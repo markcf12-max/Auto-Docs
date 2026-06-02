@@ -1,34 +1,33 @@
-/* =========================
-   AUTO DOC ENGINE
-========================= */
-
 let generatedText = "";
 
-function generateDoc() {
-
-  const caseVal = document.getElementById("case").value;
-  const details = document.getElementById("details").value;
-  const name = document.getElementById("name").value;
-  const min = document.getElementById("min").value;
-  const company = document.getElementById("company").value;
-  const email = document.getElementById("email").value;
-  const thread = document.getElementById("thread").value;
-  const datetime = document.getElementById("datetime").value;
-  const action = document.getElementById("action").value;
-  const wocas = document.getElementById("wocas").value;
+/* =========================
+   GENERATE
+========================= */
+window.generateDoc = function () {
 
   const compact = document.getElementById("compactMode").checked;
+
+  const caseVal = document.getElementById("case").value.trim();
+  const details = document.getElementById("details").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const min = document.getElementById("min").value.trim();
+  const company = document.getElementById("company").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const thread = document.getElementById("thread").value.trim();
+  const datetime = document.getElementById("datetime").value.trim();
+  const action = document.getElementById("action").value.trim();
+  const wocas = document.getElementById("wocas").value.trim();
 
   if (compact) {
 
     generatedText =
 `CASE: ${caseVal} | NAME: ${name} | MIN: ${min} | COMPANY: ${company}
 
-DETAILS OF THE CONCERN: ${details}
+DETAILS: ${details}
 
 EMAIL: ${email} | THREAD: ${thread} | DATE/TIME: ${datetime}
 
-ACTION TAKEN: ${action}
+ACTION: ${action}
 
 WOCAS: ${wocas}`;
 
@@ -45,25 +44,32 @@ THREAD CASE NUMBER: ${thread}
 DATE & TIME EMAIL RECEIVED: ${datetime}
 ACTION TAKEN: ${action}
 WOCAS: ${wocas}`;
-
   }
 
   document.getElementById("output").textContent = generatedText;
-}
+};
 
-function copyDoc() {
+
+/* =========================
+   COPY
+========================= */
+window.copyDoc = function () {
+  if (!generatedText) return alert("Nothing to copy yet.");
   navigator.clipboard.writeText(generatedText);
-  alert("Copied to clipboard!");
-}
+};
 
-function downloadTxt() {
 
-  const blob = new Blob([generatedText], {
-    type: "text/plain"
-  });
+/* =========================
+   DOWNLOAD TXT
+========================= */
+window.downloadTxt = function () {
 
+  if (!generatedText) return alert("Nothing to download yet.");
+
+  const blob = new Blob([generatedText], { type: "text/plain" });
   const a = document.createElement("a");
+
   a.href = URL.createObjectURL(blob);
   a.download = "auto-doc.txt";
   a.click();
-}
+};
