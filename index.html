@@ -1,11 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Auto Docs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input, textarea {
+      width: 100%;
+      margin: 6px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    textarea {
+      min-height: 80px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    pre {
+      margin-top: 15px;
+      background: #111827;
+      color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+
 <div class="container">
 
   <h1>Auto Docs</h1>
 
   <label>
-  <input type="checkbox" id="compactMode">
-  Compact Mode
-</label>
+    <input type="checkbox" id="compactMode">
+    Compact Mode
+  </label>
 
   <input id="case" placeholder="CASE">
   <textarea id="details" placeholder="DETAILS OF THE CONCERN"></textarea>
@@ -29,3 +94,8 @@
   <pre id="output"></pre>
 
 </div>
+
+<script type="module" src="script.js"></script>
+
+</body>
+</html>
