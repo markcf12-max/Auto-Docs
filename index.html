@@ -67,23 +67,65 @@
 
   <h1>Auto Docs</h1>
 
-  <label>
-    <input type="checkbox" id="compactMode">
-    Compact Mode
-  </label>
+  <!-- Compact Toggle (CSS handled in your style.css) -->
+  <div class="toggle-row">
+    <span class="toggle-label">Compact Mode</span>
 
-  <input id="case" placeholder="CASE">
-  <textarea id="details" placeholder="DETAILS OF THE CONCERN"></textarea>
+    <label class="switch">
+      <input type="checkbox" id="compactMode">
+      <span class="slider"></span>
+    </label>
+  </div>
 
-  <input id="name" placeholder="NAME">
-  <input id="min" placeholder="MIN">
-  <input id="company" placeholder="COMPANY NAME">
-  <input id="email" placeholder="EMAIL ADDRESS">
-  <input id="thread" placeholder="THREAD CASE NUMBER">
-  <input id="datetime" placeholder="DATE & TIME EMAIL RECEIVED">
+  <div class="field">
+    <label>CASE</label>
+    <input id="case">
+  </div>
 
-  <textarea id="action" placeholder="ACTION TAKEN"></textarea>
-  <textarea id="wocas" placeholder="WOCAS"></textarea>
+  <div class="field">
+    <label>DETAILS OF THE CONCERN</label>
+    <textarea id="details"></textarea>
+  </div>
+
+  <div class="field">
+    <label>NAME</label>
+    <input id="name">
+  </div>
+
+  <div class="field">
+    <label>MIN</label>
+    <input id="min">
+  </div>
+
+  <div class="field">
+    <label>COMPANY NAME</label>
+    <input id="company">
+  </div>
+
+  <div class="field">
+    <label>EMAIL ADDRESS</label>
+    <input id="email">
+  </div>
+
+  <div class="field">
+    <label>THREAD CASE NUMBER</label>
+    <input id="thread">
+  </div>
+
+  <div class="field">
+    <label>DATE & TIME EMAIL RECEIVED</label>
+    <input id="datetime">
+  </div>
+
+  <div class="field">
+    <label>ACTION TAKEN</label>
+    <textarea id="action"></textarea>
+  </div>
+
+  <div class="field">
+    <label>WOCAS</label>
+    <textarea id="wocas"></textarea>
+  </div>
 
   <div class="buttons">
     <button onclick="generateDoc()">Generate</button>
@@ -94,7 +136,6 @@
   <pre id="output"></pre>
 
 </div>
-
 <script type="module" src="script.js"></script>
 
 </body>
