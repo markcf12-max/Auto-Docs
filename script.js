@@ -17,7 +17,24 @@ function generateDoc() {
   const action = document.getElementById("action").value;
   const wocas = document.getElementById("wocas").value;
 
-  generatedText = 
+  const compact = document.getElementById("compactMode").checked;
+
+  if (compact) {
+
+    generatedText =
+`CASE: ${caseVal} | NAME: ${name} | MIN: ${min} | COMPANY: ${company}
+
+DETAILS OF THE CONCERN: ${details}
+
+EMAIL: ${email} | THREAD: ${thread} | DATE/TIME: ${datetime}
+
+ACTION TAKEN: ${action}
+
+WOCAS: ${wocas}`;
+
+  } else {
+
+    generatedText =
 `CASE: ${caseVal}
 DETAILS OF THE CONCERN: ${details}
 NAME: ${name}
@@ -28,6 +45,8 @@ THREAD CASE NUMBER: ${thread}
 DATE & TIME EMAIL RECEIVED: ${datetime}
 ACTION TAKEN: ${action}
 WOCAS: ${wocas}`;
+
+  }
 
   document.getElementById("output").textContent = generatedText;
 }
