@@ -1,1 +1,34 @@
+/* =========================
+   AUTO DOCS ENHANCEMENTS
+========================= */
 
+.field {
+  margin-bottom: 12px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #374151;
+}
+
+/* Toggle row alignment */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.toggle-label {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Keep your existing switch if you already have it */
+/* If not, tell me and I’ll merge it cleanly */
