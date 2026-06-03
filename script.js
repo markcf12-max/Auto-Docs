@@ -1,6 +1,3 @@
-/* =========================
-   HELPERS
-========================= */
 function $(id) {
   return document.getElementById(id);
 }
@@ -8,7 +5,22 @@ function $(id) {
 const STORAGE_KEY = "auto_docs_v3";
 
 /* =========================
-   SAVE INPUTS
+   TECH LINKS
+========================= */
+const TECH_LINKS = {
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE"
+};
+
+/* =========================
+   SAVE
 ========================= */
 function saveData() {
   const data = {
@@ -30,7 +42,7 @@ function saveData() {
 }
 
 /* =========================
-   LOAD INPUTS
+   LOAD
 ========================= */
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -45,7 +57,7 @@ function loadData() {
 }
 
 /* =========================
-   BUILD OUTPUT (LIVE)
+   OUTPUT
 ========================= */
 function updateOutput() {
   const output =
@@ -53,15 +65,15 @@ function updateOutput() {
 CONCERN TYPE: ${$("concernType").value}
 VOC: ${$("voc").value}
 
-DETAILS OF THE CONCERN:
+DETAILS:
 ${$("details").value}
 
 NAME: ${$("name").value}
 MIN: ${$("min").value}
-COMPANY NAME: ${$("company").value}
-EMAIL ADDRESS: ${$("email").value}
-THREAD CASE NUMBER: ${$("thread").value}
-DATE & TIME EMAIL RECEIVED: ${$("datetime").value}
+COMPANY: ${$("company").value}
+EMAIL: ${$("email").value}
+THREAD: ${$("thread").value}
+DATE/TIME: ${$("datetime").value}
 
 ACTION TAKEN:
 ${$("action").value}
@@ -73,7 +85,7 @@ ${$("wocas").value}`.trim();
 }
 
 /* =========================
-   SUGGESTIONS ENGINE
+   SUGGESTIONS
 ========================= */
 function updateSuggestions() {
 
@@ -82,53 +94,68 @@ function updateSuggestions() {
 
   let list = [];
 
+  /* =========================
+     TECHNICAL
+  ========================= */
+  if (concern === "Technical") {
+
+    const techItems = Object.keys(TECH_LINKS);
+
+    $("suggestions").innerHTML = techItems
+      .map(item => `• <a href="${TECH_LINKS[item]}" target="_blank">${item}</a>`)
+      .join("");
+
+    return;
+  }
+
+  /* =========================
+     OTHER CONCERNS
+  ========================= */
   if (concern === "Inquiry") {
-    list.push("• Check account details");
-    list.push("• Provide standard information response");
-    list.push("• Verify customer request");
+    list.push({ text: "Check account details", link: "https://example.com" });
+    list.push({ text: "Verify request", link: "https://example.com" });
   }
 
   if (concern === "Complaint") {
-    list.push("• Acknowledge issue immediately");
-    list.push("• Investigate system logs / records");
-    list.push("• Escalate if SLA breach risk detected");
+    list.push({ text: "Acknowledge issue", link: "https://example.com" });
+    list.push({ text: "Escalate case", link: "https://example.com" });
   }
 
   if (concern === "Aftersales") {
-    list.push("• Validate transaction history");
-    list.push("• Check eligibility / warranty");
-    list.push("• Coordinate with support team");
+    list.push({ text: "Validate transaction", link: "https://example.com" });
   }
 
   if (concern === "Other") {
-    list.push("• Review case manually");
-    list.push("• Classify properly before processing");
+    list.push({ text: "Review manually", link: "https://example.com" });
   }
 
+  /* =========================
+     VOC
+  ========================= */
   if (voc === "Negative") {
-    list.push("");
-    list.push("⚠ PRIORITY HANDLING");
-    list.push("• Apologize and acknowledge frustration");
-    list.push("• Escalate if service impact confirmed");
+    list.push({ text: "Apologize and escalate", link: "https://example.com" });
   }
 
   if (voc === "Positive") {
-    list.push("");
-    list.push("• Maintain positive engagement tone");
-    list.push("• Confirm resolution and close case");
+    list.push({ text: "Confirm resolution", link: "https://example.com" });
   }
 
   if (voc === "Neutral") {
-    list.push("");
-    list.push("• Standard processing applies");
+    list.push({ text: "Standard processing", link: "https://example.com" });
   }
 
-  $("suggestions").textContent =
-    list.length ? list.join("\n") : "Select Concern & VOC";
+  if (!list.length) {
+    $("suggestions").textContent = "Select Concern & VOC";
+    return;
+  }
+
+  $("suggestions").innerHTML = list
+    .map(i => `• <a href="${i.link}" target="_blank">${i.text}</a>`)
+    .join("<br>");
 }
 
 /* =========================
-   LIVE SYSTEM CORE
+   INPUT HANDLER
 ========================= */
 function handleInput() {
   saveData();
@@ -136,23 +163,17 @@ function handleInput() {
 }
 
 /* =========================
-   COPY OUTPUT
+   COPY
 ========================= */
 function copyDoc() {
-  const text = $("output").textContent;
-
-  navigator.clipboard.writeText(text)
-    .then(() => alert("Copied to clipboard"))
-    .catch(err => console.error("Copy failed:", err));
+  navigator.clipboard.writeText($("output").textContent);
 }
 
 /* =========================
-   DOWNLOAD OUTPUT
+   DOWNLOAD
 ========================= */
 function downloadTxt() {
-  const text = $("output").textContent;
-
-  const blob = new Blob([text], { type: "text/plain" });
+  const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
@@ -164,17 +185,13 @@ function downloadTxt() {
 }
 
 /* =========================
-   RESET FORM
+   RESET
 ========================= */
 function resetForm() {
-
   [
     "case","concernType","voc","details","name","min",
     "company","email","thread","datetime","action","wocas"
-  ].forEach(id => {
-    const el = $(id);
-    if (el) el.value = "";
-  });
+  ].forEach(id => $(id).value = "");
 
   $("output").textContent = "";
   $("suggestions").textContent = "Select Concern & VOC";
@@ -189,7 +206,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
 
-  // auto-fill date/time if empty
   if (!$("datetime").value) {
     $("datetime").value = new Date().toLocaleString();
   }
@@ -204,8 +220,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   fields.forEach(id => {
     const el = $(id);
-    if (!el) return;
-
     el.addEventListener("input", handleInput);
     el.addEventListener("change", () => {
       handleInput();
