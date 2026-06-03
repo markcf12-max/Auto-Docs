@@ -65,13 +65,11 @@ function initAutoSave() {
 }
 
 /* =========================
-   GENERATE
+   AUTO DOCS SCRIPT
 ========================= */
-window.generateDoc = function () {
 
-  const compact = document.getElementById("compactMode").checked;
-
-  const caseVal = document.getElementById("case").value.trim();
+function generateDoc() {
+  const caseNum = document.getElementById("case").value.trim();
   const details = document.getElementById("details").value.trim();
   const name = document.getElementById("name").value.trim();
   const min = document.getElementById("min").value.trim();
@@ -82,23 +80,13 @@ window.generateDoc = function () {
   const action = document.getElementById("action").value.trim();
   const wocas = document.getElementById("wocas").value.trim();
 
-  if (compact) {
+  if (!caseNum) {
+    alert("Please enter CASE number");
+    return;
+  }
 
-    generatedText =
-`CASE: ${caseVal} | NAME: ${name} | MIN: ${min} | COMPANY: ${company}
-
-DETAILS: ${details}
-
-EMAIL: ${email} | THREAD: ${thread} | DATE/TIME: ${datetime}
-
-ACTION: ${action}
-
-WOCAS: ${wocas}`;
-
-  } else {
-
-    generatedText =
-`CASE: ${caseVal}
+  const output = 
+`CASE: ${caseNum}
 DETAILS OF THE CONCERN: ${details}
 NAME: ${name}
 MIN: ${min}
@@ -108,33 +96,62 @@ THREAD CASE NUMBER: ${thread}
 DATE & TIME EMAIL RECEIVED: ${datetime}
 ACTION TAKEN: ${action}
 WOCAS: ${wocas}`;
-  }
 
-  document.getElementById("output").textContent = generatedText;
-  saveData();
-};
+  document.getElementById("output").textContent = output;
 
-/* =========================
-   COPY
-========================= */
-window.copyDoc = function () {
-  if (!generatedText) return alert("Nothing to copy yet.");
-  navigator.clipboard.writeText(generatedText);
-};
+  // Save to localStorage so it won't be lost on refresh
+  localStorage.setItem("autoDocsData", JSON.stringify({
+    caseNum, details, name, min, company, email, thread, datetime, action, wocas
+  }));
+}
 
-/* =========================
-   DOWNLOAD
-========================= */
-window.downloadTxt = function () {
-  if (!generatedText) return alert("Nothing to download yet.");
+function copyDoc() {
+  const output = document.getElementById("output").textContent;
+  if (!output) return;
+  navigator.clipboard.writeText(output)
+    .then(() => alert("Copied to clipboard!"));
+}
 
-  const blob = new Blob([generatedText], { type: "text/plain" });
+function downloadTxt() {
+  const output = document.getElementById("output").textContent;
+  if (!output) return;
+  const blob = new Blob([output], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-
-  a.href = URL.createObjectURL(blob);
-  a.download = "auto-doc.txt";
+  a.href = url;
+  a.download = `AutoDoc_${new Date().toISOString()}.txt`;
+  document.body.appendChild(a);
   a.click();
-};
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function resetForm() {
+  document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+  document.getElementById("output").textContent = "";
+  localStorage.removeItem("autoDocsData");
+}
+
+// =========================
+// Load saved data on page refresh
+// =========================
+window.addEventListener("load", () => {
+  const saved = JSON.parse(localStorage.getItem("autoDocsData"));
+  if (!saved) return;
+
+  document.getElementById("case").value = saved.caseNum || "";
+  document.getElementById("details").value = saved.details || "";
+  document.getElementById("name").value = saved.name || "";
+  document.getElementById("min").value = saved.min || "";
+  document.getElementById("company").value = saved.company || "";
+  document.getElementById("email").value = saved.email || "";
+  document.getElementById("thread").value = saved.thread || "";
+  document.getElementById("datetime").value = saved.datetime || "";
+  document.getElementById("action").value = saved.action || "";
+  document.getElementById("wocas").value = saved.wocas || "";
+  
+  generateDoc(); // regenerate output automatically
+});
 
 /* =========================
    CLEAR
