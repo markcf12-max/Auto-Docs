@@ -1,5 +1,8 @@
 let generatedText = "";
 
+/* =========================
+   FIELD LIST
+========================= */
 const fields = [
   "case",
   "details",
@@ -22,7 +25,6 @@ function saveData() {
   fields.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-
     data[id] = el.value;
   });
 
@@ -40,9 +42,8 @@ function loadData() {
 
   fields.forEach(id => {
     const el = document.getElementById(id);
-    if (!el || data[id] === undefined) return;
-
-    el.value = data[id];
+    if (!el) return;
+    el.value = data[id] || "";
   });
 }
 
@@ -59,47 +60,50 @@ function initAutoSave() {
 }
 
 /* =========================
-   GENERATE
+   GENERATE DOC
 ========================= */
-function generateDoc() {
-  const caseNum = document.getElementById("case").value.trim();
+window.generateDoc = function () {
+
+  const get = (id) =>
+    document.getElementById(id)?.value.trim() || "";
+
+  const caseNum = get("case");
 
   if (!caseNum) {
     alert("Please enter CASE number");
     return;
   }
 
-  const output =
-`CASE: ${caseNum}
-DETAILS OF THE CONCERN: ${document.getElementById("details").value}
-NAME: ${document.getElementById("name").value}
-MIN: ${document.getElementById("min").value}
-COMPANY NAME: ${document.getElementById("company").value}
-EMAIL ADDRESS: ${document.getElementById("email").value}
-THREAD CASE NUMBER: ${document.getElementById("thread").value}
-DATE & TIME EMAIL RECEIVED: ${document.getElementById("datetime").value}
-ACTION TAKEN: ${document.getElementById("action").value}
-WOCAS: ${document.getElementById("wocas").value}`;
+  generatedText = `
+CASE: ${caseNum}
+DETAILS OF THE CONCERN: ${get("details")}
+NAME: ${get("name")}
+MIN: ${get("min")}
+COMPANY NAME: ${get("company")}
+EMAIL ADDRESS: ${get("email")}
+THREAD CASE NUMBER: ${get("thread")}
+DATE & TIME EMAIL RECEIVED: ${get("datetime")}
+ACTION TAKEN: ${get("action")}
+WOCAS: ${get("wocas")}
+`.trim();
 
-  document.getElementById("output").textContent = output;
-
-  generatedText = output;
-}
+  document.getElementById("output").textContent = generatedText;
+};
 
 /* =========================
    COPY
 ========================= */
-function copyDoc() {
+window.copyDoc = function () {
   const output = document.getElementById("output").textContent;
   if (!output) return;
 
   navigator.clipboard.writeText(output);
-}
+};
 
 /* =========================
    DOWNLOAD
 ========================= */
-function downloadTxt() {
+window.downloadTxt = function () {
   const output = document.getElementById("output").textContent;
   if (!output) return;
 
@@ -108,31 +112,27 @@ function downloadTxt() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `AutoDoc_${Date.now()}.txt`;
-
-  document.body.appendChild(a);
+  a.download = "AutoDoc.txt";
   a.click();
-  document.body.removeChild(a);
 
   URL.revokeObjectURL(url);
-}
+};
 
 /* =========================
-   RESET (FIXED)
+   RESET
 ========================= */
-function resetForm() {
+window.resetForm = function () {
 
   fields.forEach(id => {
     const el = document.getElementById(id);
-    if (!el) return;
-    el.value = "";
+    if (el) el.value = "";
   });
 
   document.getElementById("output").textContent = "";
-  generatedText = "";
-
   localStorage.removeItem("auto_docs");
-}
+
+  generatedText = "";
+};
 
 /* =========================
    INIT
