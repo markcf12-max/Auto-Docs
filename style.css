@@ -7,7 +7,7 @@
   gap: 14px;
   padding: 0 20px 20px;
 
-  height: calc(100vh - 90px); /* KEY FIX */
+  height: calc(100vh - 90px);
   overflow: hidden;
 }
 
@@ -20,19 +20,19 @@
   box-shadow: 0 10px 25px rgba(0,0,0,0.08);
   padding: 16px;
 
-  overflow-y: auto;   /* KEY */
-  min-height: 0;      /* KEY for grid fix */
+  overflow-y: auto;
+  min-height: 0;
 }
 
 /* =========================
-   INPUT PANEL (BIGGER SCROLL AREA)
+   INPUT PANEL
 ========================= */
 .inputPanel {
   height: 100%;
 }
 
 /* =========================
-   OUTPUT PANEL (MEDIUM HEIGHT)
+   OUTPUT PANEL
 ========================= */
 .outputPanel {
   background: #0f172a;
@@ -42,7 +42,7 @@
 }
 
 /* =========================
-   SUGGESTION PANEL (COMPACT BUT FITS)
+   SUGGESTION PANEL
 ========================= */
 .suggestionPanel {
   background: #111827;
@@ -73,7 +73,19 @@ pre {
 }
 
 /* =========================
-   RESPONSIVE (MOBILE FIX)
+   SUGGESTION BOX
+========================= */
+#suggestions {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.5;
+
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* =========================
+   RESPONSIVE
 ========================= */
 @media (max-width: 1100px) {
   .layout {
@@ -85,17 +97,4 @@ pre {
     height: auto;
     max-height: none;
   }
-}
-
-/* =========================
-   SUGGESTION BOX
-========================= */
-
-#suggestions {
-  white-space: pre-wrap;
-  font-size: 13px;
-  line-height: 1.5;
-
-  overflow-y: auto;
-  flex: 1; /* IMPORTANT */
 }
