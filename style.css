@@ -1,61 +1,64 @@
 body {
   margin: 0;
   font-family: system-ui, Arial;
-  background: #f3f4f6;
-  color: #111827;
+  background: #0b1220;
+  color: #e5e7eb;
 }
 
-/* HEADER */
+/* TOPBAR */
 .topbar {
   padding: 20px 30px;
+  border-bottom: 1px solid #1f2937;
 }
 
 .topbar h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
 }
 
 .topbar p {
   margin: 4px 0 0;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
-/* MAIN LAYOUT */
+/* LAYOUT */
 .layout {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
+  grid-template-columns: 1.2fr 1fr;
   gap: 20px;
-  padding: 0 30px 30px;
+  padding: 20px 30px;
 }
 
 /* PANEL */
 .panel {
-  background: white;
+  background: #111827;
   padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border-radius: 14px;
+  border: 1px solid #1f2937;
 }
 
 /* GROUP */
 .group {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.label {
+label {
+  display: block;
   font-size: 12px;
-  font-weight: 700;
-  color: #6b7280;
+  color: #94a3b8;
   margin-bottom: 6px;
+  font-weight: 600;
 }
 
 /* INPUTS */
 input, textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
+  padding: 10px;
   border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #0b1220;
+  color: #e5e7eb;
   outline: none;
-  font-size: 14px;
   box-sizing: border-box;
 }
 
@@ -64,7 +67,7 @@ textarea {
   resize: vertical;
 }
 
-/* GRID INPUTS */
+/* GRID */
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -83,55 +86,50 @@ button {
   padding: 10px;
   border: none;
   border-radius: 10px;
-  cursor: pointer;
   font-weight: 600;
+  cursor: pointer;
   transition: 0.2s;
 }
 
+/* BUTTON COLORS */
 button:nth-child(1) { background: #2563eb; color: white; }
 button:nth-child(2) { background: #10b981; color: white; }
-button:nth-child(3) { background: #111827; color: white; }
+button:nth-child(3) { background: #f59e0b; color: black; }
 
 button.danger {
   background: #ef4444;
   color: white;
 }
 
-/* OUTPUT PANEL */
-.outputPanel {
+/* OUTPUT */
+.output {
   background: #0f172a;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 20px;
-  color: white;
+  border: 1px solid #1f2937;
   position: sticky;
   top: 20px;
   height: fit-content;
 }
 
-.outputHeader {
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 10px;
+.output-header {
+  font-size: 12px;
   color: #94a3b8;
+  margin-bottom: 10px;
+  font-weight: 700;
 }
 
 pre {
   white-space: pre-wrap;
   font-size: 13px;
+  color: #e5e7eb;
   line-height: 1.5;
 }
 
-/* =========================
-   RESPONSIVE DESIGN
-========================= */
-
+/* RESPONSIVE */
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
-  }
-
-  .outputPanel {
-    position: relative;
   }
 
   .buttons {
@@ -139,12 +137,6 @@ pre {
   }
 
   .grid-2 {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 500px) {
-  .buttons {
     grid-template-columns: 1fr;
   }
 }
