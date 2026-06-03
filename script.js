@@ -105,7 +105,7 @@ function updateSuggestions() {
     $("suggestions").innerHTML = `
       <strong>${voc}</strong>
       <br><br>
-      <a href="${link}" target="_blank">Open Procedure Guide</a>
+      <a href="${link}" target="_blank">Open Connectivity File</a>
     `;
 
     return;
