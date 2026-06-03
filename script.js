@@ -1,81 +1,19 @@
-let generatedText = "";
-
-/* =========================
-   FIELD LIST
-========================= */
-const fields = [
-  "case",
-  "details",
-  "name",
-  "min",
-  "company",
-  "email",
-  "thread",
-  "datetime",
-  "action",
-  "wocas"
-];
-
-/* =========================
-   SAVE DATA
-========================= */
-function saveData() {
-  const data = {};
-
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    data[id] = el.value;
-  });
-
-  localStorage.setItem("auto_docs", JSON.stringify(data));
+function get(id) {
+  return document.getElementById(id).value.trim();
 }
 
 /* =========================
-   LOAD DATA
-========================= */
-function loadData() {
-  const saved = localStorage.getItem("auto_docs");
-  if (!saved) return;
-
-  const data = JSON.parse(saved);
-
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.value = data[id] || "";
-  });
-}
-
-/* =========================
-   AUTO SAVE
-========================= */
-function initAutoSave() {
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    el.addEventListener("input", saveData);
-  });
-}
-
-/* =========================
-   GENERATE DOC
+   GENERATE
 ========================= */
 window.generateDoc = function () {
 
-  const get = (id) =>
-    document.getElementById(id)?.value.trim() || "";
-
-  const caseNum = get("case");
-
-  if (!caseNum) {
-    alert("Please enter CASE number");
+  if (!get("case")) {
+    alert("CASE is required");
     return;
   }
 
-  generatedText = `
-CASE: ${caseNum}
+  const output =
+`CASE: ${get("case")}
 DETAILS OF THE CONCERN: ${get("details")}
 NAME: ${get("name")}
 MIN: ${get("min")}
@@ -84,35 +22,35 @@ EMAIL ADDRESS: ${get("email")}
 THREAD CASE NUMBER: ${get("thread")}
 DATE & TIME EMAIL RECEIVED: ${get("datetime")}
 ACTION TAKEN: ${get("action")}
-WOCAS: ${get("wocas")}
-`.trim();
+WOCAS: ${get("wocas")}`;
 
-  document.getElementById("output").textContent = generatedText;
+  document.getElementById("output").textContent = output;
+
+  localStorage.setItem("auto_docs", output);
 };
 
 /* =========================
    COPY
 ========================= */
 window.copyDoc = function () {
-  const output = document.getElementById("output").textContent;
-  if (!output) return;
-
-  navigator.clipboard.writeText(output);
+  const text = document.getElementById("output").textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text);
 };
 
 /* =========================
    DOWNLOAD
 ========================= */
-window.downloadTxt = function () {
-  const output = document.getElementById("output").textContent;
-  if (!output) return;
+window.downloadDoc = function () {
+  const text = document.getElementById("output").textContent;
+  if (!text) return;
 
-  const blob = new Blob([output], { type: "text/plain" });
+  const blob = new Blob([text], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "AutoDoc.txt";
+  a.download = "auto-doc.txt";
   a.click();
 
   URL.revokeObjectURL(url);
@@ -123,21 +61,19 @@ window.downloadTxt = function () {
 ========================= */
 window.resetForm = function () {
 
-  fields.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
+  ["case","details","name","min","company","email","thread","datetime","action","wocas"]
+  .forEach(id => document.getElementById(id).value = "");
 
   document.getElementById("output").textContent = "";
   localStorage.removeItem("auto_docs");
-
-  generatedText = "";
 };
 
 /* =========================
-   INIT
+   AUTO RESTORE
 ========================= */
-window.addEventListener("DOMContentLoaded", () => {
-  loadData();
-  initAutoSave();
+window.addEventListener("load", () => {
+  const saved = localStorage.getItem("auto_docs");
+  if (saved) {
+    document.getElementById("output").textContent = saved;
+  }
 });
