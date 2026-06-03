@@ -102,11 +102,18 @@ function updateSuggestions() {
       return;
     }
 
-    $("suggestions").innerHTML = `
-      <strong>${voc}</strong>
-      <br><br>
-      <a href="${link}" target="_blank">Open Connectivity File</a>
-    `;
+const label = voc
+  .toLowerCase()
+  .replace(" connectivity", "")
+  .replace(/\b\w/g, c => c.toUpperCase());
+
+$("suggestions").innerHTML = `
+  <strong>${voc}</strong>
+  <br><br>
+  <a href="${link}" target="_blank">
+    Open ${label} Connectivity
+  </a>
+`;
 
     return;
   }
