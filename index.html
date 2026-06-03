@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Docs</title>
-
+  <title>Auto Docs Generator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,101 +11,93 @@
 
 <div class="app">
 
+  <!-- HEADER -->
   <div class="topbar">
-    <div>
-      <h1>Auto Docs</h1>
-      <p>Case Generator Tool</p>
-    </div>
+    <h1>Auto Docs</h1>
+    <p>Case Generator System</p>
   </div>
 
+  <!-- MAIN LAYOUT -->
   <div class="layout">
 
-    <!-- LEFT PANEL -->
+    <!-- LEFT INPUT PANEL -->
     <div class="panel">
 
       <div class="grid-2">
-
         <div class="group">
-          <div class="label">CASE</div>
+          <label>CASE</label>
           <input id="case" placeholder="00000000">
         </div>
 
         <div class="group">
-          <div class="label">DATE & TIME</div>
+          <label>DATE & TIME</label>
           <input id="datetime">
         </div>
-
       </div>
 
       <div class="group">
-        <div class="label">DETAILS OF THE CONCERN</div>
+        <label>DETAILS OF THE CONCERN</label>
         <textarea id="details"></textarea>
       </div>
 
       <div class="grid-2">
-
         <div class="group">
-          <div class="label">NAME</div>
+          <label>NAME</label>
           <input id="name">
         </div>
 
         <div class="group">
-          <div class="label">MIN</div>
+          <label>MIN</label>
           <input id="min">
         </div>
-
       </div>
 
       <div class="group">
-        <div class="label">COMPANY</div>
+        <label>COMPANY NAME</label>
         <input id="company">
       </div>
 
       <div class="grid-2">
-
         <div class="group">
-          <div class="label">EMAIL</div>
+          <label>EMAIL</label>
           <input id="email">
         </div>
 
         <div class="group">
-          <div class="label">THREAD</div>
+          <label>THREAD CASE</label>
           <input id="thread">
         </div>
-
       </div>
 
       <div class="group">
-        <div class="label">ACTION TAKEN</div>
+        <label>ACTION TAKEN</label>
         <textarea id="action"></textarea>
       </div>
 
       <div class="group">
-        <div class="label">WOCAS</div>
+        <label>WOCAS</label>
         <textarea id="wocas"></textarea>
       </div>
 
-      <!-- BUTTON BAR -->
+      <!-- BUTTONS -->
       <div class="buttons">
         <button onclick="generateDoc()">Generate</button>
         <button onclick="copyDoc()">Copy</button>
-        <button onclick="downloadTxt()">Download</button>
+        <button onclick="downloadDoc()">Download</button>
         <button class="danger" onclick="resetForm()">Reset</button>
       </div>
 
     </div>
 
-    <!-- RIGHT PANEL -->
-    <div class="outputPanel">
+    <!-- RIGHT OUTPUT PANEL -->
+    <div class="output">
 
-      <div class="outputHeader">Generated Output</div>
-
+      <div class="output-header">OUTPUT PREVIEW</div>
       <pre id="output"></pre>
 
     </div>
 
   </div>
-
 </div>
 
 <script src="script.js"></script>
