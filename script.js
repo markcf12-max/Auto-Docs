@@ -106,9 +106,9 @@ ${$("details").value}
 
 NAME: ${$("name").value}
 MIN: ${$("min").value}
-COMPANY: ${$("company").value}
-EMAIL: ${$("email").value}
-THREAD: ${$("thread").value}
+COMPANY NAME: ${$("company").value}
+EMAIL ADDRESS: ${$("email").value}
+THREAD NUMBER: ${$("thread").value}
 DATE/TIME: ${$("datetime").value}
 
 ACTION:
