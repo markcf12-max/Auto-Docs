@@ -11,92 +11,99 @@
 
 <div class="app">
 
-  <div class="header">
-    <h1>Auto Docs</h1>
-    <p>Internal Case Generator Tool</p>
-  </div>
-
-  <!-- TOGGLE -->
-  <div class="toggle-row">
-    <span class="toggle-label">Compact Mode</span>
-    <input type="checkbox" id="compactMode">
-  </div>
-
-  <!-- CASE SECTION -->
-  <div class="card">
-    <h2>Case Information</h2>
-
-    <div class="field">
-      <label>CASE</label>
-      <input id="case" placeholder="00000000">
-    </div>
-
-    <div class="field">
-      <label>DETAILS OF THE CONCERN</label>
-      <textarea id="details"></textarea>
+  <div class="topbar">
+    <div>
+      <h1>Auto Docs</h1>
+      <p>Case Generator</p>
     </div>
   </div>
 
-  <!-- CUSTOMER SECTION -->
-  <div class="card">
-    <h2>Customer Details</h2>
+  <div class="layout">
 
-    <div class="grid">
-      <div class="field">
-        <label>NAME</label>
-        <input id="name">
+    <!-- LEFT INPUT PANEL -->
+    <div class="panel">
+
+      <div class="toggle">
+        <label>
+          <input type="checkbox" id="compactMode">
+          Compact Mode
+        </label>
       </div>
 
-      <div class="field">
-        <label>MIN</label>
-        <input id="min">
+      <div class="group">
+        <div class="label">CASE</div>
+        <input id="case" placeholder="00000000">
       </div>
 
-      <div class="field">
-        <label>COMPANY</label>
+      <div class="group">
+        <div class="label">DETAILS</div>
+        <textarea id="details"></textarea>
+      </div>
+
+      <div class="grid">
+        <div class="group">
+          <div class="label">NAME</div>
+          <input id="name">
+        </div>
+
+        <div class="group">
+          <div class="label">MIN</div>
+          <input id="min">
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="label">COMPANY</div>
         <input id="company">
       </div>
 
-      <div class="field">
-        <label>EMAIL</label>
-        <input id="email">
+      <div class="grid">
+        <div class="group">
+          <div class="label">EMAIL</div>
+          <input id="email">
+        </div>
+
+        <div class="group">
+          <div class="label">THREAD</div>
+          <input id="thread">
+        </div>
       </div>
+
+      <div class="group">
+        <div class="label">DATE & TIME</div>
+        <input id="datetime">
+      </div>
+
+      <div class="group">
+        <div class="label">ACTION TAKEN</div>
+        <textarea id="action"></textarea>
+      </div>
+
+      <div class="group">
+        <div class="label">WOCAS</div>
+        <textarea id="wocas"></textarea>
+      </div>
+
+      <div class="buttons">
+        <button onclick="generateDoc()">Generate</button>
+        <button onclick="copyDoc()">Copy</button>
+        <button onclick="downloadTxt()">Download</button>
+      </div>
+
     </div>
 
-    <div class="field">
-      <label>THREAD CASE NUMBER</label>
-      <input id="thread">
+    <!-- RIGHT OUTPUT PANEL -->
+    <div class="outputPanel">
+
+      <div class="outputHeader">
+        Generated Output
+      </div>
+
+      <pre id="output"></pre>
+
     </div>
 
-    <div class="field">
-      <label>DATE & TIME RECEIVED</label>
-      <input id="datetime">
-    </div>
   </div>
-
-  <!-- ACTION SECTION -->
-  <div class="card">
-    <h2>Resolution</h2>
-
-    <div class="field">
-      <label>ACTION TAKEN</label>
-      <textarea id="action"></textarea>
-    </div>
-
-    <div class="field">
-      <label>WOCAS</label>
-      <textarea id="wocas"></textarea>
-    </div>
-  </div>
-
-  <!-- BUTTONS -->
-  <div class="buttons">
-    <button onclick="generateDoc()">Generate</button>
-    <button onclick="copyDoc()">Copy</button>
-    <button onclick="downloadTxt()">Download TXT</button>
-  </div>
-
-  <pre id="output"></pre>
 
 </div>
 
