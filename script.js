@@ -226,10 +226,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
 
-  if (!$("datetime").value) {
-    $("datetime").value = new Date().toLocaleString();
-  }
-
   updateVocOptions();
   updateOutput();
   updateSuggestions();
