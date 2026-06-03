@@ -8,21 +8,48 @@ const STORAGE_KEY = "auto_docs_v4";
    TECH LINKS
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx",
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx",
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx",
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx",
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx"
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/"
 };
 
 /* =========================
-   VOC UPDATE
+   OUTPUT (LIVE)
+========================= */
+function updateOutput() {
+  $("output").textContent = `
+CASE: ${$("case").value}
+CONCERN TYPE: ${$("concernType").value}
+VOC: ${$("voc").value}
+
+DETAILS:
+${$("details").value}
+
+NAME: ${$("name").value}
+MIN: ${$("min").value}
+COMPANY: ${$("company").value}
+EMAIL: ${$("email").value}
+THREAD: ${$("thread").value}
+DATE/TIME: ${$("datetime").value}
+
+ACTION:
+${$("action").value}
+
+WOCAS:
+${$("wocas").value}
+`.trim();
+}
+
+/* =========================
+   VOC SWITCH (FIXED)
 ========================= */
 function updateVocOptions() {
   const concern = $("concernType").value;
   const voc = $("voc");
 
-  voc.innerHTML = "";
+  const previous = voc.value;
 
   if (concern === "Technical") {
     voc.innerHTML = `
@@ -42,46 +69,27 @@ function updateVocOptions() {
     `;
   }
 
+  // always reset properly (prevents stale mismatch bug)
   voc.value = "";
+
   updateSuggestions();
+  updateOutput();
 }
 
 /* =========================
-   OUTPUT
-========================= */
-function updateOutput() {
-  const output =
-`CASE: ${$("case").value}
-CONCERN TYPE: ${$("concernType").value}
-VOC: ${$("voc").value}
-
-DETAILS:
-${$("details").value}
-
-NAME: ${$("name").value}
-MIN: ${$("min").value}
-COMPANY: ${$("company").value}
-EMAIL: ${$("email").value}
-THREAD: ${$("thread").value}
-DATE/TIME: ${$("datetime").value}
-
-ACTION:
-${$("action").value}
-
-WOCAS:
-${$("wocas").value}`;
-
-  $("output").textContent = output;
-}
-
-/* =========================
-   SUGGESTIONS
+   SUGGESTIONS (FIXED)
 ========================= */
 function updateSuggestions() {
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
+  if (!concern) {
+    $("suggestions").textContent = "Select Concern & VOC";
+    return;
+  }
+
   if (concern === "Technical") {
+
     if (!voc) {
       $("suggestions").textContent = "Select Connectivity Type";
       return;
@@ -96,8 +104,10 @@ function updateSuggestions() {
 
     $("suggestions").innerHTML = `
       <strong>${voc}</strong>
+      <br><br>
       <a href="${link}" target="_blank">Open Procedure Guide</a>
     `;
+
     return;
   }
 
@@ -112,13 +122,11 @@ function updateSuggestions() {
   if (voc === "Positive") list.push("Confirm resolution");
   if (voc === "Neutral") list.push("Standard processing");
 
-  $("suggestions").innerHTML = list.length
-    ? list.join("<br>")
-    : "Select Concern & VOC";
+  $("suggestions").innerHTML = list.join("<br>");
 }
 
 /* =========================
-   SAVE / LOAD
+   SAVE
 ========================= */
 function saveData() {
   const data = {};
@@ -128,15 +136,20 @@ function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+/* =========================
+   LOAD
+========================= */
 function loadData() {
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
   Object.keys(saved).forEach(id => {
-    if ($(id)) $(id).value = saved[id];
+    const el = $(id);
+    if (el) el.value = saved[id];
   });
 }
 
 /* =========================
-   HANDLER
+   MASTER UPDATE
 ========================= */
 function handleInput() {
   saveData();
@@ -145,11 +158,17 @@ function handleInput() {
 }
 
 /* =========================
-   COPY
+   COPY (FIXED - NO ALERT)
 ========================= */
 function copyDoc() {
   navigator.clipboard.writeText($("output").textContent);
-  alert("Copied!");
+
+  // small non-blocking feedback instead of alert
+  const btn = event.target;
+  const original = btn.textContent;
+
+  btn.textContent = "Copied!";
+  setTimeout(() => btn.textContent = original, 1200);
 }
 
 /* =========================
@@ -173,26 +192,36 @@ function downloadTxt() {
 function resetForm() {
   document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
   localStorage.removeItem(STORAGE_KEY);
+
   updateOutput();
   updateSuggestions();
 }
 
 /* =========================
-   INIT
+   INIT (FIXED PROPERLY)
 ========================= */
 window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
-  updateVocOptions();
+
   updateOutput();
   updateSuggestions();
 
-  document.querySelectorAll("input, textarea, select").forEach(el => {
+  const fields = document.querySelectorAll("input, textarea, select");
+
+  fields.forEach(el => {
+
     el.addEventListener("input", handleInput);
+
     el.addEventListener("change", () => {
-      if (el.id === "concernType") updateVocOptions();
+
+      if (el.id === "concernType") {
+        updateVocOptions();
+      }
+
       handleInput();
     });
+
   });
 
 });
