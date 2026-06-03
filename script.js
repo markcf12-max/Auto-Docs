@@ -69,6 +69,106 @@ const TECH_PROCEDURES = {
 };
 
 /* =========================
+   AFTERSALES PROCEDURES
+========================= */
+
+const AFTERSALES_PROCEDURES = {
+
+  ACCOUNT: [
+    "Validate account ownership and authentication.",
+    "Check account status and eligibility.",
+    "Confirm request details and supporting documents.",
+    "Proceed based on policy guidelines.",
+    "Escalate if approval is required."
+  ],
+
+  DEVICE: [
+    "Verify device/SIM details in the account.",
+    "Check eligibility for unlocking or replacement.",
+    "Confirm warranty or contract status.",
+    "Proceed with approved device action.",
+    "Escalate if restrictions apply."
+  ],
+
+  PLAN: [
+    "Check current plan and contract status.",
+    "Validate eligibility for upgrade/downgrade/retention.",
+    "Confirm customer request impact.",
+    "Process plan change accordingly.",
+    "Set expectations for billing changes."
+  ],
+
+  BILLING: [
+    "Review billing account details.",
+    "Validate billing address or transfer request.",
+    "Check for discrepancies or disputes.",
+    "Process correction or escalation if needed.",
+    "Provide explanation to customer."
+  ],
+
+  BULK: [
+    "Verify bulk request authorization.",
+    "Check affected accounts and scope.",
+    "Validate system readiness for bulk processing.",
+    "Execute bulk operation based on SOP.",
+    "Confirm completion."
+  ],
+
+  SPECIAL: [
+    "Identify system or regulatory requirement.",
+    "Check applicable process or advisory.",
+    "Follow official procedure.",
+    "Coordinate with support teams if needed.",
+    "Ensure compliance with updated guidelines."
+  ]
+};
+
+/* =========================
+   AFTERSALES CATEGORY MAPPING
+========================= */
+
+function getAftersalesCategory(voc) {
+
+  if (!voc) return null;
+
+  const v = voc.toUpperCase();
+
+  if (
+    v.includes("CREDIT") ||
+    v.includes("OWNERSHIP") ||
+    v.includes("REPRESENTATIVE") ||
+    v.includes("ASSIGNEE")
+  ) return "ACCOUNT";
+
+  if (
+    v.includes("DEVICE") ||
+    v.includes("UNLOCKING") ||
+    v.includes("SIM") ||
+    v.includes("HANDSET") ||
+    v.includes("REPLACEMENT")
+  ) return "DEVICE";
+
+  if (
+    v.includes("PLAN") ||
+    v.includes("RENEWAL") ||
+    v.includes("RETENTION") ||
+    v.includes("DOWNGRADE") ||
+    v.includes("UPGRADE")
+  ) return "PLAN";
+
+  if (
+    v.includes("BILL") ||
+    v.includes("BILLING") ||
+    v.includes("ADDRESS")
+  ) return "BILLING";
+
+  if (v.includes("BULK")) return "BULK";
+
+  return "SPECIAL";
+}
+
+
+/* =========================
    LIVE OUTPUT
 ========================= */
 function updateOutput() {
@@ -116,17 +216,51 @@ function updateVocOptions(keepValue = false) {
       <option value="COVERAGE CONNECTIVITY">COVERAGE CONNECTIVITY</option>
     `;
 
-  } else {
+  } 
+  
+  else if (concern === "Aftersales") {
 
     voc.innerHTML = `
-      <option value="">Select</option>
-      <option value="Positive">Positive</option>
-      <option value="Neutral">Neutral</option>
-      <option value="Negative">Negative</option>
+      <option value="">Select Aftersales Type</option>
+      <option>INCREASE/DECREASE IN CREDIT LIMIT</option>
+      <option>FEATURE DEACTIVATION</option>
+      <option>FEATURE ACTIVATION</option>
+      <option>DEVICE UNLOCKING</option>
+      <option>CONTRACT RENEWAL/RETENTION</option>
+      <option>CHANGE PLAN: DOWNGRADE AND UPGRADE</option>
+      <option>CHANGE OF OWNERSHIP FROM ENTERPRISE TO CONSUMER WITH NPOT ROLLBACK</option>
+      <option>CHANGE OF OWNERSHIP FROM ENTERPRISE TO CONSUMER</option>
+      <option>CHANGE OF AUTHORIZED REPRESENTATIVE</option>
+      <option>CHANGE MOBILE NUMBER (MIN)</option>
+      <option>CHANGE CPE/HANDSET/DEVICE REPLACEMENT</option>
+      <option>CHANGE BILLING ADDRESS</option>
+      <option>CHANGE ASSIGNEE</option>
+      <option>BULK VOLUNTARY TEMPORARY DISCONNECTION</option>
+      <option>BULK VOLUNTARY PERMANENT DISCONNECTION</option>
+      <option>BULK SIM ACTIVATION</option>
+      <option>BULK FEATURE DEACTIVATION</option>
+      <option>BULK FEATURE ACTIVATION</option>
+      <option>BULK CHANGE ASSIGNEE</option>
+      <option>BILLING ACCOUNT TRANSFER</option>
+      <option>A2P AFTERSALES TRANSACTIONS VIA SOPRANO HELP CENTER</option>
+      <option>3G SUNSET SPARE SIM PROCESS OF CSP-BORN ACCOUNTS (SMART ONLY)</option>
+      <option>3G SUNSET SIM REPLACEMENT PROCESS OF SFDC-BORN ACCOUNTS</option>
     `;
 
   }
 
+  else {
+
+    voc.innerHTML = `
+      <option value="">Select</option>
+      <option>Positive</option>
+      <option>Neutral</option>
+      <option>Negative</option>
+    `;
+
+  }
+
+  // preserve selection if needed
   voc.value = keepValue ? currentValue : "";
 
   updateSuggestions();
@@ -146,6 +280,9 @@ function updateSuggestions() {
     return;
   }
 
+  /* =========================
+     TECHNICAL
+  ========================= */
   if (concern === "Technical") {
 
     if (!voc) {
@@ -175,6 +312,37 @@ function updateSuggestions() {
     return;
   }
 
+  /* =========================
+     AFTERSALES (NEW LOGIC)
+  ========================= */
+  if (concern === "Aftersales") {
+
+    if (!voc) {
+      $("suggestions").textContent = "Select Aftersales Type";
+      return;
+    }
+
+    const category = getAftersalesCategory(voc);
+    const steps = AFTERSALES_PROCEDURES[category] || [];
+
+    $("suggestions").innerHTML = `
+      <strong>${voc}</strong>
+
+      <div style="margin-top:10px; line-height:1.6;">
+        ${steps.map(step => "• " + step).join("<br>")}
+      </div>
+
+      <br>
+
+      <em>Please check on our updated empowerment matrix for reference.</em>
+    `;
+
+    return;
+  }
+
+  /* =========================
+     DEFAULT (INQUIRY ETC.)
+  ========================= */
   let list = [];
 
   if (concern === "Inquiry") list.push("Check account details");
