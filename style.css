@@ -1,34 +1,41 @@
 /* =========================
-   AUTO DOCS ENHANCEMENTS
+   AUTO DOCS CLEAN UI FIX
 ========================= */
 
 .field {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .field label {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   color: #374151;
 }
 
-/* Toggle row alignment */
+/* Compact toggle row (SAFE VERSION) */
 .toggle-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f9fafb;
-  padding: 10px 12px;
+
+  background: #f4f7fb;
+  border: 1px solid #e5e7eb;
+
+  padding: 10px 14px;
   border-radius: 10px;
-  margin-bottom: 15px;
+
+  margin-bottom: 16px;
 }
 
 .toggle-label {
   font-weight: 600;
+  font-size: 14px;
   color: #111827;
 }
 
-/* Keep your existing switch if you already have it */
-/* If not, tell me and I’ll merge it cleanly */
+/* Prevent layout shift */
+input, textarea {
+  box-sizing: border-box;
+}
