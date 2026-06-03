@@ -9,11 +9,11 @@ const STORAGE_KEY = "auto_docs_v4";
    TECH LINKS
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf",
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf",
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf",
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf",
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf"
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FVOICE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FSMS%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "DATA CONNECTIVITY": "https://https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FDATA%5FCONNECTIVITY%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FROAMING%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FCOVERAGE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE"
 };
 
 /* =========================
