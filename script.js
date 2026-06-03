@@ -8,13 +8,16 @@ const STORAGE_KEY = "auto_docs_v4";
    TECH LINKS
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FVOICE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE/",
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FSMS%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE/",
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FDATA%5FCONNECTIVITY%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE/",
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FROAMING%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE/",
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FCOVERAGE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE/"
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf",
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf",
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf"
 };
 
+/* =========================
+   TECH PROCEDURES
+========================= */
 const TECH_PROCEDURES = {
 
   "VOICE CONNECTIVITY": [
@@ -22,7 +25,7 @@ const TECH_PROCEDURES = {
     "Verify that all voice services are active.",
     "Check for account misalignment or provisioning issues.",
     "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
-    "If required details are not available, request the information from the customer."f
+    "If required details are not available, request the information from the customer."
   ],
 
   "SMS CONNECTIVITY": [
@@ -47,8 +50,8 @@ const TECH_PROCEDURES = {
     "Check for account misalignment or provisioning issues.",
     "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
     "If required details are not available, request the information from the customer.",
-    "Provide the One Roaming channel.",
-    "Reminder: Provide the roaming website gigaroamin.smart.com.ph."
+    "Provide One Roaming channel.",
+    "Reminder: roaming website gigaroamin.smart.com.ph"
   ],
 
   "COVERAGE CONNECTIVITY": [
@@ -58,11 +61,10 @@ const TECH_PROCEDURES = {
     "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
     "If required details are not available, request the information from the customer."
   ]
-
 };
 
 /* =========================
-   OUTPUT (LIVE)
+   LIVE OUTPUT
 ========================= */
 function updateOutput() {
   $("output").textContent = `
@@ -89,7 +91,7 @@ ${$("wocas").value}
 }
 
 /* =========================
-   VOC SWITCH (FIXED)
+   VOC SWITCH
 ========================= */
 function updateVocOptions(keepValue = false) {
 
@@ -120,20 +122,17 @@ function updateVocOptions(keepValue = false) {
 
   }
 
-  if (keepValue) {
-    voc.value = currentValue;
-  } else {
-    voc.value = "";
-  }
+  voc.value = keepValue ? currentValue : "";
 
   updateSuggestions();
   updateOutput();
 }
 
 /* =========================
-   SUGGESTIONS (FIXED)
+   SUGGESTIONS
 ========================= */
 function updateSuggestions() {
+
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
@@ -150,34 +149,25 @@ function updateSuggestions() {
     }
 
     const link = TECH_LINKS[voc];
+    const procedures = TECH_PROCEDURES[voc] || [];
 
-    if (!link) {
-      $("suggestions").textContent = "No guide available";
-      return;
-    }
+    const label = voc.replace(" CONNECTIVITY", "");
 
-const label = voc
-  .replace(" CONNECTIVITY", "")
-  .toLowerCase()
-  .replace(/\b\w/g, c => c.toUpperCase());
+    $("suggestions").innerHTML = `
+      <strong>${voc}</strong>
 
-const procedures = TECH_PROCEDURES[voc] || [];
+      <div style="margin-top:10px; line-height:1.6;">
+        ${procedures.map(p => "• " + p).join("<br>")}
+      </div>
 
-$("suggestions").innerHTML = `
-  <strong>${voc}</strong>
+      <br>
 
-  <div style="margin-top:12px; line-height:1.7;">
-    ${procedures.map(step => `• ${step}`).join("<br>")}
-  </div>
+      <a href="${link}" target="_blank">
+        Open ${label} Connectivity
+      </a>
+    `;
 
-  <br>
-
-  <a href="${link}" target="_blank">
-    Open ${label} Connectivity
-  </a>
-`;
-
-return;
+    return;
   }
 
   let list = [];
@@ -195,7 +185,7 @@ return;
 }
 
 /* =========================
-   SAVE
+   SAVE / LOAD
 ========================= */
 function saveData() {
   const data = {};
@@ -205,12 +195,8 @@ function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-/* =========================
-   LOAD
-========================= */
 function loadData() {
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-
   Object.keys(saved).forEach(id => {
     const el = $(id);
     if (el) el.value = saved[id];
@@ -218,7 +204,7 @@ function loadData() {
 }
 
 /* =========================
-   MASTER UPDATE
+   INPUT HANDLER
 ========================= */
 function handleInput() {
   saveData();
@@ -227,17 +213,15 @@ function handleInput() {
 }
 
 /* =========================
-   COPY (FIXED - NO ALERT)
+   COPY
 ========================= */
-function copyDoc() {
+function copyDoc(button) {
   navigator.clipboard.writeText($("output").textContent);
 
-  // small non-blocking feedback instead of alert
-  const btn = event.target;
-  const original = btn.textContent;
+  const original = button.textContent;
+  button.textContent = "Copied!";
 
-  btn.textContent = "Copied!";
-  setTimeout(() => btn.textContent = original, 1200);
+  setTimeout(() => button.textContent = original, 1200);
 }
 
 /* =========================
@@ -267,20 +251,25 @@ function resetForm() {
 }
 
 /* =========================
-   INIT (FIXED PROPERLY)
+   INIT
 ========================= */
 window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
 
-  const savedVoc = $("voc").value;
-
   updateVocOptions(true);
-
-  $("voc").value = savedVoc;
 
   updateOutput();
   updateSuggestions();
+
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+
+    el.addEventListener("input", handleInput);
+
+    el.addEventListener("change", () => {
+
+      if (el.id === "concernType") {
+        updateVocOptions();
       }
 
       handleInput();
