@@ -1,7 +1,77 @@
 let generatedText = "";
 
 /* =========================
-   GENERATE
+   FIELDS FOR AUTOSAVE
+========================= */
+const fields = [
+  "case",
+  "details",
+  "name",
+  "min",
+  "company",
+  "email",
+  "thread",
+  "datetime",
+  "action",
+  "wocas",
+  "compactMode"
+];
+
+/* =========================
+   AUTO SAVE
+========================= */
+function saveToLocal() {
+
+  const data = {};
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    data[id] = el.type === "checkbox" ? el.checked : el.value;
+  });
+
+  localStorage.setItem("autoDocsData", JSON.stringify(data));
+}
+
+/* =========================
+   RESTORE DATA
+========================= */
+function loadFromLocal() {
+
+  const saved = localStorage.getItem("autoDocsData");
+  if (!saved) return;
+
+  const data = JSON.parse(saved);
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || data[id] === undefined) return;
+
+    if (el.type === "checkbox") {
+      el.checked = data[id];
+    } else {
+      el.value = data[id];
+    }
+  });
+}
+
+/* =========================
+   ATTACH LISTENERS
+========================= */
+function attachListeners() {
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener("input", saveToLocal);
+    el.addEventListener("change", saveToLocal);
+  });
+}
+
+/* =========================
+   GENERATE DOC
 ========================= */
 window.generateDoc = function () {
 
@@ -47,8 +117,8 @@ WOCAS: ${wocas}`;
   }
 
   document.getElementById("output").textContent = generatedText;
+  saveToLocal();
 };
-
 
 /* =========================
    COPY
@@ -58,9 +128,8 @@ window.copyDoc = function () {
   navigator.clipboard.writeText(generatedText);
 };
 
-
 /* =========================
-   DOWNLOAD TXT
+   DOWNLOAD
 ========================= */
 window.downloadTxt = function () {
 
@@ -73,3 +142,30 @@ window.downloadTxt = function () {
   a.download = "auto-doc.txt";
   a.click();
 };
+
+/* =========================
+   CLEAR FORM
+========================= */
+window.clearForm = function () {
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (el.type === "checkbox") {
+      el.checked = false;
+    } else {
+      el.value = "";
+    }
+  });
+
+  localStorage.removeItem("autoDocsData");
+  document.getElementById("output").textContent = "";
+  generatedText = "";
+};
+
+/* =========================
+   INIT
+========================= */
+loadFromLocal();
+attachListeners();
