@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auto Docs</title>
 
   <link rel="stylesheet" href="style.css">
@@ -13,20 +14,28 @@
 
   <div class="topbar">
     <div>
-      <h1>TESTING</h1>
-      <p>Case Generator</p>
+      <h1>Auto Docs</h1>
+      <p>Case Generator Tool</p>
     </div>
   </div>
 
   <div class="layout">
 
-    <!-- LEFT INPUT PANEL -->
+    <!-- LEFT PANEL -->
     <div class="panel">
 
+      <div class="grid-2">
 
-      <div class="group">
-        <div class="label">CASE</div>
-        <input id="case" placeholder="00000000">
+        <div class="group">
+          <div class="label">CASE</div>
+          <input id="case" placeholder="00000000">
+        </div>
+
+        <div class="group">
+          <div class="label">DATE & TIME</div>
+          <input id="datetime">
+        </div>
+
       </div>
 
       <div class="group">
@@ -34,7 +43,8 @@
         <textarea id="details"></textarea>
       </div>
 
-      <div class="grid">
+      <div class="grid-2">
+
         <div class="group">
           <div class="label">NAME</div>
           <input id="name">
@@ -44,6 +54,7 @@
           <div class="label">MIN</div>
           <input id="min">
         </div>
+
       </div>
 
       <div class="group">
@@ -51,7 +62,8 @@
         <input id="company">
       </div>
 
-      <div class="grid">
+      <div class="grid-2">
+
         <div class="group">
           <div class="label">EMAIL</div>
           <input id="email">
@@ -61,11 +73,7 @@
           <div class="label">THREAD</div>
           <input id="thread">
         </div>
-      </div>
 
-      <div class="group">
-        <div class="label">DATE & TIME</div>
-        <input id="datetime">
       </div>
 
       <div class="group">
@@ -78,21 +86,20 @@
         <textarea id="wocas"></textarea>
       </div>
 
-  <div class="buttons">
-    <button onclick="generateDoc()">Generate</button>
-    <button onclick="copyDoc()">Copy</button>
-    <button onclick="downloadTxt()">Download</button>
-    <button onclick="resetForm()">Reset</button>
-  </div>
+      <!-- BUTTON BAR -->
+      <div class="buttons">
+        <button onclick="generateDoc()">Generate</button>
+        <button onclick="copyDoc()">Copy</button>
+        <button onclick="downloadTxt()">Download</button>
+        <button class="danger" onclick="resetForm()">Reset</button>
+      </div>
 
     </div>
 
-    <!-- RIGHT OUTPUT PANEL -->
+    <!-- RIGHT PANEL -->
     <div class="outputPanel">
 
-      <div class="outputHeader">
-        Generated Output
-      </div>
+      <div class="outputHeader">Generated Output</div>
 
       <pre id="output"></pre>
 
