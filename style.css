@@ -1,24 +1,23 @@
 body {
   margin: 0;
   font-family: system-ui, Arial;
-  background: #0b1220;
-  color: #e5e7eb;
+  background: #f3f4f6;
+  color: #111827;
 }
 
-/* TOPBAR */
+/* HEADER */
 .topbar {
   padding: 20px 30px;
-  border-bottom: 1px solid #1f2937;
 }
 
 .topbar h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 28px;
 }
 
 .topbar p {
   margin: 4px 0 0;
-  color: #94a3b8;
+  color: #6b7280;
 }
 
 /* LAYOUT */
@@ -26,40 +25,44 @@ body {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 20px;
-  padding: 20px 30px;
+  padding: 0 30px 30px;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* PANEL */
 .panel {
-  background: #111827;
+  background: white;
   padding: 20px;
   border-radius: 14px;
-  border: 1px solid #1f2937;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
 /* GROUP */
 .group {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-label {
-  display: block;
+.label {
   font-size: 12px;
-  color: #94a3b8;
+  font-weight: 700;
+  color: #6b7280;
   margin-bottom: 6px;
-  font-weight: 600;
 }
 
 /* INPUTS */
-input, textarea {
+input, textarea, select {
   width: 100%;
-  padding: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
-  border: 1px solid #1f2937;
-  background: #0b1220;
-  color: #e5e7eb;
+  font-size: 14px;
   outline: none;
-  box-sizing: border-box;
 }
 
 textarea {
@@ -68,7 +71,7 @@ textarea {
 }
 
 /* GRID */
-.grid-2 {
+.grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -79,64 +82,43 @@ textarea {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  margin-top: 15px;
+  margin-top: 10px;
 }
 
 button {
   padding: 10px;
   border: none;
   border-radius: 10px;
-  font-weight: 600;
   cursor: pointer;
+  font-weight: 600;
   transition: 0.2s;
 }
 
-/* BUTTON COLORS */
 button:nth-child(1) { background: #2563eb; color: white; }
 button:nth-child(2) { background: #10b981; color: white; }
-button:nth-child(3) { background: #f59e0b; color: black; }
+button:nth-child(3) { background: #111827; color: white; }
+button:nth-child(4) { background: #ef4444; color: white; }
 
-button.danger {
-  background: #ef4444;
-  color: white;
+button:hover {
+  transform: translateY(-2px);
 }
 
 /* OUTPUT */
-.output {
+.outputPanel {
   background: #0f172a;
   border-radius: 14px;
   padding: 20px;
-  border: 1px solid #1f2937;
-  position: sticky;
-  top: 20px;
-  height: fit-content;
+  color: white;
 }
 
-.output-header {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-bottom: 10px;
+.outputHeader {
+  font-size: 14px;
   font-weight: 700;
+  margin-bottom: 10px;
+  color: #cbd5e1;
 }
 
 pre {
   white-space: pre-wrap;
   font-size: 13px;
-  color: #e5e7eb;
-  line-height: 1.5;
-}
-
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .buttons {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .grid-2 {
-    grid-template-columns: 1fr;
-  }
 }
