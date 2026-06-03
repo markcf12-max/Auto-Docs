@@ -1,5 +1,15 @@
 /* =========================
-   MAIN LAYOUT (FIXED GRID)
+   GLOBAL FIX
+========================= */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, Arial;
+  background: #f5f7fb;
+}
+
+/* =========================
+   MAIN LAYOUT
 ========================= */
 .layout {
   display: grid;
@@ -12,76 +22,95 @@
 }
 
 /* =========================
-   PANEL BASE
+   PANEL BASE (MODERN CARD)
 ========================= */
 .panel {
-  background: white;
-  border-radius: 14px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border-radius: 16px;
   padding: 16px;
 
   overflow-y: auto;
   min-height: 0;
+
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+
+  scrollbar-width: thin;
 }
 
 /* =========================
-   INPUT PANEL
+   INPUT PANEL (CLEAN WHITE)
 ========================= */
 .inputPanel {
-  height: 100%;
+  background: #ffffff;
 }
 
 /* =========================
-   OUTPUT PANEL
+   OUTPUT PANEL (MODERN DARK)
 ========================= */
 .outputPanel {
-  background: #0f172a;
-  color: white;
-
-  height: 100%;
+  background: linear-gradient(180deg, #0f172a, #0b1220);
+  color: #e5e7eb;
 }
 
 /* =========================
-   SUGGESTION PANEL
+   SUGGESTION PANEL (SOFT DARK)
 ========================= */
 .suggestionPanel {
-  background: #111827;
+  background: linear-gradient(180deg, #111827, #0b1220);
   color: #e5e7eb;
 
-  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 /* =========================
-   HEADERS
+   HEADER (MODERN STYLE)
 ========================= */
 .outputHeader {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  margin-bottom: 10px;
-  color: #cbd5e1;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  color: #94a3b8;
 }
 
 /* =========================
-   PRE STYLING
+   PRE TEXT OUTPUT
 ========================= */
 pre {
   white-space: pre-wrap;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* =========================
-   SUGGESTION BOX
+   SUGGESTIONS BOX
 ========================= */
 #suggestions {
-  white-space: pre-wrap;
-  font-size: 13px;
-  line-height: 1.5;
-
-  overflow-y: auto;
   flex: 1;
+  overflow-y: auto;
+
+  font-size: 13px;
+  line-height: 1.6;
+
+  padding-right: 6px;
+}
+
+/* =========================
+   SCROLLBAR (MODERN TOUCH)
+========================= */
+.panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
 }
 
 /* =========================
@@ -95,6 +124,5 @@ pre {
 
   .panel {
     height: auto;
-    max-height: none;
   }
 }
