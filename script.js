@@ -15,6 +15,52 @@ const TECH_LINKS = {
   "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FCOVERAGE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE/"
 };
 
+const TECH_PROCEDURES = {
+
+  "VOICE CONNECTIVITY": [
+    "Check and validate account.",
+    "Verify that all voice services are active.",
+    "Check for account misalignment or provisioning issues.",
+    "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
+    "If required details are not available, request the information from the customer."
+  ],
+
+  "SMS CONNECTIVITY": [
+    "Check and validate account.",
+    "Verify that all SMS services are active.",
+    "Check for account misalignment or provisioning issues.",
+    "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
+    "If required details are not available, request the information from the customer."
+  ],
+
+  "DATA CONNECTIVITY": [
+    "Check and validate account.",
+    "Verify that all data services are active.",
+    "Check for account misalignment or provisioning issues.",
+    "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
+    "If required details are not available, request the information from the customer."
+  ],
+
+  "ROAMING CONNECTIVITY": [
+    "Check and validate account.",
+    "Verify roaming activation and eligibility.",
+    "Check for account misalignment or provisioning issues.",
+    "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
+    "If required details are not available, request the information from the customer.",
+    "Provide the One Roaming channel.",
+    "Reminder: Provide the roaming website gigaroamin.smart.com.ph."
+  ],
+
+  "COVERAGE CONNECTIVITY": [
+    "Check and validate account.",
+    "Verify that all services are active.",
+    "Check for account misalignment or provisioning issues.",
+    "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
+    "If required details are not available, request the information from the customer."
+  ]
+
+};
+
 /* =========================
    OUTPUT (LIVE)
 ========================= */
@@ -107,15 +153,23 @@ const label = voc
   .toLowerCase()
   .replace(/\b\w/g, c => c.toUpperCase());
 
+const procedures = TECH_PROCEDURES[voc] || [];
+
 $("suggestions").innerHTML = `
   <strong>${voc}</strong>
-  <br><br>
+
+  <div style="margin-top:12px; line-height:1.7;">
+    ${procedures.map(step => `• ${step}`).join("<br>")}
+  </div>
+
+  <br>
+
   <a href="${link}" target="_blank">
     Open ${label} Connectivity
   </a>
 `;
 
-    return;
+return;
   }
 
   let list = [];
