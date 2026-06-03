@@ -20,35 +20,35 @@
   <div class="layout">
 
     <!-- LEFT -->
-    <div class="panel">
+  <div class="panel">
+
+    <div class="group">
+      <div class="label">CASE</div>
+      <input id="case">
+    </div>
+
+    <div class="grid">
+      <div class="group">
+        <div class="label">CONCERN TYPE</div>
+        <select id="concernType" onchange="updateSuggestions()">
+          <option value="">Select</option>
+          <option>Inquiry</option>
+          <option>Complaint</option>
+          <option>Aftersales</option>
+          <option>Other</option>
+        </select>
+      </div>
 
       <div class="group">
-        <div class="label">CASE</div>
-        <input id="case" placeholder="00000000">
+        <div class="label">VOC</div>
+        <select id="voc" onchange="updateSuggestions()">
+          <option value="">Select</option>
+          <option>Positive</option>
+          <option>Neutral</option>
+          <option>Negative</option>
+        </select>
       </div>
-
-      <div class="grid">
-        <div class="group">
-          <div class="label">CONCERN TYPE</div>
-          <select id="concernType">
-            <option value="">Select</option>
-            <option>Inquiry</option>
-            <option>Complaint</option>
-            <option>Aftersales</option>
-            <option>Other</option>
-          </select>
-        </div>
-
-        <div class="group">
-          <div class="label">VOC</div>
-          <select id="voc">
-            <option value="">Select</option>
-            <option>Positive</option>
-            <option>Neutral</option>
-            <option>Negative</option>
-          </select>
-        </div>
-      </div>
+    </div>
 
       <div class="group">
         <div class="label">DETAILS</div>
@@ -113,6 +113,11 @@
       <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
     </div>
+    <!-- SUGGESTION PANEL -->
+      <div class="suggestionPanel">
+    <div class="outputHeader">Suggested Procedures</div>
+    <div id="suggestions">Select Concern & VOC</div>
+  </div>
 
   </div>
 </div>
