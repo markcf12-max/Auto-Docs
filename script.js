@@ -8,45 +8,50 @@ const STORAGE_KEY = "auto_docs_v3";
    TECH LINKS
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf",
+  "VOICE CONNECTIVITY":
+    "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf",
 
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf",
+  "SMS CONNECTIVITY":
+    "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf",
 
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf",
+  "DATA CONNECTIVITY":
+    "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf",
 
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf",
+  "ROAMING CONNECTIVITY":
+    "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf",
 
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf"
+  "COVERAGE CONNECTIVITY":
+    "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf"
 };
 
 /* =========================
-   VOC SWITCH
+   VOC SWITCHING
 ========================= */
 function updateVocOptions() {
-
   const concern = $("concernType").value;
   const voc = $("voc");
 
   voc.innerHTML = "";
 
-  if (concern !== "Technical") {
+  if (concern === "Technical") {
+    voc.innerHTML = `
+      <option value="">Select</option>
+      <option>VOICE CONNECTIVITY</option>
+      <option>SMS CONNECTIVITY</option>
+      <option>DATA CONNECTIVITY</option>
+      <option>ROAMING CONNECTIVITY</option>
+      <option>COVERAGE CONNECTIVITY</option>
+    `;
+  } else {
     voc.innerHTML = `
       <option value="">Select</option>
       <option>Positive</option>
       <option>Neutral</option>
       <option>Negative</option>
     `;
-    return;
   }
 
-  voc.innerHTML = `
-    <option value="">Select</option>
-    <option>VOICE CONNECTIVITY</option>
-    <option>SMS CONNECTIVITY</option>
-    <option>DATA CONNECTIVITY</option>
-    <option>ROAMING CONNECTIVITY</option>
-    <option>COVERAGE CONNECTIVITY</option>
-  `;
+  $("voc").value = "";
 }
 
 /* =========================
@@ -88,10 +93,13 @@ function loadData() {
 ========================= */
 function updateOutput() {
 
+  const concern = $("concernType").value;
+  const voc = $("voc").value;
+
   const output =
 `CASE: ${$("case").value}
-CONCERN TYPE: ${$("concernType").value}
-VOC: ${$("voc").value}
+CONCERN TYPE: ${concern}
+VOC: ${formatVoc(concern, voc)}
 
 DETAILS:
 ${$("details").value}
@@ -113,6 +121,14 @@ ${$("wocas").value}`.trim();
 }
 
 /* =========================
+   VOC FORMAT FIX
+========================= */
+function formatVoc(concern, voc) {
+  if (!voc) return "Not selected";
+  return voc;
+}
+
+/* =========================
    SUGGESTIONS
 ========================= */
 function updateSuggestions() {
@@ -120,20 +136,32 @@ function updateSuggestions() {
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
-  let html = "";
-
+  /* =========================
+     TECHNICAL MODE (FIXED)
+  ========================= */
   if (concern === "Technical") {
 
-    const items = Object.keys(TECH_LINKS);
+    if (!voc) {
+      $("suggestions").textContent = "Select Connectivity Type";
+      return;
+    }
 
-    html = items.map(i =>
-      `• <a href="${TECH_LINKS[i]}" target="_blank">${i}</a>`
-    ).join("");
+    const link = TECH_LINKS[voc];
 
-    $("suggestions").innerHTML = html;
+    if (!link) {
+      $("suggestions").textContent = "No guide available";
+      return;
+    }
+
+    $("suggestions").innerHTML =
+      `• <a href="${link}" target="_blank">${voc}</a>`;
+
     return;
   }
 
+  /* =========================
+     NORMAL MODE
+  ========================= */
   let list = [];
 
   if (concern === "Inquiry") list.push("Check account details");
