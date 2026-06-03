@@ -48,7 +48,6 @@ function loadData() {
    BUILD OUTPUT (LIVE)
 ========================= */
 function updateOutput() {
-
   const output =
 `CASE: ${$("case").value}
 CONCERN TYPE: ${$("concernType").value}
@@ -63,6 +62,7 @@ COMPANY NAME: ${$("company").value}
 EMAIL ADDRESS: ${$("email").value}
 THREAD CASE NUMBER: ${$("thread").value}
 DATE & TIME EMAIL RECEIVED: ${$("datetime").value}
+
 ACTION TAKEN:
 ${$("action").value}
 
@@ -136,7 +136,35 @@ function handleInput() {
 }
 
 /* =========================
-   RESET
+   COPY OUTPUT
+========================= */
+function copyDoc() {
+  const text = $("output").textContent;
+
+  navigator.clipboard.writeText(text)
+    .then(() => alert("Copied to clipboard"))
+    .catch(err => console.error("Copy failed:", err));
+}
+
+/* =========================
+   DOWNLOAD OUTPUT
+========================= */
+function downloadTxt() {
+  const text = $("output").textContent;
+
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "auto-docs.txt";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+/* =========================
+   RESET FORM
 ========================= */
 function resetForm() {
 
@@ -160,6 +188,12 @@ function resetForm() {
 window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
+
+  // auto-fill date/time if empty
+  if (!$("datetime").value) {
+    $("datetime").value = new Date().toLocaleString();
+  }
+
   updateOutput();
   updateSuggestions();
 
