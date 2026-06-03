@@ -1,8 +1,5 @@
 let generatedText = "";
 
-/* =========================
-   FIELDS FOR AUTOSAVE
-========================= */
 const fields = [
   "case",
   "details",
@@ -18,10 +15,9 @@ const fields = [
 ];
 
 /* =========================
-   AUTO SAVE
+   SAVE DATA (SAFE)
 ========================= */
-function saveToLocal() {
-
+function saveData() {
   const data = {};
 
   fields.forEach(id => {
@@ -31,15 +27,14 @@ function saveToLocal() {
     data[id] = el.type === "checkbox" ? el.checked : el.value;
   });
 
-  localStorage.setItem("autoDocsData", JSON.stringify(data));
+  localStorage.setItem("auto_docs", JSON.stringify(data));
 }
 
 /* =========================
-   RESTORE DATA
+   LOAD DATA (SAFE)
 ========================= */
-function loadFromLocal() {
-
-  const saved = localStorage.getItem("autoDocsData");
+function loadData() {
+  const saved = localStorage.getItem("auto_docs");
   if (!saved) return;
 
   const data = JSON.parse(saved);
@@ -57,21 +52,20 @@ function loadFromLocal() {
 }
 
 /* =========================
-   ATTACH LISTENERS
+   AUTO SAVE LISTENERS
 ========================= */
-function attachListeners() {
-
+function initAutoSave() {
   fields.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
 
-    el.addEventListener("input", saveToLocal);
-    el.addEventListener("change", saveToLocal);
+    el.addEventListener("input", saveData);
+    el.addEventListener("change", saveData);
   });
 }
 
 /* =========================
-   GENERATE DOC
+   GENERATE
 ========================= */
 window.generateDoc = function () {
 
@@ -117,7 +111,7 @@ WOCAS: ${wocas}`;
   }
 
   document.getElementById("output").textContent = generatedText;
-  saveToLocal();
+  saveData();
 };
 
 /* =========================
@@ -132,7 +126,6 @@ window.copyDoc = function () {
    DOWNLOAD
 ========================= */
 window.downloadTxt = function () {
-
   if (!generatedText) return alert("Nothing to download yet.");
 
   const blob = new Blob([generatedText], { type: "text/plain" });
@@ -144,10 +137,9 @@ window.downloadTxt = function () {
 };
 
 /* =========================
-   CLEAR FORM
+   CLEAR
 ========================= */
 window.clearForm = function () {
-
   fields.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -159,13 +151,15 @@ window.clearForm = function () {
     }
   });
 
-  localStorage.removeItem("autoDocsData");
+  localStorage.removeItem("auto_docs");
   document.getElementById("output").textContent = "";
   generatedText = "";
 };
 
 /* =========================
-   INIT
+   INIT (IMPORTANT ORDER)
 ========================= */
-loadFromLocal();
-attachListeners();
+window.addEventListener("DOMContentLoaded", () => {
+  loadData();
+  initAutoSave();
+});
