@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Docs Generator</title>
+  <title>Auto Docs</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -11,96 +10,113 @@
 
 <div class="app">
 
-  <!-- HEADER -->
   <div class="topbar">
-    <h1>Auto Docs</h1>
-    <p>Case Generator System</p>
+    <div>
+      <h1>Auto Docs</h1>
+      <p>Case Generator System</p>
+    </div>
   </div>
 
-  <!-- MAIN LAYOUT -->
   <div class="layout">
 
-    <!-- LEFT INPUT PANEL -->
+    <!-- LEFT -->
     <div class="panel">
 
-      <div class="grid-2">
+      <div class="group">
+        <div class="label">CASE</div>
+        <input id="case" placeholder="00000000">
+      </div>
+
+      <div class="grid">
         <div class="group">
-          <label>CASE</label>
-          <input id="case" placeholder="00000000">
+          <div class="label">CONCERN TYPE</div>
+          <select id="concernType">
+            <option value="">Select</option>
+            <option>Inquiry</option>
+            <option>Complaint</option>
+            <option>Aftersales</option>
+            <option>Other</option>
+          </select>
         </div>
 
         <div class="group">
-          <label>DATE & TIME</label>
-          <input id="datetime">
+          <div class="label">VOC</div>
+          <select id="voc">
+            <option value="">Select</option>
+            <option>Positive</option>
+            <option>Neutral</option>
+            <option>Negative</option>
+          </select>
         </div>
       </div>
 
       <div class="group">
-        <label>DETAILS OF THE CONCERN</label>
+        <div class="label">DETAILS</div>
         <textarea id="details"></textarea>
       </div>
 
-      <div class="grid-2">
+      <div class="grid">
         <div class="group">
-          <label>NAME</label>
+          <div class="label">NAME</div>
           <input id="name">
         </div>
 
         <div class="group">
-          <label>MIN</label>
+          <div class="label">MIN</div>
           <input id="min">
         </div>
       </div>
 
       <div class="group">
-        <label>COMPANY NAME</label>
+        <div class="label">COMPANY</div>
         <input id="company">
       </div>
 
-      <div class="grid-2">
+      <div class="grid">
         <div class="group">
-          <label>EMAIL</label>
+          <div class="label">EMAIL</div>
           <input id="email">
         </div>
 
         <div class="group">
-          <label>THREAD CASE</label>
+          <div class="label">THREAD</div>
           <input id="thread">
         </div>
       </div>
 
       <div class="group">
-        <label>ACTION TAKEN</label>
+        <div class="label">DATE & TIME</div>
+        <input id="datetime">
+      </div>
+
+      <div class="group">
+        <div class="label">ACTION TAKEN</div>
         <textarea id="action"></textarea>
       </div>
 
       <div class="group">
-        <label>WOCAS</label>
+        <div class="label">WOCAS</div>
         <textarea id="wocas"></textarea>
       </div>
 
-      <!-- BUTTONS -->
       <div class="buttons">
         <button onclick="generateDoc()">Generate</button>
         <button onclick="copyDoc()">Copy</button>
-        <button onclick="downloadDoc()">Download</button>
-        <button class="danger" onclick="resetForm()">Reset</button>
+        <button onclick="downloadTxt()">Download</button>
+        <button onclick="resetForm()">Reset</button>
       </div>
 
     </div>
 
-    <!-- RIGHT OUTPUT PANEL -->
-    <div class="output">
-
-      <div class="output-header">OUTPUT PREVIEW</div>
+    <!-- RIGHT -->
+    <div class="outputPanel">
+      <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
-
     </div>
 
   </div>
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
