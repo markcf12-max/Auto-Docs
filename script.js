@@ -153,31 +153,37 @@ function updateSuggestions() {
   const concern = $("concernType").value;
   const voc = $("voc").value.trim();
 
-  if (concern === "Technical") {
+if (concern === "Technical") {
 
-    if (!voc) {
-      $("suggestions").innerHTML =
-        "Select a Connectivity Type";
-      return;
-    }
+if (!voc) {
+$("suggestions").innerHTML =
+"Select a Connectivity Type";
+return;
+}
 
-    const link = TECH_LINKS[voc];
+const link = TECH_LINKS[voc.toUpperCase().trim()];
 
-    if (!link) {
-      $("suggestions").innerHTML =
-        "No guide available";
-      return;
-    }
+if (!link) {
+$("suggestions").innerHTML =
+"No guide available";
+return;
+}
 
-    $("suggestions").innerHTML = `
-      <strong>${voc}</strong><br><br>
-      <a href="${link}" target="_blank">
-        Open Procedure Guide
-      </a>
-    `;
+$("suggestions").innerHTML = ` <div style="margin-bottom:10px;"> <strong>${voc}</strong> </div>
 
-    return;
-  }
+```
+<a href="${link}"
+   target="_blank"
+   rel="noopener noreferrer">
+   Open Procedure Guide
+</a>
+```
+
+`;
+
+return;
+}
+
 
   let list = [];
 
