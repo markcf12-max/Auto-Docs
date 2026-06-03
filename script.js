@@ -27,6 +27,28 @@ const TECH_LINKS = {
 /* =========================
    VOC SWITCHING
 ========================= */
+function updateVocOptions(reset = true) {
+const concern = $("concernType").value;
+const voc = $("voc");
+
+const currentValue = voc.value;
+
+if (concern === "Technical") {
+voc.innerHTML = `       <option value="">Select Connectivity Type</option>       <option value="VOICE CONNECTIVITY">VOICE CONNECTIVITY</option>       <option value="SMS CONNECTIVITY">SMS CONNECTIVITY</option>       <option value="DATA CONNECTIVITY">DATA CONNECTIVITY</option>       <option value="ROAMING CONNECTIVITY">ROAMING CONNECTIVITY</option>       <option value="COVERAGE CONNECTIVITY">COVERAGE CONNECTIVITY</option>
+    `;
+} else {
+voc.innerHTML = `       <option value="">Select</option>       <option value="Positive">Positive</option>       <option value="Neutral">Neutral</option>       <option value="Negative">Negative</option>
+    `;
+}
+
+if (reset) {
+voc.value = "";
+} else {
+voc.value = currentValue;
+}
+
+updateSuggestions();
+}
 function updateVocOptions() {
   const concern = $("concernType").value;
   const voc = $("voc");
@@ -278,21 +300,52 @@ window.addEventListener("DOMContentLoaded", () => {
     "wocas"
   ];
 
-  fields.forEach(id => {
-    const el = $(id);
+window.addEventListener("DOMContentLoaded", () => {
 
-    if (!el) return;
+loadData();
 
-    el.addEventListener("input", handleInput);
+updateVocOptions(false);
 
-    el.addEventListener("change", () => {
+updateOutput();
+updateSuggestions();
 
-      if (id === "concernType") {
-        updateVocOptions();
-      }
+const fields = [
+"case",
+"concernType",
+"voc",
+"details",
+"name",
+"min",
+"company",
+"email",
+"thread",
+"datetime",
+"action",
+"wocas"
+];
 
-      handleInput();
-    });
-  });
+fields.forEach(id => {
+
+```
+const el = $(id);
+
+if (!el) return;
+
+el.addEventListener("input", handleInput);
+
+el.addEventListener("change", () => {
+
+  if (id === "concernType") {
+    updateVocOptions(true);
+  }
+
+  handleInput();
+});
+```
+
+});
+
+});
+
 
 });
