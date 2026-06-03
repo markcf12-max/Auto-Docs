@@ -1,79 +1,91 @@
-function get(id) {
-  return document.getElementById(id).value.trim();
+function $(id) {
+  return document.getElementById(id);
 }
 
-/* =========================
-   GENERATE
-========================= */
-window.generateDoc = function () {
+/* AUTO SAVE KEY */
+const KEY = "auto_docs_v2";
 
-  if (!get("case")) {
+/* SAVE */
+function save() {
+  const data = {
+    case: $("case").value,
+    concernType: $("concernType").value,
+    voc: $("voc").value,
+    details: $("details").value,
+    name: $("name").value,
+    min: $("min").value,
+    company: $("company").value,
+    email: $("email").value,
+    thread: $("thread").value,
+    datetime: $("datetime").value,
+    action: $("action").value,
+    wocas: $("wocas").value
+  };
+
+  localStorage.setItem(KEY, JSON.stringify(data));
+}
+
+/* LOAD */
+function load() {
+  const data = JSON.parse(localStorage.getItem(KEY));
+  if (!data) return;
+
+  Object.keys(data).forEach(k => {
+    const el = $(k);
+    if (el) el.value = data[k];
+  });
+}
+
+/* LISTENERS */
+window.addEventListener("input", save);
+
+/* GENERATE */
+function generateDoc() {
+
+  if (!$("case").value.trim()) {
     alert("CASE is required");
     return;
   }
 
   const output =
-`CASE: ${get("case")}
-DETAILS OF THE CONCERN: ${get("details")}
-NAME: ${get("name")}
-MIN: ${get("min")}
-COMPANY NAME: ${get("company")}
-EMAIL ADDRESS: ${get("email")}
-THREAD CASE NUMBER: ${get("thread")}
-DATE & TIME EMAIL RECEIVED: ${get("datetime")}
-ACTION TAKEN: ${get("action")}
-WOCAS: ${get("wocas")}`;
+`CASE: ${$("case").value}
+CONCERN TYPE: ${$("concernType").value}
+VOC: ${$("voc").value}
 
-  document.getElementById("output").textContent = output;
+DETAILS OF THE CONCERN: ${$("details").value}
 
-  localStorage.setItem("auto_docs", output);
-};
+NAME: ${$("name").value}
+MIN: ${$("min").value}
+COMPANY NAME: ${$("company").value}
+EMAIL ADDRESS: ${$("email").value}
+THREAD CASE NUMBER: ${$("thread").value}
+DATE & TIME EMAIL RECEIVED: ${$("datetime").value}
+ACTION TAKEN: ${$("action").value}
+WOCAS: ${$("wocas").value}`;
 
-/* =========================
-   COPY
-========================= */
-window.copyDoc = function () {
-  const text = document.getElementById("output").textContent;
-  if (!text) return;
-  navigator.clipboard.writeText(text);
-};
+  $("output").textContent = output;
+}
 
-/* =========================
-   DOWNLOAD
-========================= */
-window.downloadDoc = function () {
-  const text = document.getElementById("output").textContent;
-  if (!text) return;
+/* COPY */
+function copyDoc() {
+  navigator.clipboard.writeText($("output").textContent || "");
+}
 
-  const blob = new Blob([text], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-
+/* DOWNLOAD */
+function downloadTxt() {
+  const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const a = document.createElement("a");
-  a.href = url;
-  a.download = "auto-doc.txt";
+  a.href = URL.createObjectURL(blob);
+  a.download = "AutoDoc.txt";
   a.click();
+}
 
-  URL.revokeObjectURL(url);
-};
+/* RESET */
+function resetForm() {
+  document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
+  $("output").textContent = "";
+  localStorage.removeItem(KEY);
+}
 
-/* =========================
-   RESET
-========================= */
-window.resetForm = function () {
-
-  ["case","details","name","min","company","email","thread","datetime","action","wocas"]
-  .forEach(id => document.getElementById(id).value = "");
-
-  document.getElementById("output").textContent = "";
-  localStorage.removeItem("auto_docs");
-};
-
-/* =========================
-   AUTO RESTORE
-========================= */
-window.addEventListener("load", () => {
-  const saved = localStorage.getItem("auto_docs");
-  if (saved) {
-    document.getElementById("output").textContent = saved;
-  }
-});
+/* INIT */
+window.addEventListener("load", load);
