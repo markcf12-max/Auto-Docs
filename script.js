@@ -2,7 +2,7 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const STORAGE_KEY = "auto_docs_v3";
+const STORAGE_KEY = "auto_docs_v4";
 
 /* =========================
    TECH LINKS
@@ -31,27 +31,26 @@ function updateVocOptions() {
   const concern = $("concernType").value;
   const voc = $("voc");
 
-  voc.innerHTML = "";
-
   if (concern === "Technical") {
     voc.innerHTML = `
-      <option value="">Select</option>
-      <option>VOICE CONNECTIVITY</option>
-      <option>SMS CONNECTIVITY</option>
-      <option>DATA CONNECTIVITY</option>
-      <option>ROAMING CONNECTIVITY</option>
-      <option>COVERAGE CONNECTIVITY</option>
+      <option value="">Select Connectivity Type</option>
+      <option value="VOICE CONNECTIVITY">VOICE CONNECTIVITY</option>
+      <option value="SMS CONNECTIVITY">SMS CONNECTIVITY</option>
+      <option value="DATA CONNECTIVITY">DATA CONNECTIVITY</option>
+      <option value="ROAMING CONNECTIVITY">ROAMING CONNECTIVITY</option>
+      <option value="COVERAGE CONNECTIVITY">COVERAGE CONNECTIVITY</option>
     `;
   } else {
     voc.innerHTML = `
       <option value="">Select</option>
-      <option>Positive</option>
-      <option>Neutral</option>
-      <option>Negative</option>
+      <option value="Positive">Positive</option>
+      <option value="Neutral">Neutral</option>
+      <option value="Negative">Negative</option>
     `;
   }
 
-  $("voc").value = "";
+  voc.value = "";
+  updateSuggestions();
 }
 
 /* =========================
@@ -78,21 +77,26 @@ function saveData() {
 
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
+
   if (!saved) return;
 
   const data = JSON.parse(saved);
 
-  Object.keys(data).forEach(k => {
-    const el = $(k);
-    if (el) el.value = data[k];
+  Object.keys(data).forEach(key => {
+    const el = $(key);
+    if (el) el.value = data[key];
   });
 }
 
 /* =========================
    OUTPUT
 ========================= */
-function updateOutput() {
+function formatVoc(concern, voc) {
+  if (!voc) return "Not selected";
+  return voc;
+}
 
+function updateOutput() {
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
@@ -109,7 +113,7 @@ MIN: ${$("min").value}
 COMPANY: ${$("company").value}
 EMAIL: ${$("email").value}
 THREAD: ${$("thread").value}
-DATE/TIME: ${$("datetime").value}
+DATE/TIME RECEIVED: ${$("datetime").value}
 
 ACTION:
 ${$("action").value}
@@ -121,59 +125,65 @@ ${$("wocas").value}`.trim();
 }
 
 /* =========================
-   VOC FORMAT FIX
-========================= */
-function formatVoc(concern, voc) {
-  if (!voc) return "Not selected";
-  return voc;
-}
-
-/* =========================
    SUGGESTIONS
 ========================= */
 function updateSuggestions() {
-
   const concern = $("concernType").value;
-  const voc = $("voc").value;
+  const voc = $("voc").value.trim();
 
-  /* =========================
-     TECHNICAL MODE (FIXED)
-  ========================= */
   if (concern === "Technical") {
 
     if (!voc) {
-      $("suggestions").textContent = "Select Connectivity Type";
+      $("suggestions").innerHTML =
+        "Select a Connectivity Type";
       return;
     }
 
     const link = TECH_LINKS[voc];
 
     if (!link) {
-      $("suggestions").textContent = "No guide available";
+      $("suggestions").innerHTML =
+        "No guide available";
       return;
     }
 
-    $("suggestions").innerHTML =
-      `• <a href="${link}" target="_blank">${voc}</a>`;
+    $("suggestions").innerHTML = `
+      <strong>${voc}</strong><br><br>
+      <a href="${link}" target="_blank">
+        Open Procedure Guide
+      </a>
+    `;
 
     return;
   }
 
-  /* =========================
-     NORMAL MODE
-  ========================= */
   let list = [];
 
-  if (concern === "Inquiry") list.push("Check account details");
-  if (concern === "Complaint") list.push("Escalate issue");
-  if (concern === "Aftersales") list.push("Validate transaction");
-  if (concern === "Other") list.push("Review manually");
+  if (concern === "Inquiry")
+    list.push("Check account details");
 
-  if (voc === "Negative") list.push("Apologize & escalate");
-  if (voc === "Positive") list.push("Confirm resolution");
-  if (voc === "Neutral") list.push("Standard processing");
+  if (concern === "Complaint")
+    list.push("Escalate issue");
 
-  $("suggestions").innerHTML = list.join("<br>");
+  if (concern === "Aftersales")
+    list.push("Validate transaction");
+
+  if (concern === "Other")
+    list.push("Review manually");
+
+  if (voc === "Negative")
+    list.push("Apologize & escalate");
+
+  if (voc === "Positive")
+    list.push("Confirm resolution");
+
+  if (voc === "Neutral")
+    list.push("Standard processing");
+
+  $("suggestions").innerHTML =
+    list.length
+      ? list.join("<br>")
+      : "Select Concern & VOC";
 }
 
 /* =========================
@@ -182,17 +192,29 @@ function updateSuggestions() {
 function handleInput() {
   saveData();
   updateOutput();
+  updateSuggestions();
 }
 
 /* =========================
-   COPY / DOWNLOAD
+   COPY
 ========================= */
 function copyDoc() {
-  navigator.clipboard.writeText($("output").textContent);
+  navigator.clipboard.writeText(
+    $("output").textContent
+  );
+
+  alert("Copied!");
 }
 
+/* =========================
+   DOWNLOAD
+========================= */
 function downloadTxt() {
-  const blob = new Blob([$("output").textContent], { type: "text/plain" });
+  const blob = new Blob(
+    [$("output").textContent],
+    { type: "text/plain" }
+  );
+
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
@@ -207,11 +229,23 @@ function downloadTxt() {
    RESET
 ========================= */
 function resetForm() {
-
   [
-    "case","concernType","voc","details","name","min",
-    "company","email","thread","datetime","action","wocas"
-  ].forEach(id => $(id).value = "");
+    "case",
+    "concernType",
+    "voc",
+    "details",
+    "name",
+    "min",
+    "company",
+    "email",
+    "thread",
+    "datetime",
+    "action",
+    "wocas"
+  ].forEach(id => {
+    const el = $(id);
+    if (el) el.value = "";
+  });
 
   $("output").textContent = "";
   $("suggestions").textContent = "Select Concern & VOC";
@@ -226,24 +260,39 @@ window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
 
-  updateVocOptions();
   updateOutput();
   updateSuggestions();
 
   const fields = [
-    "case","concernType","voc","details","name","min",
-    "company","email","thread","datetime","action","wocas"
+    "case",
+    "concernType",
+    "voc",
+    "details",
+    "name",
+    "min",
+    "company",
+    "email",
+    "thread",
+    "datetime",
+    "action",
+    "wocas"
   ];
 
   fields.forEach(id => {
     const el = $(id);
 
+    if (!el) return;
+
     el.addEventListener("input", handleInput);
 
     el.addEventListener("change", () => {
+
+      if (id === "concernType") {
+        updateVocOptions();
+      }
+
       handleInput();
-      updateVocOptions();
-      updateSuggestions();
     });
   });
+
 });
