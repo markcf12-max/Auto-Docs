@@ -10,6 +10,7 @@
 
 <div class="app">
 
+  <!-- TOP BAR -->
   <div class="topbar">
     <div>
       <h1>Auto Docs</h1>
@@ -17,38 +18,41 @@
     </div>
   </div>
 
+  <!-- MAIN LAYOUT -->
   <div class="layout">
 
-    <!-- LEFT -->
-  <div class="panel inputPanel">
-
-    <div class="group">
-      <div class="label">CASE</div>
-      <input id="case">
-    </div>
-
-    <div class="grid">
-      <div class="group">
-        <div class="label">CONCERN TYPE</div>
-        <select id="concernType" onchange="updateSuggestions()">
-          <option value="">Select</option>
-          <option>Inquiry</option>
-          <option>Complaint</option>
-          <option>Aftersales</option>
-          <option>Other</option>
-        </select>
-      </div>
+    <!-- INPUT PANEL -->
+    <div class="panel inputPanel">
 
       <div class="group">
-        <div class="label">VOC</div>
-        <select id="voc" onchange="updateSuggestions()">
-          <option value="">Select</option>
-          <option>Positive</option>
-          <option>Neutral</option>
-          <option>Negative</option>
-        </select>
+        <div class="label">CASE</div>
+        <input id="case" placeholder="00000000">
       </div>
-    </div>
+
+      <div class="grid">
+
+        <div class="group">
+          <div class="label">CONCERN TYPE</div>
+          <select id="concernType" onchange="updateSuggestions()">
+            <option value="">Select</option>
+            <option>Inquiry</option>
+            <option>Complaint</option>
+            <option>Aftersales</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <div class="label">VOC</div>
+          <select id="voc" onchange="updateSuggestions()">
+            <option value="">Select</option>
+            <option>Positive</option>
+            <option>Neutral</option>
+            <option>Negative</option>
+          </select>
+        </div>
+
+      </div>
 
       <div class="group">
         <div class="label">DETAILS</div>
@@ -100,27 +104,28 @@
       </div>
 
       <div class="buttons">
-        <button onclick="generateDoc()">Generate</button>
-        <button onclick="copyDoc()">Copy</button>
-        <button onclick="downloadTxt()">Download</button>
-        <button onclick="resetForm()">Reset</button>
+        <button class="btn primary" onclick="generateDoc()">Generate</button>
+        <button class="btn success" onclick="copyDoc()">Copy</button>
+        <button class="btn dark" onclick="downloadTxt()">Download</button>
+        <button class="btn danger" onclick="resetForm()">Reset</button>
       </div>
 
     </div>
 
-  <!-- MIDDLE OUTPUT -->
-  <div class="panel outputPanel">
-    <div class="outputHeader">Generated Output</div>
-    <pre id="output"></pre>
-  </div>
-    
-  <!-- RIGHT SUGGESTIONS -->
-  <div class="panel suggestionPanel">
-    <div class="outputHeader">Suggested Procedures</div>
-    <pre id="suggestions">Select Concern & VOC</pre>
-  </div>
+    <!-- OUTPUT -->
+    <div class="panel outputPanel">
+      <div class="outputHeader">Generated Output</div>
+      <pre id="output"></pre>
+    </div>
+
+    <!-- SUGGESTIONS -->
+    <div class="panel suggestionPanel">
+      <div class="outputHeader">Suggested Procedures</div>
+      <pre id="suggestions">Select Concern & VOC</pre>
+    </div>
 
   </div>
+
 </div>
 
 <script src="script.js"></script>
