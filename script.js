@@ -1,4 +1,3 @@
-console.log("SCRIPT LOADED");
 
 function $(id) {
   return document.getElementById(id);
