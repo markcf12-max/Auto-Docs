@@ -1,93 +1,78 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f7fb;
+  font-family: system-ui, Arial;
+  background: #f5f7fb;
   color: #111827;
 }
 
-.app {
-  max-width: 900px;
-  margin: auto;
-  padding: 25px;
-}
-
 /* HEADER */
-.header {
-  margin-bottom: 20px;
+.topbar {
+  padding: 20px 30px;
 }
 
-.header h1 {
+.topbar h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
 }
 
-.header p {
-  margin: 5px 0 0;
+.topbar p {
+  margin: 4px 0 0;
   color: #6b7280;
 }
 
-/* CARD */
-.card {
+/* MAIN LAYOUT */
+.layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  padding: 0 30px 30px;
+}
+
+/* PANEL */
+.panel {
   background: white;
-  padding: 18px;
+  padding: 20px;
   border-radius: 14px;
-  margin-bottom: 18px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
-.card h2 {
-  font-size: 16px;
-  margin-bottom: 12px;
-  color: #374151;
+/* GROUP */
+.group {
+  margin-bottom: 14px;
 }
 
-/* FIELD */
-.field {
-  margin-bottom: 12px;
-}
-
-.field label {
-  display: block;
+.label {
   font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 5px;
+  font-weight: 700;
   color: #6b7280;
+  margin-bottom: 6px;
 }
 
+/* INPUTS */
 input, textarea {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
   border: 1px solid #e5e7eb;
+  border-radius: 10px;
   outline: none;
   font-size: 14px;
 }
 
 textarea {
-  min-height: 80px;
+  min-height: 70px;
   resize: vertical;
 }
 
 /* GRID */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 /* TOGGLE */
-.toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: white;
-  padding: 12px 14px;
-  border-radius: 12px;
+.toggle {
   margin-bottom: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.toggle-label {
   font-weight: 600;
 }
 
@@ -100,7 +85,7 @@ textarea {
 
 button {
   flex: 1;
-  padding: 12px;
+  padding: 10px;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -112,11 +97,22 @@ button:nth-child(2) { background: #10b981; color: white; }
 button:nth-child(3) { background: #111827; color: white; }
 
 /* OUTPUT */
-pre {
-  margin-top: 15px;
+.outputPanel {
   background: #0f172a;
-  color: #e2e8f0;
-  padding: 15px;
-  border-radius: 12px;
-  overflow-x: auto;
+  border-radius: 14px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.outputHeader {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #cbd5e1;
+}
+
+pre {
+  white-space: pre-wrap;
+  font-size: 13px;
 }
