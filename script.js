@@ -8,19 +8,49 @@ const STORAGE_KEY = "auto_docs_v3";
    TECH LINKS
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_VOICE.pdf",
 
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_SMS.pdf",
 
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_DATA_CONNECTIVITY.pdf",
 
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_ROAMING.pdf",
 
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE"
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING_SPACE_TECH360_SPS_GUIDE_COVERAGE.pdf"
 };
 
 /* =========================
-   SAVE
+   VOC SWITCH
+========================= */
+function updateVocOptions() {
+
+  const concern = $("concernType").value;
+  const voc = $("voc");
+
+  voc.innerHTML = "";
+
+  if (concern !== "Technical") {
+    voc.innerHTML = `
+      <option value="">Select</option>
+      <option>Positive</option>
+      <option>Neutral</option>
+      <option>Negative</option>
+    `;
+    return;
+  }
+
+  voc.innerHTML = `
+    <option value="">Select</option>
+    <option>VOICE CONNECTIVITY</option>
+    <option>SMS CONNECTIVITY</option>
+    <option>DATA CONNECTIVITY</option>
+    <option>ROAMING CONNECTIVITY</option>
+    <option>COVERAGE CONNECTIVITY</option>
+  `;
+}
+
+/* =========================
+   SAVE / LOAD
 ========================= */
 function saveData() {
   const data = {
@@ -41,18 +71,15 @@ function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-/* =========================
-   LOAD
-========================= */
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return;
 
   const data = JSON.parse(saved);
 
-  Object.keys(data).forEach(key => {
-    const el = $(key);
-    if (el) el.value = data[key];
+  Object.keys(data).forEach(k => {
+    const el = $(k);
+    if (el) el.value = data[k];
   });
 }
 
@@ -60,6 +87,7 @@ function loadData() {
    OUTPUT
 ========================= */
 function updateOutput() {
+
   const output =
 `CASE: ${$("case").value}
 CONCERN TYPE: ${$("concernType").value}
@@ -75,7 +103,7 @@ EMAIL: ${$("email").value}
 THREAD: ${$("thread").value}
 DATE/TIME: ${$("datetime").value}
 
-ACTION TAKEN:
+ACTION:
 ${$("action").value}
 
 WOCAS:
@@ -92,66 +120,32 @@ function updateSuggestions() {
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
-  let list = [];
+  let html = "";
 
-  /* =========================
-     TECHNICAL
-  ========================= */
   if (concern === "Technical") {
 
-    const techItems = Object.keys(TECH_LINKS);
+    const items = Object.keys(TECH_LINKS);
 
-    $("suggestions").innerHTML = techItems
-      .map(item => `• <a href="${TECH_LINKS[item]}" target="_blank">${item}</a>`)
-      .join("");
+    html = items.map(i =>
+      `• <a href="${TECH_LINKS[i]}" target="_blank">${i}</a>`
+    ).join("");
 
+    $("suggestions").innerHTML = html;
     return;
   }
 
-  /* =========================
-     OTHER CONCERNS
-  ========================= */
-  if (concern === "Inquiry") {
-    list.push({ text: "Check account details", link: "https://example.com" });
-    list.push({ text: "Verify request", link: "https://example.com" });
-  }
+  let list = [];
 
-  if (concern === "Complaint") {
-    list.push({ text: "Acknowledge issue", link: "https://example.com" });
-    list.push({ text: "Escalate case", link: "https://example.com" });
-  }
+  if (concern === "Inquiry") list.push("Check account details");
+  if (concern === "Complaint") list.push("Escalate issue");
+  if (concern === "Aftersales") list.push("Validate transaction");
+  if (concern === "Other") list.push("Review manually");
 
-  if (concern === "Aftersales") {
-    list.push({ text: "Validate transaction", link: "https://example.com" });
-  }
+  if (voc === "Negative") list.push("Apologize & escalate");
+  if (voc === "Positive") list.push("Confirm resolution");
+  if (voc === "Neutral") list.push("Standard processing");
 
-  if (concern === "Other") {
-    list.push({ text: "Review manually", link: "https://example.com" });
-  }
-
-  /* =========================
-     VOC
-  ========================= */
-  if (voc === "Negative") {
-    list.push({ text: "Apologize and escalate", link: "https://example.com" });
-  }
-
-  if (voc === "Positive") {
-    list.push({ text: "Confirm resolution", link: "https://example.com" });
-  }
-
-  if (voc === "Neutral") {
-    list.push({ text: "Standard processing", link: "https://example.com" });
-  }
-
-  if (!list.length) {
-    $("suggestions").textContent = "Select Concern & VOC";
-    return;
-  }
-
-  $("suggestions").innerHTML = list
-    .map(i => `• <a href="${i.link}" target="_blank">${i.text}</a>`)
-    .join("<br>");
+  $("suggestions").innerHTML = list.join("<br>");
 }
 
 /* =========================
@@ -163,15 +157,12 @@ function handleInput() {
 }
 
 /* =========================
-   COPY
+   COPY / DOWNLOAD
 ========================= */
 function copyDoc() {
   navigator.clipboard.writeText($("output").textContent);
 }
 
-/* =========================
-   DOWNLOAD
-========================= */
 function downloadTxt() {
   const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
@@ -188,6 +179,7 @@ function downloadTxt() {
    RESET
 ========================= */
 function resetForm() {
+
   [
     "case","concernType","voc","details","name","min",
     "company","email","thread","datetime","action","wocas"
@@ -210,6 +202,7 @@ window.addEventListener("DOMContentLoaded", () => {
     $("datetime").value = new Date().toLocaleString();
   }
 
+  updateVocOptions();
   updateOutput();
   updateSuggestions();
 
@@ -220,9 +213,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
   fields.forEach(id => {
     const el = $(id);
+
     el.addEventListener("input", handleInput);
+
     el.addEventListener("change", () => {
       handleInput();
+      updateVocOptions();
       updateSuggestions();
     });
   });
