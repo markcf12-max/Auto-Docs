@@ -157,6 +157,26 @@ window.clearForm = function () {
 };
 
 /* =========================
+   RESET BUTTON
+========================= */
+
+window.resetForm = function () {
+
+  document.getElementById("case").value = "";
+  document.getElementById("details").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("min").value = "";
+  document.getElementById("company").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("thread").value = "";
+  document.getElementById("datetime").value = "";
+  document.getElementById("action").value = "";
+  document.getElementById("wocas").value = "";
+
+  document.getElementById("output").textContent = "";
+};
+
+/* =========================
    INIT (IMPORTANT ORDER)
 ========================= */
 window.addEventListener("DOMContentLoaded", () => {
