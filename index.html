@@ -23,12 +23,6 @@
     <!-- LEFT INPUT PANEL -->
     <div class="panel">
 
-      <div class="toggle">
-        <label>
-          <input type="checkbox" id="compactMode">
-          Compact Mode
-        </label>
-      </div>
 
       <div class="group">
         <div class="label">CASE</div>
@@ -36,7 +30,7 @@
       </div>
 
       <div class="group">
-        <div class="label">DETAILS</div>
+        <div class="label">DETAILS OF THE CONCERN</div>
         <textarea id="details"></textarea>
       </div>
 
@@ -84,11 +78,12 @@
         <textarea id="wocas"></textarea>
       </div>
 
-      <div class="buttons">
-        <button onclick="generateDoc()">Generate</button>
-        <button onclick="copyDoc()">Copy</button>
-        <button onclick="downloadTxt()">Download</button>
-      </div>
+  <div class="buttons">
+    <button onclick="generateDoc()">Generate</button>
+    <button onclick="copyDoc()">Copy</button>
+    <button onclick="downloadTxt()">Download</button>
+    <button onclick="resetForm()">Reset</button>
+  </div>
 
     </div>
 
