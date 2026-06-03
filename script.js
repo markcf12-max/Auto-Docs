@@ -103,8 +103,8 @@ function updateSuggestions() {
     }
 
 const label = voc
+  .replace(" CONNECTIVITY", "")
   .toLowerCase()
-  .replace(" connectivity", "")
   .replace(/\b\w/g, c => c.toUpperCase());
 
 $("suggestions").innerHTML = `
