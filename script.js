@@ -22,7 +22,7 @@ const TECH_PROCEDURES = {
     "Verify that all voice services are active.",
     "Check for account misalignment or provisioning issues.",
     "If all services are active and no misalignment is found, proceed with gathering details for SR Ticket Creation.",
-    "If required details are not available, request the information from the customer."
+    "If required details are not available, request the information from the customer."f
   ],
 
   "SMS CONNECTIVITY": [
@@ -91,13 +91,15 @@ ${$("wocas").value}
 /* =========================
    VOC SWITCH (FIXED)
 ========================= */
-function updateVocOptions() {
+function updateVocOptions(keepValue = false) {
+
   const concern = $("concernType").value;
   const voc = $("voc");
 
-  const previous = voc.value;
+  const currentValue = voc.value;
 
   if (concern === "Technical") {
+
     voc.innerHTML = `
       <option value="">Select Connectivity Type</option>
       <option value="VOICE CONNECTIVITY">VOICE CONNECTIVITY</option>
@@ -106,17 +108,23 @@ function updateVocOptions() {
       <option value="ROAMING CONNECTIVITY">ROAMING CONNECTIVITY</option>
       <option value="COVERAGE CONNECTIVITY">COVERAGE CONNECTIVITY</option>
     `;
+
   } else {
+
     voc.innerHTML = `
       <option value="">Select</option>
       <option value="Positive">Positive</option>
       <option value="Neutral">Neutral</option>
       <option value="Negative">Negative</option>
     `;
+
   }
 
-  // always reset properly (prevents stale mismatch bug)
-  voc.value = "";
+  if (keepValue) {
+    voc.value = currentValue;
+  } else {
+    voc.value = "";
+  }
 
   updateSuggestions();
   updateOutput();
@@ -265,19 +273,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
 
+  const savedVoc = $("voc").value;
+
+  updateVocOptions(true);
+
+  $("voc").value = savedVoc;
+
   updateOutput();
   updateSuggestions();
-
-  const fields = document.querySelectorAll("input, textarea, select");
-
-  fields.forEach(el => {
-
-    el.addEventListener("input", handleInput);
-
-    el.addEventListener("change", () => {
-
-      if (el.id === "concernType") {
-        updateVocOptions();
       }
 
       handleInput();
