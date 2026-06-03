@@ -174,3 +174,14 @@ button:nth-child(4) { background: #ef4444; color: white; }
     height: auto;
   }
 }
+
+#suggestions a {
+  color: #60a5fa;
+  text-decoration: none;
+  display: block;
+  margin: 4px 0;
+}
+
+#suggestions a:hover {
+  text-decoration: underline;
+}
