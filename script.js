@@ -340,179 +340,79 @@ function updateSuggestions() {
     return;
   }
 
-  /* =========================
-     DEFAULT (INQUIRY ETC.)
-  ========================= */
-  let list = [];
+/* =========================
+   DEFAULT (INQUIRY ETC.)
+========================= */
+
+let list = [];
 
 if (concern === "Inquiry") {
 
-  const inquiryMap = {
+  const INQUIRY_PROCEDURES = {
 
-    "APP RELATED": "Check application functionality and user access.",
-    "ACTIVATION": "Verify activation status and provisioning.",
-    "ADA ENROLLMENT": "Validate enrollment status and eligibility.",
-    "APPLICATION REQUIREMENTS": "Check required documents and completeness.",
-    "APPLICATION STATUS": "Check current processing status.",
-    "AVAILMENT OF ADD-ONS": "Validate add-on eligibility and subscription.",
+    "APP RELATED": [
+      "Check application functionality and user access."
+    ],
 
-    "BALANCE TRANSFER": "Check balance transfer eligibility and status.",
-    "BALANCE:ACCOUNT RECONCILIATION": "Verify account reconciliation records.",
-    "BALANCE:CLARIFICATION ON BILLED CHARGES": "Review billed charges and breakdown.",
-    "BALANCE:COLLECTION REMINDER": "Check collection notice validity.",
-    "BALANCE:NON-RECEIPT OF BILL": "Verify billing delivery status.",
-    "BALANCE:POSTING OF PAYMENT": "Confirm payment posting.",
-    "BALANCE:PRO-RATA": "Validate pro-rata billing computation.",
-    "BALANCE:REMAINING ALLOCATION": "Check remaining allocation.",
-    "BALANCE:TOP UP": "Verify top-up transaction.",
-    "BALANCE:UNBILLED": "Check unbilled usage details.",
+    "ACTIVATION": [
+      "Verify activation status and provisioning."
+    ],
 
-    "BAN": "Validate Billing Account Number.",
-    "BAR SMS": "Check SMS barring status.",
-    "BARRING:DATA": "Check data barring status.",
-    "BARRING:LOSS": "Validate loss-related barring request.",
+    "ADA ENROLLMENT": [
+      "Validate enrollment status and eligibility."
+    ],
 
-    "BILL DETAILS:DUE DATE/CUTOFF": "Check billing cycle details.",
-    "BIN ABUSE": "Investigate BIN misuse case.",
-    "BIN FRAUD": "Escalate fraud validation.",
+    "APPLICATION REQUIREMENTS": [
+      "Check required documents and completeness."
+    ],
 
-    "CHANGE IN BILLING ADDRESS": "Update or verify billing address.",
-    "CHANGE IN CREDIT LIMIT": "Check credit limit adjustment eligibility.",
-    "E-SIM": "Validate eSIM provisioning.",
-    "CHANGE IN CUSTOMER INFORMATION": "Verify customer profile update.",
-    "CHANGE OF OWNERSHIP": "Process ownership transfer request.",
+    "APPLICATION STATUS": [
+      "Check current processing status."
+    ],
 
-    "COVERAGE": "Check network coverage issue.",
+    "AVAILMENT OF ADD-ONS": [
+      "Validate add-on eligibility and subscription."
+    ],
 
-    "DATA CONNECTIVITY:INTERMITTENT CONNECTION": "Troubleshoot intermittent issue.",
-    "DATA CONNECTIVITY:NO CONNECTION": "Check outage or provisioning.",
-    "DATA CONNECTIVITY:SPECIFIC WEBSITE/APPLICATION": "Check access restriction.",
-    "DATA CONNECTIVITY:SLOW CONNECTION": "Perform speed check.",
+    "BALANCE TRANSFER": [
+      "Check balance transfer eligibility and status."
+    ],
 
-    "DEACTIVATION OF FLEXIBUNDLES": "Validate bundle deactivation.",
-    "DISCONNECTION": "Check disconnection status.",
+    "BALANCE:ACCOUNT RECONCILIATION": [
+      "Verify account reconciliation records."
+    ],
 
-    "DISPUTE: MSF CHARGES": "Review MSF dispute.",
-    "DISPUTE: CALL CHARGES": "Validate call charges.",
-    "DISPUTE:DATA CHARGES": "Review data billing.",
-    "DISPUTE:SMS CHARGES": "Check SMS charges.",
-    "DISPUTE: PCC": "Validate PCC dispute.",
-    "DISPUTE:VAS CHARGES": "Review VAS charges.",
+    "BALANCE:CLARIFICATION ON BILLED CHARGES": [
+      "Review billed charges and breakdown."
+    ],
 
-    "FAIR USE POLICY": "Check FUP usage threshold.",
-    "FAST DEPLETION": "Investigate fast consumption issue.",
-
-    "FLP RESENDING OF LOAD": "Check load resend status.",
-    "HANDSET UNLOCKING": "Validate unlock request.",
-
-    "HOAX CALL/SMS": "Investigate spam activity.",
-
-    "HOME PREPAID WIFI": "Check HPW connectivity issue.",
-
-    "INABILITY TO CALL THE HOTLINE/SPECIAL NUMBER": "Check call routing issue.",
-    "INTERNATIONAL ROAMING- STATUS": "Check roaming status.",
-
-    "INABILITY TO REGISTER": "Check registration failure cause.",
-
-    "LIFTING:DATA": "Lift data restriction.",
-    "LIFTING:INCOMING/OUTGOING/DATA": "Full service lifting request.",
-    "LIFTING:REDIRECTION": "Lift call forwarding.",
-
-    "MENU UPDATE": "Check system update availability.",
-    "MOBILE APPLICATION": "Troubleshoot app issue.",
-
-    "OTHER PROCEDURAL CONCERN": "Route to correct team.",
-
-    "PASALOAD": "Check load sharing.",
-
-    "PAYMENT ARRANGEMENT": "Verify payment setup.",
-    "PAYMENT CHANNEL": "Check payment channel.",
-
-    "PLAN DOWNGRADE/UPGRADE": "Validate plan change.",
-    "PLAN INCLUSION": "Check plan inclusions.",
-
-    "PRODUCT/PROMO INQUIRY": "Check promo details.",
-    "PROMO MECHANICS": "Explain promo rules.",
-    "PROMO RATES/INCLUSION": "Check promo pricing.",
-
-    "PUK/PIN": "Assist SIM unlock.",
-
-    "REFUND": "Validate refund status.",
-
-    "REGISTRATION PROCEDURE": "Guide registration process.",
-    "RELOADING PROCEDURE": "Assist reload process.",
-    "RELOADING:DELAYED CONFIRMATION MESSAGE": "Check SMS delay.",
-    "RELOADING:INABILITY TO RELOAD": "Troubleshoot reload issue.",
-    "RELOADING:MULTIPLE DEDUCTION": "Check duplicate charge.",
-    "RELOADING:NO CONFIRMATION MESSAGE": "Check confirmation issue.",
-    "RELOADING:UNCREDITED LOAD": "Validate missing load.",
-
-    "REPLACEMENT:DEVICE": "Process device replacement.",
-    "REPLACEMENT:SIM": "Process SIM replacement.",
-
-    "RETAILER INCENTIVE": "Check incentive concern.",
-    "RETENTION": "Handle retention case.",
-    "REWARDS": "Check reward status.",
-
-    "SELF CARE CHANNEL": "Assist self-care access.",
-
-    "SERVICE CONTRACT": "Check contract validity.",
-
-    "SERVICE DOWNTIME:CALL": "Check voice outage.",
-    "SERVICE DOWNTIME:DATA": "Check data outage.",
-    "SERVICE DOWNTIME:LOADING": "Check system downtime.",
-    "SERVICE DOWNTIME:REGISTRATION": "Check registration system.",
-    "SERVICE DOWNTIME:SMS": "Check SMS outage.",
-    "SERVICE DOWNTIME:VAS": "Check VAS downtime.",
-
-    "SIM UPGRADE": "Process SIM upgrade.",
-
-    "SMS CONNECTIVITY:INCOMING": "Check incoming SMS issue.",
-    "SMS CONNECTIVITY:MULTIPLE": "Check bulk SMS issue.",
-    "SMS CONNECTIVITY:DELAYED": "Check SMS delay.",
-    "SMS CONNECTIVITY:OUTGOING": "Check outgoing SMS issue.",
-    "SMS CONNECTIVITY:PREMIUM SMS": "Check premium SMS issue.",
-
-    "SOA:BILL REPRINT": "Reprint SOA.",
-    "SOA:E-STATEMENT": "Check e-statement.",
-    "STATUS: ACCOUNT": "Check account status.",
-    "SOA:NON RECEIPT/DELAYED": "Check SOA delivery.",
-
-    "SUBSCRIBER TAG STATUS:NO SERVICE": "Check service issue.",
-
-    "UNBLOCKING OF DEALER/RETAILER SIM": "Process SIM unblock.",
-
-    "VAS CANCELLATION": "Cancel VAS.",
-    "VAS TECH:VAS CANCELLATION": "Handle VAS cancellation.",
-    "VAS TECH:UNABLE TO REGISTER": "Fix VAS registration issue.",
-
-    "VOICE CONNECTIVITY: INCOMING": "Check incoming call issue.",
-    "VOICE CONNECTIVITY: OUTGOING": "Check outgoing call issue.",
-    "VOICE QUALITY": "Diagnose call quality issue.",
-
-    "BALANCE: AMOUNT TO SETTLE": "Check outstanding balance.",
-
-    "DISSATISFACTION": "Log customer complaint.",
-
-    "MNP INQUIRY": "Check porting status.",
-
-    "GENERAL INQUIRY": "Provide general assistance."
+    "GENERAL INQUIRY": [
+      "Verify concern details.",
+      "Check account context.",
+      "Provide accurate resolution or escalate if needed."
+    ]
   };
 
-  const result = inquiryMap[voc];
+  const steps = INQUIRY_PROCEDURES[voc];
 
-  list.push(result || "Review inquiry and validate account details");
+  if (steps && steps.length) {
+    list.push(...steps);
+  } else {
+    list.push("Review inquiry and validate account details");
+  }
 }
-  if (concern === "Complaint") list.push("Escalate issue");
-  if (concern === "Aftersales") list.push("Validate transaction");
-  if (concern === "Other") list.push("Review manually");
 
-  if (voc === "Negative") list.push("Apologize & escalate");
-  if (voc === "Positive") list.push("Confirm resolution");
-  if (voc === "Neutral") list.push("Standard processing");
+/* other concerns */
+if (concern === "Complaint") list.push("Escalate issue");
+if (concern === "Aftersales") list.push("Validate transaction");
+if (concern === "Other") list.push("Review manually");
 
-  $("suggestions").innerHTML = list.join("<br>");
-}
+/* VOC add-ons */
+if (voc === "Negative") list.push("Apologize & escalate");
+if (voc === "Positive") list.push("Confirm resolution");
+if (voc === "Neutral") list.push("Standard processing");
+
+$("suggestions").innerHTML = list.join("<br>");
 
 /* =========================
    SAVE / LOAD
