@@ -45,33 +45,9 @@ function loadData() {
 }
 
 /* =========================
-   AUTO SAVE LISTENERS
+   BUILD OUTPUT (LIVE)
 ========================= */
-function initAutoSave() {
-  [
-    "case","concernType","voc","details","name","min",
-    "company","email","thread","datetime","action","wocas"
-  ].forEach(id => {
-    const el = $(id);
-    if (!el) return;
-
-    el.addEventListener("input", saveData);
-    el.addEventListener("change", () => {
-      saveData();
-      updateSuggestions();
-    });
-  });
-}
-
-/* =========================
-   GENERATE DOC
-========================= */
-function generateDoc() {
-
-  if (!$("case").value.trim()) {
-    alert("CASE is required");
-    return;
-  }
+function updateOutput() {
 
   const output =
 `CASE: ${$("case").value}
@@ -91,58 +67,9 @@ ACTION TAKEN:
 ${$("action").value}
 
 WOCAS:
-${$("wocas").value}`;
+${$("wocas").value}`.trim();
 
   $("output").textContent = output;
-
-  saveData();
-}
-
-/* =========================
-   COPY
-========================= */
-function copyDoc() {
-  const text = $("output").textContent;
-  if (!text) return;
-
-  navigator.clipboard.writeText(text);
-}
-
-/* =========================
-   DOWNLOAD
-========================= */
-function downloadTxt() {
-  const text = $("output").textContent;
-  if (!text) return;
-
-  const blob = new Blob([text], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `AutoDoc_${Date.now()}.txt`;
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
-
-/* =========================
-   RESET
-========================= */
-function resetForm() {
-
-  [
-    "case","concernType","voc","details","name","min",
-    "company","email","thread","datetime","action","wocas"
-  ].forEach(id => {
-    const el = $(id);
-    if (el) el.value = "";
-  });
-
-  $("output").textContent = "";
-  $("suggestions").textContent = "Select Concern & VOC";
-
-  localStorage.removeItem(STORAGE_KEY);
 }
 
 /* =========================
@@ -155,7 +82,6 @@ function updateSuggestions() {
 
   let list = [];
 
-  /* CONCERN TYPE */
   if (concern === "Inquiry") {
     list.push("• Check account details");
     list.push("• Provide standard information response");
@@ -179,7 +105,6 @@ function updateSuggestions() {
     list.push("• Classify properly before processing");
   }
 
-  /* VOC */
   if (voc === "Negative") {
     list.push("");
     list.push("⚠ PRIORITY HANDLING");
@@ -203,17 +128,54 @@ function updateSuggestions() {
 }
 
 /* =========================
+   LIVE SYSTEM CORE
+========================= */
+function handleInput() {
+  saveData();
+  updateOutput();
+}
+
+/* =========================
+   RESET
+========================= */
+function resetForm() {
+
+  [
+    "case","concernType","voc","details","name","min",
+    "company","email","thread","datetime","action","wocas"
+  ].forEach(id => {
+    const el = $(id);
+    if (el) el.value = "";
+  });
+
+  $("output").textContent = "";
+  $("suggestions").textContent = "Select Concern & VOC";
+
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+/* =========================
    INIT
 ========================= */
 window.addEventListener("DOMContentLoaded", () => {
 
   loadData();
-  initAutoSave();
-
-  // live suggestion triggers
-  $("concernType").addEventListener("change", updateSuggestions);
-  $("voc").addEventListener("change", updateSuggestions);
-
-  // auto generate suggestions on load
+  updateOutput();
   updateSuggestions();
+
+  const fields = [
+    "case","concernType","voc","details","name","min",
+    "company","email","thread","datetime","action","wocas"
+  ];
+
+  fields.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+
+    el.addEventListener("input", handleInput);
+    el.addEventListener("change", () => {
+      handleInput();
+      updateSuggestions();
+    });
+  });
 });
