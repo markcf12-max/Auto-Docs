@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: system-ui, Arial;
-  background: #f5f7fb;
+  background: #f3f4f6;
   color: #111827;
 }
 
@@ -12,7 +12,7 @@ body {
 
 .topbar h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 28px;
 }
 
 .topbar p {
@@ -23,7 +23,7 @@ body {
 /* MAIN LAYOUT */
 .layout {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1.3fr 1fr;
   gap: 20px;
   padding: 0 30px 30px;
 }
@@ -32,7 +32,7 @@ body {
 .panel {
   background: white;
   padding: 20px;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
@@ -51,77 +51,100 @@ body {
 /* INPUTS */
 input, textarea {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   outline: none;
   font-size: 14px;
+  box-sizing: border-box;
 }
 
 textarea {
-  min-height: 70px;
+  min-height: 80px;
   resize: vertical;
 }
 
-/* GRID */
-.grid {
+/* GRID INPUTS */
+.grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-/* TOGGLE */
-.toggle {
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
 /* BUTTONS */
 .buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
 button {
-  flex: 1;
   padding: 10px;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
+  transition: 0.2s;
 }
 
 button:nth-child(1) { background: #2563eb; color: white; }
 button:nth-child(2) { background: #10b981; color: white; }
 button:nth-child(3) { background: #111827; color: white; }
 
-/* OUTPUT */
+button.danger {
+  background: #ef4444;
+  color: white;
+}
+
+/* OUTPUT PANEL */
 .outputPanel {
   background: #0f172a;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 20px;
   color: white;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  position: sticky;
+  top: 20px;
+  height: fit-content;
 }
 
 .outputHeader {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   margin-bottom: 10px;
-  color: #cbd5e1;
+  color: #94a3b8;
 }
 
 pre {
   white-space: pre-wrap;
   font-size: 13px;
+  line-height: 1.5;
 }
 
-button:nth-child(4) {
-  background: #ef4444;
-  color: white;
+/* =========================
+   RESPONSIVE DESIGN
+========================= */
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .outputPanel {
+    position: relative;
+  }
+
+  .buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
-button:nth-child(4):hover {
-  background: #dc2626;
+@media (max-width: 500px) {
+  .buttons {
+    grid-template-columns: 1fr;
+  }
 }
