@@ -122,3 +122,18 @@ pre {
   white-space: pre-wrap;
   font-size: 13px;
 }
+
+.suggestionPanel {
+  background: #111827;
+  border-radius: 14px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+#suggestions {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e5e7eb;
+  white-space: pre-wrap;
+}
