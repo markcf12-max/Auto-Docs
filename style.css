@@ -4,9 +4,11 @@
 .layout {
   display: grid;
   grid-template-columns: 2fr 1.2fr 1fr;
-  gap: 16px;
-  padding: 0 30px 30px;
-  align-items: start;
+  gap: 14px;
+  padding: 0 20px 20px;
+
+  height: calc(100vh - 90px); /* KEY FIX */
+  overflow: hidden;
 }
 
 /* =========================
@@ -16,16 +18,18 @@
   background: white;
   border-radius: 14px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-  padding: 18px;
-  max-height: calc(100vh - 120px);
-  overflow: auto;
+  padding: 16px;
+
+  overflow-y: auto;   /* KEY */
+  min-height: 0;      /* KEY for grid fix */
 }
 
 /* =========================
    INPUT PANEL (BIGGER SCROLL AREA)
 ========================= */
 .inputPanel {
-  min-height: 600px;
+  height: 100%;
+}
 }
 
 /* =========================
@@ -34,6 +38,8 @@
 .outputPanel {
   background: #0f172a;
   color: white;
+
+  height: 100%;
 }
 
 /* =========================
@@ -42,6 +48,10 @@
 .suggestionPanel {
   background: #111827;
   color: #e5e7eb;
+
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* =========================
@@ -69,9 +79,24 @@ pre {
 @media (max-width: 1100px) {
   .layout {
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .panel {
+    height: auto;
     max-height: none;
   }
+}
+
+/* =========================
+   SUGGESTION BOX
+========================= */
+
+#suggestions {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.5;
+
+  overflow-y: auto;
+  flex: 1; /* IMPORTANT */
 }
