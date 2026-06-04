@@ -29,19 +29,19 @@ function loadData() {
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": [
     { text: "Check voice service", link: "https://yourguide-link.com/voice" },
-    { text: "Validate account status", link: "https://yourguide-link.com/account" }
+    { text: "Validate account status", link: "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FVOICE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE" }
   ],
   "SMS CONNECTIVITY": [
-    { text: "Check SMS provisioning", link: "https://yourguide-link.com/sms" }
+    { text: "Check SMS provisioning", link: "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FSMS%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE" }
   ],
   "DATA CONNECTIVITY": [
-    { text: "Check data session", link: "https://yourguide-link.com/data" }
+    { text: "Check data session", link: "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FDATA%5FCONNECTIVITY%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE" }
   ],
   "ROAMING CONNECTIVITY": [
-    { text: "Verify roaming status", link: "https://yourguide-link.com/roaming" }
+    { text: "Verify roaming status", link: "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FROAMING%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE" }
   ],
   "COVERAGE CONNECTIVITY": [
-    { text: "Check signal coverage", link: "https://yourguide-link.com/coverage" }
+    { text: "Check signal coverage", link: "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FCOVERAGE%2Epdf&parent=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE" }
   ]
 };
 
