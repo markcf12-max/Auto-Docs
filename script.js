@@ -195,7 +195,7 @@ function updateVocOptions(keepExistingValue = false) {
   const vocInput = $("voc");
   if (!datalist || !vocInput) return;
 
-  // Fix: If category is empty/reset, completely clear the list options out and exit
+  // Fix: If category is empty/reset, completely clear out options and stop
   if (!concern) {
     datalist.innerHTML = "";
     vocInput.value = "";
@@ -253,20 +253,26 @@ function resetForm() {
     el.value = "";
   });
   
-  // Wipe out browser local storage files
+  // Wipe browser local storage tracking
   localStorage.removeItem(STORAGE_KEY);
   
-  // FIXED: Explicitly force the selector dropdown back to index 0 (Select Category placeholder)
+  // FIXED: Explicitly forces Concern Type dropdown back to index 0
   const concernDropdown = $("concernType");
   if (concernDropdown) {
     concernDropdown.selectedIndex = 0;
   }
   
-  // Clear datalist elements completely
+  // FIXED: Explicitly forces VOC input field to go blank instead of defaulting
+  const vocInput = $("voc");
+  if (vocInput) {
+    vocInput.value = "";
+  }
+  
+  // Clear datalist configurations out completely
   const datalist = $("vocOptions");
   if (datalist) datalist.innerHTML = "";
   
-  // Rerender screens cleanly
+  // Rerender presentation windows cleanly
   updateOutput();
   if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 }
