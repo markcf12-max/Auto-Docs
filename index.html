@@ -106,7 +106,7 @@
       <div class="buttons">
         <button onclick="copyDoc()">Copy</button>
         <button onclick="downloadTxt()">Download</button>
-        <button onclick="resetForm()">Reset</button>
+        <button onclick="resetForm(event)">Reset</button>
       </div>
 
     </div>
@@ -114,13 +114,13 @@
     <div class="panel outputPanel" id="outputPanelFrame">
       <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
-      
-      <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
-        <i class="fas fa-book-open"></i> <span>View Playbooks</span>
-      </button>
     </div>
 
     <div class="panel suggestionPanel" id="playbookPanel">
+      <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
+        <i class="fas fa-book-open"></i> <span>View Playbooks</span>
+      </button>
+      
       <div class="outputHeader">Suggested Procedures</div>
       <div id="suggestions">Select Concern & VOC</div>
     </div>
@@ -132,7 +132,7 @@
 <div class="floating-action-dock" id="mobileDock">
   <button style="background: #2563eb; color: white; padding: 10px;" onclick="copyDoc()">Copy</button>
   <button style="background: #10b981; color: white; padding: 10px;" onclick="downloadTxt()">Save</button>
-  <button style="background: #ef4444; color: white; padding: 10px;" onclick="resetForm()">Clear</button>
+  <button style="background: #ef4444; color: white; padding: 10px;" onclick="resetForm(event)">Clear</button>
 </div>
 
 <script src="script.js"></script>
