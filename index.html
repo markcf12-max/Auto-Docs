@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Auto Docs</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Added an icon library for the theme toggle button -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -12,7 +11,6 @@
 
 <div class="app">
 
-  <!-- TOP BAR WITH THEME TOGGLE -->
   <div class="topbar">
     <div>
       <h1>Auto Docs</h1>
@@ -23,10 +21,8 @@
     </button>
   </div>
 
-  <!-- MAIN LAYOUT -->
   <div class="layout">
 
-    <!-- INPUT PANEL -->
     <div class="panel inputPanel">
 
       <div class="group">
@@ -39,6 +35,7 @@
         <div class="group">
           <div class="label">CONCERN TYPE</div>
           <select id="concernType">
+            <option value="" disabled selected hidden>Select type of concern</option>
             <option value="Technical">Technical</option>
             <option value="Aftersales">Aftersales</option>
             <option value="Inquiry">Inquiry</option>
@@ -48,7 +45,6 @@
 
         <div class="group">
           <div class="label">VOC</div>
-          <!-- Click triggers focus auto-select -->
           <input type="text" id="voc" list="vocOptions" placeholder="Type keywords (e.g. sim, billing)..." autocomplete="off" onfocus="this.select()">
           <datalist id="vocOptions"></datalist>
         </div>
@@ -112,13 +108,11 @@
 
     </div>
 
-    <!-- OUTPUT PANEL -->
     <div class="panel outputPanel">
       <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
     </div>
 
-    <!-- SUGGESTION PANEL -->
     <div class="panel suggestionPanel">
       <div class="outputHeader">Suggested Procedures</div>
       <div id="suggestions">Select Concern & VOC</div>
