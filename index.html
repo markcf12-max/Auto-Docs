@@ -2,17 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auto Docs</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Added an icon library for the theme toggle button -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
 
+<div id="toast" class="toast-notification">
+  <i class="fas fa-check-circle"></i> <span id="toastMessage">Manifest Copied to Clipboard</span>
+</div>
+
 <div class="app">
 
-  <!-- TOP BAR WITH THEME TOGGLE -->
   <div class="topbar">
     <div>
       <h1>Auto Docs</h1>
@@ -23,19 +26,16 @@
     </button>
   </div>
 
-  <!-- MAIN LAYOUT -->
   <div class="layout">
 
-    <!-- INPUT PANEL -->
     <div class="panel inputPanel">
 
       <div class="group">
         <div class="label">SR/CASE</div>
-        <input id="case" placeholder="00000000">
+        <input id="case" placeholder="Case: 8 digits | SR: 10 digits" maxlength="12">
       </div>
 
       <div class="grid">
-
         <div class="group">
           <div class="label">CONCERN TYPE</div>
           <select id="concernType">
@@ -52,56 +52,55 @@
           <input type="text" id="voc" list="vocOptions" placeholder="Type keywords (e.g. sim, billing)..." autocomplete="off" onfocus="this.select()">
           <datalist id="vocOptions"></datalist>
         </div>
-
       </div>
 
       <div class="group">
         <div class="label">DETAILS OF THE CONCERN</div>
-        <textarea id="details"></textarea>
+        <textarea id="details" placeholder="Document problem transaction variables..."></textarea>
       </div>
 
       <div class="grid">
         <div class="group">
           <div class="label">NAME</div>
-          <input id="name">
+          <input id="name" placeholder="Client Name">
         </div>
 
         <div class="group">
-          <div class="label">MIN</div>
-          <input id="min">
+          <div class="label">MIN (MOBILE NUMBER)</div>
+          <input id="min" placeholder="09XX (11d) | 63XX (12d) | 9XX (10d)" maxlength="15">
         </div>
       </div>
 
       <div class="group">
         <div class="label">COMPANY NAME</div>
-        <input id="company">
+        <input id="company" placeholder="Corporate account label">
       </div>
 
       <div class="grid">
         <div class="group">
           <div class="label">EMAIL ADDRESS</div>
-          <input id="email">
+          <input id="email" placeholder="client@domain.com">
         </div>
 
         <div class="group">
           <div class="label">THREAD NUMBER</div>
-          <input id="thread">
+          <input id="thread" placeholder="CRM System Reference">
         </div>
       </div>
 
       <div class="group">
         <div class="label">DATE & TIME RECEIVED</div>
-        <input id="datetime">
+        <input id="datetime" placeholder="YYYY-MM-DD HH:MM">
       </div>
 
       <div class="group">
         <div class="label">ACTION TAKEN</div>
-        <textarea id="action"></textarea>
+        <textarea id="action" placeholder="Troubleshooting mitigation steps applied..."></textarea>
       </div>
 
       <div class="group">
         <div class="label">WOCAS</div>
-        <textarea id="wocas"></textarea>
+        <textarea id="wocas" placeholder="Disposition text closures..."></textarea>
       </div>
 
       <div class="buttons">
@@ -112,20 +111,28 @@
 
     </div>
 
-    <!-- OUTPUT PANEL -->
-    <div class="panel outputPanel">
+    <div class="panel outputPanel" id="outputPanelFrame">
       <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
+      
+      <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
+        <i class="fas fa-book-open"></i> <span>View Playbooks</span>
+      </button>
     </div>
 
-    <!-- SUGGESTION PANEL -->
-    <div class="panel suggestionPanel">
+    <div class="panel suggestionPanel" id="playbookPanel">
       <div class="outputHeader">Suggested Procedures</div>
       <div id="suggestions">Select Concern & VOC</div>
     </div>
 
   </div>
 
+</div>
+
+<div class="floating-action-dock" id="mobileDock">
+  <button style="background: #2563eb; color: white; padding: 10px;" onclick="copyDoc()">Copy</button>
+  <button style="background: #10b981; color: white; padding: 10px;" onclick="downloadTxt()">Save</button>
+  <button style="background: #ef4444; color: white; padding: 10px;" onclick="resetForm()">Clear</button>
 </div>
 
 <script src="script.js"></script>
