@@ -190,13 +190,13 @@ function updateSuggestions() {
 }
 
 function updateVocOptions(keepExistingValue = false) {
-  const concern = $("concernType").value;
+  const concern = $("concernType")?.value;
   const datalist = $("vocOptions");
   const vocInput = $("voc");
   if (!datalist || !vocInput) return;
 
-  // Fix: If category is empty/reset, completely clear out options and stop
-  if (!concern) {
+  // Fix: If category is empty/blank, wipe out everything safely and stop executing.
+  if (!concern || concern === "") {
     datalist.innerHTML = "";
     vocInput.value = "";
     return;
@@ -248,33 +248,31 @@ function downloadTxt() {
 }
 
 function resetForm() {
-  // Clear all text inputs and textareas
+  // 1. Wipe out storage immediately first
+  localStorage.removeItem(STORAGE_KEY);
+  
+  // 2. Explicitly target and empty out all input elements
   document.querySelectorAll("input, textarea").forEach(el => {
     el.value = "";
   });
   
-  // Wipe browser local storage tracking
-  localStorage.removeItem(STORAGE_KEY);
-  
-  // FIXED: Explicitly forces Concern Type dropdown back to index 0
+  // 3. Force the dropdown element to index 0 (the blank option string)
   const concernDropdown = $("concernType");
   if (concernDropdown) {
     concernDropdown.selectedIndex = 0;
+    concernDropdown.value = ""; 
   }
   
-  // FIXED: Explicitly forces VOC input field to go blank instead of defaulting
+  // 4. Force empty settings on your datalist module
   const vocInput = $("voc");
-  if (vocInput) {
-    vocInput.value = "";
-  }
+  if (vocInput) vocInput.value = "";
   
-  // Clear datalist configurations out completely
   const datalist = $("vocOptions");
   if (datalist) datalist.innerHTML = "";
   
-  // Rerender presentation windows cleanly
-  updateOutput();
+  // 5. Hard refresh text boxes and suggestion panes directly
   if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+  updateOutput();
 }
 
 window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme;
