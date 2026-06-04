@@ -5,6 +5,92 @@ function $(id) {
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
 
+/* ==========================================================================
+   REAL-TIME REGULAR EXPRESSION VALIDATORS
+   ========================================================================== */
+function validateCaseField(el) {
+  const val = el.value.trim();
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
+  
+  if (val.length === 0) return; // Neutral unedited state
+  
+  // Rule: Case number targets 8 digits, SR tickets require 10 digits
+  if (val.length === 8 || val.length === 10) {
+    el.classList.add('val-green');
+  } else if (val.length > 10) {
+    el.classList.add('val-crimson');
+  } else {
+    el.classList.add('val-amber');
+  }
+}
+
+function validateMinField(el) {
+  const val = el.value.trim();
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
+
+  if (val.length === 0) return;
+
+  // Prefix routing criteria condition checklist
+  if (val.startsWith('09')) {
+    if (val.length === 11) el.classList.add('val-green');
+    else if (val.length > 11) el.classList.add('val-crimson');
+    else el.classList.add('val-amber');
+  } 
+  else if (val.startsWith('63')) {
+    if (val.length === 12) el.classList.add('val-green');
+    else if (val.length > 12) el.classList.add('val-crimson');
+    else el.classList.add('val-amber');
+  } 
+  else if (val.startsWith('9')) {
+    if (val.length === 10) el.classList.add('val-green');
+    else if (val.length > 10) el.classList.add('val-crimson');
+    else el.classList.add('val-amber');
+  } 
+  else {
+    el.classList.add('val-crimson'); // Flag invalid prefix configurations immediately
+  }
+}
+
+/* ==========================================================================
+   OPTION B DRAWER STRUCTURAL VIEWPORT CONTROLLER
+   ========================================================================== */
+function toggleDrawer(e) {
+  if(e) e.stopPropagation();
+  const drawer = $('playbookPanel');
+  if(!drawer) return;
+  
+  drawer.classList.toggle('drawer-open');
+  
+  const btnText = $('drawerToggle').querySelector('span');
+  const btnIcon = $('drawerToggle').querySelector('i');
+  
+  if(drawer.classList.contains('drawer-open')) {
+    btnText.textContent = "Close Playbooks";
+    btnIcon.className = "fas fa-times";
+  } else {
+    btnText.textContent = "View Playbooks";
+    btnIcon.className = "fas fa-book-open";
+  }
+}
+
+// Clean auto-collapse fallback click mechanism for Tier 2 layouts
+document.addEventListener('click', (e) => {
+  const drawer = $('playbookPanel');
+  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle').contains(e.target)) {
+    drawer.classList.remove('drawer-open');
+    $('drawerToggle').querySelector('span').textContent = "View Playbooks";
+    $('drawerToggle').querySelector('i').className = "fas fa-book-open";
+  }
+});
+
+function showToast(msg) {
+  const toast = $('toast');
+  if(!toast) return;
+  $('toastMessage').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 2200);
+}
+
 /* =========================
    DATA STORAGE
 ========================= */
@@ -135,8 +221,15 @@ const VOC_OPTIONS = {
 ========================= */
 function updateOutput() {
   if (!$("output")) return;
+  
+  // Real-time dynamic identifier conversion label check
+  const caseVal = $("case")?.value.trim() || "";
+  let ticketHeaderTag = "CASE/SR VALUE";
+  if (caseVal.length === 8) ticketHeaderTag = "CASE NUMBER";
+  if (caseVal.length === 10) ticketHeaderTag = "SR NUMBER";
+
   $("output").textContent = 
-`CASE: ${$("case")?.value || ""}
+`${ticketHeaderTag}: ${caseVal}
 CONCERN TYPE: ${$("concernType")?.value || ""}
 VOC: ${$("voc")?.value || ""}
 
@@ -219,13 +312,13 @@ function updateVocOptions(keepExistingValue = false) {
 }
 
 /* =========================
-   DOWNLOAD TEXT METHOD (Added to prevent script crashes)
+   DOWNLOAD TEXT METHOD
 ========================= */
 function downloadTxt() {
   const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "auto-docs.txt"; a.click();
+  a.href = url; a.download = `Log-${$("case")?.value || 'auto-docs'}.txt`; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -239,9 +332,19 @@ function init() {
   updateOutput();
   updateSuggestions();
 
+  // Run initial state checking sweeps for stored session contents
+  if($('case')) validateCaseField($('case'));
+  if($('min')) validateMinField($('min'));
+
   document.querySelectorAll("input, textarea, select").forEach(el => {
     // Fired on every single keystroke or selection change
     el.addEventListener("input", () => {
+      // Force instant alphanumeric digit scrubbing filters on key fields
+      if(el.id === "case" || el.id === "min") el.value = el.value.replace(/\D/g, '');
+      
+      if(el.id === "case") validateCaseField(el);
+      if(el.id === "min") validateMinField(el);
+
       saveData();
       updateOutput();
       if (el.id === "voc" || el.id === "concernType") {
@@ -263,6 +366,17 @@ function init() {
 
 function copyDoc() { 
   navigator.clipboard.writeText($("output").textContent || ""); 
+  
+  // Trigger modern iridescent micro-flash border animation sweep
+  const previewFrame = $('outputPanelFrame');
+  if(previewFrame) {
+    previewFrame.classList.remove('panel-flash-active');
+    void previewFrame.offsetWidth; // Force asset flow computation recalculation re-trigger
+    previewFrame.classList.add('panel-flash-active');
+  }
+
+  showToast(`Manifest Logs Copied! (${$("output").textContent.length} chars)`);
+
   const copyBtn = document.querySelector("button[onclick='copyDoc()']");
   if (copyBtn) {
     const originalText = copyBtn.textContent;
@@ -279,10 +393,12 @@ function copyDoc() {
    BALANCED RESET METHOD
 ========================= */
 function resetForm() {
+  if(!confirm("Clear all active manifest field logs?")) return;
   localStorage.removeItem(STORAGE_KEY);
   
   document.querySelectorAll("input, textarea").forEach(el => {
     el.value = "";
+    el.classList.remove('val-amber', 'val-green', 'val-crimson');
   });
   
   const concernDropdown = $("concernType");
@@ -300,5 +416,5 @@ function resetForm() {
   updateOutput();
 }
 
-window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme;
+window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer;
 window.addEventListener("DOMContentLoaded", init);
