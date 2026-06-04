@@ -10,12 +10,14 @@
 
 <body>
 
+<!-- Floating Toast Alert Notification -->
 <div id="toast" class="toast-notification">
   <i class="fas fa-check-circle"></i> <span id="toastMessage">Manifest Copied to Clipboard</span>
 </div>
 
 <div class="app">
 
+  <!-- TOP BAR WITH THEME TOGGLE -->
   <div class="topbar">
     <div>
       <h1>Auto Docs</h1>
@@ -26,8 +28,10 @@
     </button>
   </div>
 
+  <!-- MAIN LAYOUT MATRIX -->
   <div class="layout">
 
+    <!-- INPUT PANEL -->
     <div class="panel inputPanel">
 
       <div class="group">
@@ -111,24 +115,28 @@
 
     </div>
 
+    <!-- OUTPUT PANEL -->
     <div class="panel outputPanel" id="outputPanelFrame">
       <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
     </div>
 
+    <!-- SUGGESTION PANEL (PLAYBOOKS) -->
     <div class="panel suggestionPanel" id="playbookPanel">
-      <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
-        <i class="fas fa-book-open"></i> <span>View Playbooks</span>
-      </button>
-      
-      <div class="outputHeader">Suggested Procedures</div>
+      <div class="outputHeader" id="playbookHeader">Suggested Procedures</div>
       <div id="suggestions">Select Concern & VOC</div>
     </div>
 
-  </div>
+  </div> <!-- End Layout -->
 
-</div>
+  <!-- GLOBAL TOGGLE BUTTON: Placed outside layout containers to prevent truncation clipping -->
+  <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
+    <i class="fas fa-book-open"></i> <span>View Playbooks</span>
+  </button>
 
+</div> <!-- End App -->
+
+<!-- Mobile Action Footer Dock Ribbon -->
 <div class="floating-action-dock" id="mobileDock">
   <button style="background: #2563eb; color: white; padding: 10px;" onclick="copyDoc()">Copy</button>
   <button style="background: #10b981; color: white; padding: 10px;" onclick="downloadTxt()">Save</button>
