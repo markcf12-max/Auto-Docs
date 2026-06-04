@@ -47,7 +47,6 @@ const TECH_PROCEDURES = {
 
 /* =========================
    AFTERSALES DETAILED PROCEDURES ✅
-   (Maps specific Aftersales VOC steps to exact links or checklists)
 ========================= */
 const AFTERSALES_PROCEDURES = {
   "Device Unlocking": [
@@ -65,7 +64,6 @@ const AFTERSALES_PROCEDURES = {
 
 /* =========================
    INQUIRY DETAILED PROCEDURES ✅
-   (Maps specific Inquiry VOC steps to exact links or checklists)
 ========================= */
 const INQUIRY_PROCEDURES = {
   "SIM REGISTRATION": [
@@ -392,6 +390,8 @@ function init() {
     el.addEventListener("change", () => {
       if (el.id === "concernType") {
         updateVocOptions();
+        // Force the VOC field to wipe its suggestion status cleanly when changing parent categories
+        $("voc").value = ""; 
       }
       saveData();
       updateSuggestions();
