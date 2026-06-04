@@ -348,6 +348,8 @@ let list = [];
 
 if (concern === "Inquiry") {
 
+if (concern === "Inquiry") {
+
   const INQUIRY_PROCEDURES = {
     "APP RELATED": ["Check application functionality and user access."],
     "ACTIVATION": ["Verify activation status and provisioning."],
@@ -365,16 +367,16 @@ if (concern === "Inquiry") {
     ]
   };
 
-  const steps = INQUIRY_PROCEDURES[voc];
+  const steps = INQUIRY_PROCEDURES[voc?.trim()];
 
-  if (steps && steps.length) {
+  if (Array.isArray(steps)) {
     list.push(...steps);
   } else {
     list.push("Review inquiry and validate account details");
   }
 
   $("suggestions").innerHTML = list.join("<br>");
-  return; // 🔥 IMPORTANT FIX
+  return;
 }
 
 /* =========================
