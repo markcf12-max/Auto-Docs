@@ -5,59 +5,34 @@ function $(id) {
 const STORAGE_KEY = "auto_docs_v5";
 
 /* =========================
-   DATA SETS (TECH)
+   TECH DATA
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/VOICE.pdf",
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/SMS.pdf",
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/DATA.pdf",
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/ROAMING.pdf",
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/COVERAGE.pdf"
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/VOICE.pdf",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/SMS.pdf",
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/DATA.pdf",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/ROAMING.pdf",
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/COVERAGE.pdf"
 };
 
 const TECH_PROCEDURES = {
-  "VOICE CONNECTIVITY": [
-    "Check voice provisioning status",
-    "Validate account configuration",
-    "Run network diagnostics",
-    "Confirm service activation"
-  ],
-  "SMS CONNECTIVITY": [
-    "Check SMS gateway status",
-    "Validate messaging provisioning",
-    "Test send/receive capability",
-    "Escalate if system issue persists"
-  ],
-  "DATA CONNECTIVITY": [
-    "Check APN settings",
-    "Validate data provisioning",
-    "Test connectivity",
-    "Confirm network registration"
-  ],
-  "ROAMING CONNECTIVITY": [
-    "Verify roaming activation",
-    "Check partner network availability",
-    "Validate SIM eligibility",
-    "Provide roaming guidelines"
-  ],
-  "COVERAGE CONNECTIVITY": [
-    "Check coverage map",
-    "Validate network signal",
-    "Confirm location issue",
-    "Escalate if outage detected"
-  ]
+  "VOICE CONNECTIVITY": ["Check voice provisioning", "Validate account", "Run diagnostics"],
+  "SMS CONNECTIVITY": ["Check SMS gateway", "Validate provisioning", "Test messaging"],
+  "DATA CONNECTIVITY": ["Check APN", "Validate data service", "Test connection"],
+  "ROAMING CONNECTIVITY": ["Verify roaming activation", "Check partner network", "Validate SIM"],
+  "COVERAGE CONNECTIVITY": ["Check coverage map", "Validate signal", "Confirm location issue"]
 };
 
 /* =========================
-   AFTERSALES PROCEDURES
+   AFTERSALES DATA
 ========================= */
 const AFTERSALES = {
-  ACCOUNT: ["Verify ownership", "Check account status", "Validate request", "Escalate if needed"],
-  DEVICE: ["Check device status", "Verify warranty", "Validate eligibility", "Proceed with action"],
-  PLAN: ["Check current plan", "Validate eligibility", "Process change", "Confirm billing impact"],
-  BILLING: ["Review billing details", "Check discrepancies", "Validate charges", "Resolve or escalate"],
-  BULK: ["Verify bulk request", "Validate scope", "Process batch", "Confirm completion"],
-  SPECIAL: ["Review manually", "Check policy", "Coordinate support", "Escalate if needed"]
+  ACCOUNT: ["Verify ownership", "Check account status", "Validate request"],
+  DEVICE: ["Check device status", "Verify warranty", "Process eligibility"],
+  PLAN: ["Check plan", "Validate upgrade/downgrade", "Confirm billing impact"],
+  BILLING: ["Review billing", "Check discrepancies", "Resolve issue"],
+  BULK: ["Verify bulk request", "Validate scope", "Process batch"],
+  SPECIAL: ["Review manually", "Check policy", "Escalate if needed"]
 };
 
 function getAftersalesCategory(voc) {
@@ -80,7 +55,6 @@ function saveData() {
   document.querySelectorAll("input, textarea, select").forEach(el => {
     data[el.id] = el.value;
   });
-
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -94,7 +68,56 @@ function loadData() {
 }
 
 /* =========================
-   LIVE OUTPUT
+   VOC DROPDOWN FIX (IMPORTANT)
+========================= */
+function updateVocOptions() {
+  const concern = $("concernType").value;
+  const voc = $("voc");
+
+  const current = voc.value;
+
+  if (concern === "Technical") {
+    voc.innerHTML = `
+      <option value="">Select Technical Type</option>
+      <option>VOICE CONNECTIVITY</option>
+      <option>SMS CONNECTIVITY</option>
+      <option>DATA CONNECTIVITY</option>
+      <option>ROAMING CONNECTIVITY</option>
+      <option>COVERAGE CONNECTIVITY</option>
+    `;
+  }
+
+  else if (concern === "Aftersales") {
+    voc.innerHTML = `
+      <option value="">Select Aftersales Type</option>
+      <option>DEVICE</option>
+      <option>PLAN</option>
+      <option>BILLING</option>
+      <option>BULK</option>
+      <option>ACCOUNT</option>
+      <option>SPECIAL</option>
+    `;
+  }
+
+  else if (concern === "Inquiry") {
+    voc.innerHTML = `
+      <option value="">Select Inquiry Type</option>
+      <option>APP RELATED</option>
+      <option>ACTIVATION</option>
+      <option>BALANCE</option>
+      <option>GENERAL</option>
+    `;
+  }
+
+  else {
+    voc.innerHTML = `<option value="">Select VOC</option>`;
+  }
+
+  voc.value = current || "";
+}
+
+/* =========================
+   OUTPUT (LIVE)
 ========================= */
 function updateOutput() {
   const caseVal = $("case").value.trim();
@@ -124,7 +147,7 @@ ${$("wocas").value}`
 }
 
 /* =========================
-   SUGGESTIONS ENGINE (FULL UPGRADED)
+   SUGGESTIONS ENGINE
 ========================= */
 function updateSuggestions() {
 
@@ -133,50 +156,41 @@ function updateSuggestions() {
 
   let list = [];
 
-  /* ================= TECH ================= */
   if (concern === "Technical") {
-
     const steps = TECH_PROCEDURES[voc] || [];
     const link = TECH_LINKS[voc] || "";
 
-    $("suggestions").innerHTML = `
-      <strong>${voc || "Select Technical Type"}</strong><br><br>
-      ${steps.map(s => "• " + s).join("<br>")}<br><br>
-      ${link ? `<a href="${link}" target="_blank">Open Reference Guide</a>` : ""}
-    `;
+    $("suggestions").innerHTML =
+      `<strong>${voc || "Select Technical Type"}</strong><br><br>` +
+      steps.map(s => "• " + s).join("<br>") +
+      (link ? `<br><br><a href="${link}" target="_blank">Open Guide</a>` : "");
+
     return;
   }
 
-  /* ================= AFTERSALES ================= */
   if (concern === "Aftersales") {
-
     const category = getAftersalesCategory(voc);
     const steps = AFTERSALES[category] || [];
 
-    $("suggestions").innerHTML = `
-      <strong>${voc || "Select Aftersales Type"}</strong><br><br>
-      ${steps.map(s => "• " + s).join("<br>")}
-    `;
+    $("suggestions").innerHTML =
+      `<strong>${voc || "Select Aftersales Type"}</strong><br><br>` +
+      steps.map(s => "• " + s).join("<br>");
+
     return;
   }
 
-  /* ================= INQUIRY ================= */
   if (concern === "Inquiry") {
-
     const INQUIRY = {
-      "APP RELATED": ["Check app status", "Verify login access"],
-      "ACTIVATION": ["Validate activation status", "Check provisioning"],
-      "BALANCE": ["Verify balance records", "Check billing sync"],
-      "GENERAL": ["Review inquiry", "Validate account", "Respond accurately"]
+      "APP RELATED": ["Check app issue", "Verify login", "Escalate if needed"],
+      "ACTIVATION": ["Validate activation", "Check provisioning"],
+      "BALANCE": ["Check balance records", "Verify billing sync"],
+      "GENERAL": ["Review inquiry", "Provide standard response"]
     };
 
-    const steps = INQUIRY[voc] || ["Review inquiry manually"];
-
-    list = steps;
+    list = INQUIRY[voc] || ["Review inquiry manually"];
   }
 
-  /* ================= DEFAULT ================= */
-  if (concern === "Complaint") list = ["Acknowledge issue", "Investigate", "Escalate if needed"];
+  if (concern === "Complaint") list = ["Acknowledge issue", "Investigate", "Escalate"];
   if (concern === "Other") list = ["Review manually"];
 
   if (voc === "Negative") list.push("⚠ Escalate + Apologize");
@@ -187,7 +201,7 @@ function updateSuggestions() {
 }
 
 /* =========================
-   EVENTS
+   EVENTS (FIXED VOC ISSUE HERE)
 ========================= */
 function initEvents() {
 
@@ -199,7 +213,14 @@ function initEvents() {
     });
 
     el.addEventListener("change", () => {
+
       saveData();
+
+      if (el.id === "concernType") {
+        updateVocOptions();   // ✅ FIXED VOC ISSUE
+        $("voc").value = "";
+      }
+
       updateOutput();
       updateSuggestions();
     });
@@ -228,7 +249,6 @@ function downloadTxt() {
 
 function resetForm() {
   document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
-
   localStorage.removeItem(STORAGE_KEY);
 
   updateOutput();
@@ -240,12 +260,13 @@ function resetForm() {
 ========================= */
 window.addEventListener("DOMContentLoaded", () => {
   loadData();
+  updateVocOptions();   // ✅ IMPORTANT
   initEvents();
   updateOutput();
   updateSuggestions();
 });
 
-/* EXPORTS */
+/* EXPORT */
 window.copyDoc = copyDoc;
 window.downloadTxt = downloadTxt;
 window.resetForm = resetForm;
