@@ -42,32 +42,44 @@ body.dark-mode {
 }
 
 /* ==========================================================================
-   CORE LAYOUT
+   CORE APP SHELL LAYOUT
    ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
 html, body {
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   margin: 0;
-  font-family: system-ui, Arial;
+  padding: 0;
+  overflow: hidden; /* Lock viewport to maximize application real estate */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   background: var(--bg-app);
   color: var(--text-main);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-/* TOP BAR & SWITCH DESIGN */
+/* TOP BAR DESIGN */
 .topbar {
-  padding: 20px 30px;
+  height: 70px;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-panel);
 }
 
 .topbar h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
+  font-weight: 800;
 }
 
 .topbar p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -75,7 +87,7 @@ html, body {
   background: transparent;
   border: none;
   color: var(--text-main);
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
@@ -89,63 +101,65 @@ html, body {
   background: rgba(128, 128, 128, 0.15);
 }
 
-/* LAYOUT PANEL SETUP */
+/* 3-PANEL MATRIX GRID SETUP */
 .layout {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1fr;
-  gap: 14px;
-  padding: 0 20px 20px;
-  height: calc(100vh - 90px);
-  overflow: hidden;
+  /* Expanded grid spacing values optimized for widescreen visibility */
+  grid-template-columns: 45fr 30fr 25fr;
+  gap: 16px;
+  padding: 16px;
+  height: calc(100vh - 70px); /* Fill the exact bottom frame of the screen */
+  width: 100vw;
 }
 
-/* PANEL STANDARD */
+/* PANEL BASIC ARCHITECTURE */
 .panel {
   background: var(--bg-panel);
-  border-radius: 16px;
-  padding: 16px;
-  overflow-y: auto;
+  border-radius: 14px;
+  padding: 20px;
+  overflow-y: auto; /* Allow independent internal content scrolling */
   min-height: 0;
-  box-shadow: 0 12px 30px var(--shadow-color);
+  box-shadow: 0 10px 25px var(--shadow-color);
   transition: background 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
-/* INPUT PANEL COMPONENT */
+/* EXPLICIT INDIVIDUAL PANEL CONTEXT OVERRIDES */
 .inputPanel {
-  /* Leverages variable configuration to respond to global themes */
   background: var(--bg-panel); 
 }
 
-/* OUTPUT CONFIGS */
 .outputPanel {
   background: var(--bg-output-panel);
   color: var(--text-output);
 }
 
-/* SUGGESTION CONFIGS */
 .suggestionPanel {
   background: var(--bg-suggestion-panel);
   color: var(--text-suggestion);
-  display: flex;
-  flex-direction: column;
 }
 
 /* PANELS HEADER ELEMENT */
 .outputHeader {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   color: var(--header-output);
 }
 
-/* CODE / GENERIC TEXT BLOCKS */
+/* GENERATED OUTPUT LOG AREA */
 pre {
   white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.6;
   margin: 0;
+  height: 100%;
+  overflow-y: auto;
 }
 
 /* ==========================================================================
@@ -153,12 +167,14 @@ pre {
    ========================================================================== */
 .group {
   margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 .label {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 6px;
@@ -168,14 +184,14 @@ input,
 textarea,
 select {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
   border: 1px solid var(--border-color);
   background: var(--bg-input);
   color: var(--text-main);
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
-  transition: 0.2s ease;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 
 input:focus,
@@ -187,7 +203,7 @@ select:focus {
 }
 
 textarea {
-  min-height: 90px;
+  min-height: 85px;
   resize: vertical;
 }
 
@@ -198,21 +214,23 @@ textarea {
 }
 
 /* ==========================================================================
-   BUTTON LAYOUTS & SUGGESTIONS
+   BUTTONS AND INTERACTION ARRAYS
    ========================================================================== */
 .buttons {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: auto; /* Lock standard actions cleanly to panel floor */
+  padding-top: 10px;
 }
 
 button {
   flex: 1;
-  padding: 10px;
+  padding: 11px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 13px;
   transition: opacity 0.15s ease;
 }
 
@@ -222,7 +240,7 @@ button:hover {
 
 button:nth-child(1) { background: #2563eb; color: white; }
 button:nth-child(2) { background: #10b981; color: white; }
-button:nth-child(3) { background: #ef4444; color: white; } /* Handled Reset button alignment index shift */
+button:nth-child(3) { background: #ef4444; color: white; }
 
 #suggestions {
   flex: 1;
@@ -243,15 +261,22 @@ button:nth-child(3) { background: #ef4444; color: white; } /* Handled Reset butt
 }
 
 /* ==========================================================================
-   MEDIA SCALING RULES
+   MEDIA SCALING RULES (RESPONSIVE STACK OVERRIDE)
    ========================================================================== */
 @media (max-width: 1100px) {
+  html, body {
+    overflow: auto; /* Allow natural page body scrolling on smaller displays */
+  }
+
   .layout {
     grid-template-columns: 1fr;
     height: auto;
+    width: 100%;
+    overflow: visible;
   }
 
   .panel {
     height: auto;
+    min-height: 400px;
   }
 }
