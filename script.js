@@ -2,14 +2,81 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const STORAGE_KEY = "auto_docs_v4";
+const STORAGE_KEY = "auto_docs_v5";
 
 /* =========================
-   SAVE + LOAD
+   DATA SETS (TECH)
+========================= */
+const TECH_LINKS = {
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/VOICE.pdf",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/SMS.pdf",
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/DATA.pdf",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/ROAMING.pdf",
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/06JUNE/COVERAGE.pdf"
+};
+
+const TECH_PROCEDURES = {
+  "VOICE CONNECTIVITY": [
+    "Check voice provisioning status",
+    "Validate account configuration",
+    "Run network diagnostics",
+    "Confirm service activation"
+  ],
+  "SMS CONNECTIVITY": [
+    "Check SMS gateway status",
+    "Validate messaging provisioning",
+    "Test send/receive capability",
+    "Escalate if system issue persists"
+  ],
+  "DATA CONNECTIVITY": [
+    "Check APN settings",
+    "Validate data provisioning",
+    "Test connectivity",
+    "Confirm network registration"
+  ],
+  "ROAMING CONNECTIVITY": [
+    "Verify roaming activation",
+    "Check partner network availability",
+    "Validate SIM eligibility",
+    "Provide roaming guidelines"
+  ],
+  "COVERAGE CONNECTIVITY": [
+    "Check coverage map",
+    "Validate network signal",
+    "Confirm location issue",
+    "Escalate if outage detected"
+  ]
+};
+
+/* =========================
+   AFTERSALES PROCEDURES
+========================= */
+const AFTERSALES = {
+  ACCOUNT: ["Verify ownership", "Check account status", "Validate request", "Escalate if needed"],
+  DEVICE: ["Check device status", "Verify warranty", "Validate eligibility", "Proceed with action"],
+  PLAN: ["Check current plan", "Validate eligibility", "Process change", "Confirm billing impact"],
+  BILLING: ["Review billing details", "Check discrepancies", "Validate charges", "Resolve or escalate"],
+  BULK: ["Verify bulk request", "Validate scope", "Process batch", "Confirm completion"],
+  SPECIAL: ["Review manually", "Check policy", "Coordinate support", "Escalate if needed"]
+};
+
+function getAftersalesCategory(voc) {
+  const v = (voc || "").toUpperCase();
+
+  if (v.includes("DEVICE") || v.includes("SIM")) return "DEVICE";
+  if (v.includes("PLAN") || v.includes("UPGRADE") || v.includes("DOWNGRADE")) return "PLAN";
+  if (v.includes("BILL")) return "BILLING";
+  if (v.includes("BULK")) return "BULK";
+  if (v.includes("ACCOUNT")) return "ACCOUNT";
+
+  return "SPECIAL";
+}
+
+/* =========================
+   SAVE / LOAD
 ========================= */
 function saveData() {
   const data = {};
-
   document.querySelectorAll("input, textarea, select").forEach(el => {
     data[el.id] = el.value;
   });
@@ -57,55 +124,75 @@ ${$("wocas").value}`
 }
 
 /* =========================
-   SUGGESTIONS (MINIMAL FIXED)
+   SUGGESTIONS ENGINE (FULL UPGRADED)
 ========================= */
 function updateSuggestions() {
+
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
   let list = [];
 
-  if (concern === "Inquiry") {
-    list = [
-      "Check account details",
-      "Provide standard response",
-      "Verify request"
-    ];
+  /* ================= TECH ================= */
+  if (concern === "Technical") {
+
+    const steps = TECH_PROCEDURES[voc] || [];
+    const link = TECH_LINKS[voc] || "";
+
+    $("suggestions").innerHTML = `
+      <strong>${voc || "Select Technical Type"}</strong><br><br>
+      ${steps.map(s => "• " + s).join("<br>")}<br><br>
+      ${link ? `<a href="${link}" target="_blank">Open Reference Guide</a>` : ""}
+    `;
+    return;
   }
 
-  if (concern === "Complaint") {
-    list = [
-      "Acknowledge issue",
-      "Investigate logs",
-      "Escalate if needed"
-    ];
-  }
-
+  /* ================= AFTERSALES ================= */
   if (concern === "Aftersales") {
-    list = [
-      "Validate transaction",
-      "Check eligibility",
-      "Coordinate support"
-    ];
+
+    const category = getAftersalesCategory(voc);
+    const steps = AFTERSALES[category] || [];
+
+    $("suggestions").innerHTML = `
+      <strong>${voc || "Select Aftersales Type"}</strong><br><br>
+      ${steps.map(s => "• " + s).join("<br>")}
+    `;
+    return;
   }
 
-  if (concern === "Other") {
-    list = ["Review manually"];
+  /* ================= INQUIRY ================= */
+  if (concern === "Inquiry") {
+
+    const INQUIRY = {
+      "APP RELATED": ["Check app status", "Verify login access"],
+      "ACTIVATION": ["Validate activation status", "Check provisioning"],
+      "BALANCE": ["Verify balance records", "Check billing sync"],
+      "GENERAL": ["Review inquiry", "Validate account", "Respond accurately"]
+    };
+
+    const steps = INQUIRY[voc] || ["Review inquiry manually"];
+
+    list = steps;
   }
+
+  /* ================= DEFAULT ================= */
+  if (concern === "Complaint") list = ["Acknowledge issue", "Investigate", "Escalate if needed"];
+  if (concern === "Other") list = ["Review manually"];
 
   if (voc === "Negative") list.push("⚠ Escalate + Apologize");
   if (voc === "Positive") list.push("Confirm resolution");
-  if (voc === "Neutral") list.push("Standard processing");
+  if (voc === "Neutral") list.push("Standard handling");
 
-  $("suggestions").textContent =
-    list.length ? list.join("\n") : "Select Concern & VOC";
+  $("suggestions").innerHTML = list.join("<br>");
 }
 
 /* =========================
-   AUTO EVENTS (IMPORTANT FIX)
+   EVENTS
 ========================= */
 function initEvents() {
+
   document.querySelectorAll("input, textarea, select").forEach(el => {
+
     el.addEventListener("input", () => {
       saveData();
       updateOutput();
@@ -116,36 +203,29 @@ function initEvents() {
       updateOutput();
       updateSuggestions();
     });
+
   });
 }
 
 /* =========================
-   COPY
+   COPY / DOWNLOAD / RESET
 ========================= */
 function copyDoc() {
   navigator.clipboard.writeText($("output").textContent || "");
 }
 
-/* =========================
-   DOWNLOAD
-========================= */
 function downloadTxt() {
-  const text = $("output").textContent;
-  const blob = new Blob([text], { type: "text/plain" });
-
+  const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
 
+  const a = document.createElement("a");
   a.href = url;
-  a.download = `AutoDoc_${Date.now()}.txt`;
+  a.download = "AutoDoc.txt";
   a.click();
 
   URL.revokeObjectURL(url);
 }
 
-/* =========================
-   RESET
-========================= */
 function resetForm() {
   document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
 
@@ -165,7 +245,7 @@ window.addEventListener("DOMContentLoaded", () => {
   updateSuggestions();
 });
 
-/* expose buttons */
+/* EXPORTS */
 window.copyDoc = copyDoc;
 window.downloadTxt = downloadTxt;
 window.resetForm = resetForm;
