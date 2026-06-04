@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
   <title>Auto Docs</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Added an icon library for the theme toggle button -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
 
 <div class="app">
 
-  <!-- TOP BAR -->
+  <!-- TOP BAR WITH THEME TOGGLE -->
   <div class="topbar">
     <div>
       <h1>Auto Docs</h1>
       <p>Case Generator System</p>
     </div>
+    <button id="themeToggle" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+      <i class="fas fa-moon"></i>
+    </button>
   </div>
 
   <!-- MAIN LAYOUT -->
@@ -43,8 +48,8 @@
 
         <div class="group">
           <div class="label">VOC</div>
-          <!-- Real-time predictive search filter element configuration -->
-          <input type="text" id="voc" list="vocOptions" placeholder="Type keywords (e.g. sim, billing)..." autocomplete="off">
+          <!-- Click triggers focus auto-select -->
+          <input type="text" id="voc" list="vocOptions" placeholder="Type keywords (e.g. sim, billing)..." autocomplete="off" onfocus="this.select()">
           <datalist id="vocOptions"></datalist>
         </div>
 
