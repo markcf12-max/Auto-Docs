@@ -349,43 +349,15 @@ let list = [];
 if (concern === "Inquiry") {
 
   const INQUIRY_PROCEDURES = {
-
-    "APP RELATED": [
-      "Check application functionality and user access."
-    ],
-
-    "ACTIVATION": [
-      "Verify activation status and provisioning."
-    ],
-
-    "ADA ENROLLMENT": [
-      "Validate enrollment status and eligibility."
-    ],
-
-    "APPLICATION REQUIREMENTS": [
-      "Check required documents and completeness."
-    ],
-
-    "APPLICATION STATUS": [
-      "Check current processing status."
-    ],
-
-    "AVAILMENT OF ADD-ONS": [
-      "Validate add-on eligibility and subscription."
-    ],
-
-    "BALANCE TRANSFER": [
-      "Check balance transfer eligibility and status."
-    ],
-
-    "BALANCE:ACCOUNT RECONCILIATION": [
-      "Verify account reconciliation records."
-    ],
-
-    "BALANCE:CLARIFICATION ON BILLED CHARGES": [
-      "Review billed charges and breakdown."
-    ],
-
+    "APP RELATED": ["Check application functionality and user access."],
+    "ACTIVATION": ["Verify activation status and provisioning."],
+    "ADA ENROLLMENT": ["Validate enrollment status and eligibility."],
+    "APPLICATION REQUIREMENTS": ["Check required documents and completeness."],
+    "APPLICATION STATUS": ["Check current processing status."],
+    "AVAILMENT OF ADD-ONS": ["Validate add-on eligibility and subscription."],
+    "BALANCE TRANSFER": ["Check balance transfer eligibility and status."],
+    "BALANCE:ACCOUNT RECONCILIATION": ["Verify account reconciliation records."],
+    "BALANCE:CLARIFICATION ON BILLED CHARGES": ["Review billed charges and breakdown."],
     "GENERAL INQUIRY": [
       "Verify concern details.",
       "Check account context.",
@@ -400,19 +372,10 @@ if (concern === "Inquiry") {
   } else {
     list.push("Review inquiry and validate account details");
   }
+
+  $("suggestions").innerHTML = list.join("<br>");
+  return; // 🔥 IMPORTANT FIX
 }
-
-/* other concerns */
-if (concern === "Complaint") list.push("Escalate issue");
-if (concern === "Aftersales") list.push("Validate transaction");
-if (concern === "Other") list.push("Review manually");
-
-/* VOC add-ons */
-if (voc === "Negative") list.push("Apologize & escalate");
-if (voc === "Positive") list.push("Confirm resolution");
-if (voc === "Neutral") list.push("Standard processing");
-
-$("suggestions").innerHTML = list.join("<br>");
 
 /* =========================
    SAVE / LOAD
