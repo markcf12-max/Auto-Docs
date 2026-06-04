@@ -176,7 +176,7 @@ function updateSuggestions() {
     html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
   else if (concern === "Aftersales") {
-    const procedures = AFAFTER_SALES_PROCEDURES = AFTERSALES_PROCEDURES[voc] || [];
+    const procedures = AFTERSALES_PROCEDURES[voc] || [];
     html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
   } 
   else if (concern === "Inquiry") {
@@ -194,6 +194,13 @@ function updateVocOptions(keepExistingValue = false) {
   const datalist = $("vocOptions");
   const vocInput = $("voc");
   if (!datalist || !vocInput) return;
+
+  // Fix: If category is empty/reset, completely clear the list options out and exit
+  if (!concern) {
+    datalist.innerHTML = "";
+    vocInput.value = "";
+    return;
+  }
 
   const options = VOC_OPTIONS[concern] || [];
   datalist.innerHTML = options.map(opt => `<option value="${opt}"></option>`).join("");
@@ -246,13 +253,13 @@ function resetForm() {
     el.value = "";
   });
   
-  // Wipe out browser cash memory save files
+  // Wipe out browser local storage files
   localStorage.removeItem(STORAGE_KEY);
   
-  // FIXED: Reverts fully back to the "Select Category" placeholder index state
+  // FIXED: Explicitly force the selector dropdown back to index 0 (Select Category placeholder)
   const concernDropdown = $("concernType");
   if (concernDropdown) {
-    concernDropdown.value = "";
+    concernDropdown.selectedIndex = 0;
   }
   
   // Clear datalist elements completely
