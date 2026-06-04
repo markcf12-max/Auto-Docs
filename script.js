@@ -12,9 +12,8 @@ function validateCaseField(el) {
   const val = el.value.trim();
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
   
-  if (val.length === 0) return; // Neutral unedited state
+  if (val.length === 0) return; 
   
-  // Rule: Case number targets 8 digits, SR tickets require 10 digits
   if (val.length === 8 || val.length === 10) {
     el.classList.add('val-green');
   } else if (val.length > 10) {
@@ -30,7 +29,6 @@ function validateMinField(el) {
 
   if (val.length === 0) return;
 
-  // Prefix routing criteria condition checklist
   if (val.startsWith('09')) {
     if (val.length === 11) el.classList.add('val-green');
     else if (val.length > 11) el.classList.add('val-crimson');
@@ -47,7 +45,7 @@ function validateMinField(el) {
     else el.classList.add('val-amber');
   } 
   else {
-    el.classList.add('val-crimson'); // Flag invalid prefix configurations immediately
+    el.classList.add('val-crimson'); 
   }
 }
 
@@ -73,7 +71,6 @@ function toggleDrawer(e) {
   }
 }
 
-// Clean auto-collapse fallback click mechanism for Tier 2 layouts
 document.addEventListener('click', (e) => {
   const drawer = $('playbookPanel');
   if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle').contains(e.target)) {
@@ -222,7 +219,6 @@ const VOC_OPTIONS = {
 function updateOutput() {
   if (!$("output")) return;
   
-  // Real-time dynamic identifier conversion label check
   const caseVal = $("case")?.value.trim() || "";
   let ticketHeaderTag = "CASE/SR VALUE";
   if (caseVal.length === 8) ticketHeaderTag = "CASE NUMBER";
@@ -332,14 +328,11 @@ function init() {
   updateOutput();
   updateSuggestions();
 
-  // Run initial state checking sweeps for stored session contents
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
-    // Fired on every single keystroke or selection change
     el.addEventListener("input", () => {
-      // Force instant alphanumeric digit scrubbing filters on key fields
       if(el.id === "case" || el.id === "min") el.value = el.value.replace(/\D/g, '');
       
       if(el.id === "case") validateCaseField(el);
@@ -352,7 +345,6 @@ function init() {
       }
     });
 
-    // Fired specifically when items are selected/blurred
     el.addEventListener("change", () => {
       if (el.id === "concernType") {
         updateVocOptions(false);
@@ -367,11 +359,10 @@ function init() {
 function copyDoc() { 
   navigator.clipboard.writeText($("output").textContent || ""); 
   
-  // Trigger modern iridescent micro-flash border animation sweep
   const previewFrame = $('outputPanelFrame');
   if(previewFrame) {
     previewFrame.classList.remove('panel-flash-active');
-    void previewFrame.offsetWidth; // Force asset flow computation recalculation re-trigger
+    void previewFrame.offsetWidth; 
     previewFrame.classList.add('panel-flash-active');
   }
 
@@ -389,10 +380,18 @@ function copyDoc() {
   }
 }
 
-/* =========================
+/* ==========================================================================
    BALANCED RESET METHOD
-========================= */
-function resetForm() {
+   ========================================================================== */
+function resetForm(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  const toast = $('toast');
+  if (toast) toast.classList.remove('show');
+
   if(!confirm("Clear all active manifest field logs?")) return;
   localStorage.removeItem(STORAGE_KEY);
   
