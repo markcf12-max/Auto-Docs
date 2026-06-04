@@ -34,23 +34,18 @@
         <div class="group">
           <div class="label">CONCERN TYPE</div>
           <select id="concernType">
-            <option value="">Select</option>
-            <option>Inquiry</option>
-            <option>Complaint</option>
-            <option>Aftersales</option>
-            <option>Technical</option>
-            <option>Other</option>
+            <option value="Technical">Technical</option>
+            <option value="Aftersales">Aftersales</option>
+            <option value="Inquiry">Inquiry</option>
+            <option value="Complaint">Complaint</option>
           </select>
         </div>
 
         <div class="group">
           <div class="label">VOC</div>
-          <select id="voc">
-            <option value="">Select</option>
-            <option>Positive</option>
-            <option>Neutral</option>
-            <option>Negative</option>
-          </select>
+          <!-- Real-time predictive search filter element configuration -->
+          <input type="text" id="voc" list="vocOptions" placeholder="Type keywords (e.g. sim, billing)..." autocomplete="off">
+          <datalist id="vocOptions"></datalist>
         </div>
 
       </div>
