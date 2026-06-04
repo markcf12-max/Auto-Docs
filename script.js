@@ -33,6 +33,7 @@ function initTheme() {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   } else {
+    document.body.classList.remove("dark-mode");
     updateThemeIcon(false);
   }
 }
@@ -173,6 +174,11 @@ function updateSuggestions() {
   const voc = $("voc")?.value;
   let html = "";
 
+  if (!concern || !voc) {
+    $("suggestions").innerHTML = "Select Concern & VOC";
+    return;
+  }
+
   if (concern === "Technical") {
     const procedures = TECH_PROCEDURES[voc] || [];
     html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
@@ -200,7 +206,6 @@ function updateVocOptions(keepExistingValue = false) {
   const options = VOC_OPTIONS[concern] || [];
   datalist.innerHTML = options.map(opt => `<option value="${opt}"></option>`).join("");
 
-  // Keep search box blank on category switch so it does not auto-populate items!
   if (!keepExistingValue) {
     vocInput.value = "";
   }
@@ -224,7 +229,9 @@ function init() {
     });
 
     el.addEventListener("change", () => {
-      if (el.id === "concernType") updateVocOptions(false);
+      if (el.id === "concernType") {
+        updateVocOptions(false);
+      }
       saveData();
       updateSuggestions();
       updateOutput();
@@ -240,11 +247,21 @@ function downloadTxt() {
   a.href = url; a.download = "auto-docs.txt"; a.click();
   URL.revokeObjectURL(url);
 }
+
 function resetForm() {
-  document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
+  // Clear all text inputs, textareas, and dropdown selections explicitly
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    el.value = "";
+  });
+  
+  // Wipe out browser cash memory save files
   localStorage.removeItem(STORAGE_KEY);
-  $("concernType").selectedIndex = 0; 
+  
+  // Explicitly force drop downs back to their baseline operational structures
+  $("concernType").value = "Technical"; 
   updateVocOptions(false);
+  
+  // Rerender screens
   updateOutput();
   updateSuggestions();
 }
