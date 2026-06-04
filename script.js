@@ -5,77 +5,54 @@ function $(id) {
 const STORAGE_KEY = "auto_docs_v4";
 
 /* =========================
-   TECH LINKS
+   DATA
 ========================= */
 const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FVOICE%2Epdf",
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FTECH360%5FSPS%5FGUIDE%5FSMS%2Epdf",
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx?id=%2Fsites%2FLIT365%2Ffiles%2F2023Advisories%2F06JUNE%2FLEARNING%5FSPACE%5FDATA%5FCONNECTIVITY%2Epdf",
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx",
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/Forms/AllItems.aspx"
+  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
+  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/"
 };
 
-/* =========================
-   TECH PROCEDURES
-========================= */
 const TECH_PROCEDURES = {
-  "VOICE CONNECTIVITY": [
-    "Check and validate account.",
-    "Verify voice services.",
-    "Check provisioning issues.",
-    "Proceed with SR if needed."
-  ],
-  "SMS CONNECTIVITY": [
-    "Check SMS services.",
-    "Verify provisioning.",
-    "Proceed with troubleshooting."
-  ],
-  "DATA CONNECTIVITY": [
-    "Check data services.",
-    "Verify network status.",
-    "Escalate if needed."
-  ],
-  "ROAMING CONNECTIVITY": [
-    "Check roaming activation.",
-    "Verify eligibility.",
-    "Provide roaming support channel."
-  ],
-  "COVERAGE CONNECTIVITY": [
-    "Check coverage status.",
-    "Validate service area.",
-    "Escalate if needed."
-  ]
+  "VOICE CONNECTIVITY": ["Check voice service", "Verify provisioning", "Escalate if needed"],
+  "SMS CONNECTIVITY": ["Check SMS service", "Validate routing", "Escalate if needed"],
+  "DATA CONNECTIVITY": ["Check data service", "Verify network", "Escalate if needed"],
+  "ROAMING CONNECTIVITY": ["Check roaming status", "Verify eligibility", "Provide roaming support"],
+  "COVERAGE CONNECTIVITY": ["Check coverage", "Validate area", "Escalate if needed"]
 };
 
-/* =========================
-   AFTERSALES PROCEDURES
-========================= */
 const AFTERSALES_PROCEDURES = {
   ACCOUNT: ["Validate ownership", "Check account status", "Proceed accordingly"],
   DEVICE: ["Check device status", "Verify warranty", "Process request"],
-  PLAN: ["Check plan eligibility", "Validate contract", "Apply changes"],
-  BILLING: ["Review billing", "Check discrepancies", "Escalate if needed"],
+  PLAN: ["Check plan eligibility", "Apply changes", "Confirm billing impact"],
+  BILLING: ["Review billing", "Check discrepancy", "Escalate if needed"],
   BULK: ["Validate bulk request", "Check scope", "Execute process"],
   SPECIAL: ["Follow SOP", "Coordinate team", "Ensure compliance"]
 };
 
 /* =========================
-   AFTERSALES MAPPING
+   HELPERS
 ========================= */
-function getAftersalesCategory(voc) {
-  const v = (voc || "").toUpperCase();
+function saveData() {
+  const data = {};
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    data[el.id] = el.value;
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
 
-  if (v.includes("DEVICE") || v.includes("SIM")) return "DEVICE";
-  if (v.includes("PLAN") || v.includes("UPGRADE")) return "PLAN";
-  if (v.includes("BILL")) return "BILLING";
-  if (v.includes("BULK")) return "BULK";
-  if (v.includes("OWNERSHIP")) return "ACCOUNT";
-
-  return "SPECIAL";
+function loadData() {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  Object.keys(saved).forEach(id => {
+    const el = $(id);
+    if (el) el.value = saved[id];
+  });
 }
 
 /* =========================
-   LIVE OUTPUT
+   OUTPUT (LIVE)
 ========================= */
 function updateOutput() {
   $("output").textContent = `
@@ -102,7 +79,22 @@ ${$("wocas").value}
 }
 
 /* =========================
-   VOC SWITCH
+   AFTERSALES CATEGORY
+========================= */
+function getAftersalesCategory(voc) {
+  const v = (voc || "").toUpperCase();
+
+  if (v.includes("DEVICE")) return "DEVICE";
+  if (v.includes("PLAN")) return "PLAN";
+  if (v.includes("BILL")) return "BILLING";
+  if (v.includes("BULK")) return "BULK";
+  if (v.includes("ACCOUNT") || v.includes("OWNERSHIP")) return "ACCOUNT";
+
+  return "SPECIAL";
+}
+
+/* =========================
+   VOC DROPDOWN SWITCH
 ========================= */
 function updateVocOptions() {
   const concern = $("concernType").value;
@@ -122,12 +114,12 @@ function updateVocOptions() {
 
   else if (concern === "Aftersales") {
     voc.innerHTML = `
-      <option value="">Select Aftersales Type</option>
-      <option>DEVICE UNLOCKING</option>
-      <option>PLAN UPGRADE</option>
-      <option>BILLING ISSUE</option>
-      <option>BULK PROCESS</option>
-      <option>CHANGE OWNERSHIP</option>
+      <option value="">Select Type</option>
+      <option>DEVICE</option>
+      <option>PLAN</option>
+      <option>BILLING</option>
+      <option>BULK</option>
+      <option>ACCOUNT</option>
     `;
   }
 
@@ -144,7 +136,7 @@ function updateVocOptions() {
 }
 
 /* =========================
-   SUGGESTIONS
+   SUGGESTIONS ENGINE
 ========================= */
 function updateSuggestions() {
   const concern = $("concernType").value;
@@ -155,13 +147,11 @@ function updateSuggestions() {
   /* TECH */
   if (concern === "Technical") {
     const steps = TECH_PROCEDURES[voc] || [];
-    const link = TECH_LINKS[voc] || "#";
-
     list = [
-      `CONNECTIVITY: ${voc}`,
+      `TECH: ${voc}`,
       ...steps,
       "",
-      `Open Guide: ${link}`
+      `Guide: ${TECH_LINKS[voc] || ""}`
     ];
   }
 
@@ -169,7 +159,6 @@ function updateSuggestions() {
   else if (concern === "Aftersales") {
     const cat = getAftersalesCategory(voc);
     const steps = AFTERSALES_PROCEDURES[cat] || [];
-
     list = [`AFTERSALES: ${voc}`, ...steps];
   }
 
@@ -182,7 +171,7 @@ function updateSuggestions() {
     ];
   }
 
-  /* DEFAULT VOC */
+  /* VOC ADD-ONS */
   if (voc === "Negative") list.push("Apologize & escalate");
   if (voc === "Positive") list.push("Confirm resolution");
   if (voc === "Neutral") list.push("Standard handling");
@@ -191,30 +180,10 @@ function updateSuggestions() {
 }
 
 /* =========================
-   SAVE / LOAD
-========================= */
-function saveData() {
-  const data = {};
-  document.querySelectorAll("input, textarea, select").forEach(el => {
-    data[el.id] = el.value;
-  });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function loadData() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  Object.keys(saved).forEach(id => {
-    const el = $(id);
-    if (el) el.value = saved[id];
-  });
-}
-
-/* =========================
    EVENTS
 ========================= */
 function init() {
   loadData();
-  updateVocOptions();
   updateOutput();
   updateSuggestions();
 
@@ -234,4 +203,49 @@ function init() {
   });
 }
 
+/* =========================
+   COPY
+========================= */
+function copyDoc() {
+  navigator.clipboard.writeText($("output").textContent || "");
+}
+
+/* =========================
+   DOWNLOAD
+========================= */
+function downloadTxt() {
+  const blob = new Blob([$("output").textContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "auto-docs.txt";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+/* =========================
+   RESET (FIXED)
+========================= */
+function resetForm() {
+  document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
+  localStorage.removeItem(STORAGE_KEY);
+
+  $("output").textContent = "Start filling out the form...";
+  $("suggestions").textContent = "Select Concern & VOC";
+
+  updateVocOptions();
+  updateOutput();
+  updateSuggestions();
+}
+
+/* =========================
+   INIT
+========================= */
 window.addEventListener("DOMContentLoaded", init);
+
+/* expose buttons */
+window.copyDoc = copyDoc;
+window.downloadTxt = downloadTxt;
+window.resetForm = resetForm;
