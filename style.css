@@ -2,7 +2,6 @@
    THEME PALETTES & VARIABLES
    ========================================================================== */
 :root {
-  /* Light Mode Colors */
   --bg-app: #f5f7fb;
   --bg-panel: #ffffff;
   --bg-input: #f9fafb;
@@ -20,7 +19,7 @@
   --state-crimson: #dc2626;
   --state-crimson-bg: rgba(220, 38, 38, 0.04);
 
-  /* Side panels light defaults */
+  /* Dark Defaults for Side Panels */
   --bg-output-panel: linear-gradient(180deg, #0f172a, #0b1220);
   --text-output: #e5e7eb;
   --header-output: #94a3b8;
@@ -30,7 +29,6 @@
 }
 
 body.dark-mode {
-  /* Dark Mode Colors */
   --bg-app: #0f172a;
   --bg-panel: #1e293b;
   --bg-input: #334155;
@@ -40,12 +38,10 @@ body.dark-mode {
   --border-color: #334155;
   --shadow-color: rgba(0, 0, 0, 0.3);
 
-  /* Validation Shifts in Dark Mode */
   --state-amber: #fbbf24;
   --state-green: #34d399;
   --state-crimson: #f87171;
 
-  /* Smooth adjustments for side panels when dark mode is fully active */
   --bg-output-panel: #1e293b;
   --text-output: #f8fafc;
   --header-output: #64748b;
@@ -73,6 +69,14 @@ html, body {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
 /* TOP BAR DESIGN */
 .topbar {
   height: 70px;
@@ -82,6 +86,7 @@ html, body {
   align-items: center;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-panel);
+  flex-shrink: 0;
 }
 
 .topbar h1 {
@@ -107,7 +112,6 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
 }
 
 .theme-btn:hover {
@@ -127,22 +131,9 @@ html, body {
   flex-direction: column;
 }
 
-.inputPanel {
-  background: var(--bg-panel); 
-}
-
-.outputPanel {
-  background: var(--bg-output-panel);
-  color: var(--text-output);
-  position: relative;
-  border: 2px solid transparent;
-}
-
-.suggestionPanel {
-  background: var(--bg-suggestion-panel);
-  color: var(--text-suggestion);
-  position: relative;
-}
+.inputPanel { background: var(--bg-panel); }
+.outputPanel { background: var(--bg-output-panel); color: var(--text-output); border: 2px solid transparent; position: relative;}
+.suggestionPanel { background: var(--bg-suggestion-panel); color: var(--text-suggestion); }
 
 .outputHeader {
   font-size: 11px;
@@ -191,7 +182,6 @@ input, textarea, select {
   color: var(--text-main);
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -245,29 +235,27 @@ textarea {
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
-  transition: background 0.2s, opacity 0.15s ease;
 }
 
-.buttons button:hover { opacity: 0.9; }
 .buttons button:nth-child(1) { background: #2563eb; color: white; }
 .buttons button:nth-child(2) { background: #10b981; color: white; }
 .buttons button:nth-child(3) { background: #ef4444; color: white; }
 
-/* Drawer Toggle Button Master Styles */
+/* Global Anchor Drawer Toggle Button Styles */
 .drawer-toggle-btn {
-  display: none; /* Hidden on large monitor grid splits */
+  display: none; /* Hidden on Tier 1 Wide Screen Desktops */
   position: absolute;
-  z-index: 110;
+  z-index: 200; /* Forces rendering above all layouts */
   background: #eab308;
   color: #111827;
   border: none;
-  padding: 10px 16px;
+  padding: 12px 18px;
   border-radius: 30px;
   font-weight: 700;
   font-size: 12px;
   letter-spacing: 0.5px;
   cursor: pointer;
-  box-shadow: -4px 4px 14px rgba(0, 0, 0, 0.25);
+  box-shadow: -2px 4px 12px rgba(0, 0, 0, 0.2);
   align-items: center;
   gap: 8px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -287,10 +275,9 @@ textarea {
   display: inline-block;
   margin: 4px 0;
 }
-
 #suggestions a:hover { text-decoration: underline; }
 
-/* Toast Notifications */
+/* Toast Messages */
 .toast-notification {
   position: fixed;
   top: -60px;
@@ -329,7 +316,7 @@ textarea {
 .floating-action-dock button { flex:1; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; }
 
 /* ==========================================================================
-   RESPONSIVE WORKING MODES
+   RESPONSIVE MODES
    ========================================================================== */
 
 /* Tier 1: Wide Desktop Monitors (> 1100px) */
@@ -342,12 +329,9 @@ textarea {
     height: calc(100vh - 70px);
     width: 100vw;
   }
-  .suggestionPanel .drawer-toggle-btn {
-    display: none !important; /* Never display drawer handles when fully split open */
-  }
 }
 
-/* Tier 2: Medium/Compact Screens (768px - 1100px) */
+/* Tier 2: Medium/Compact Screens (768px - 1100px Wide Window) */
 @media (max-width: 1100px) and (min-width: 768px) {
   .layout {
     display: grid;
@@ -356,10 +340,8 @@ textarea {
     padding: 16px;
     height: calc(100vh - 70px);
     position: relative;
-    overflow: hidden;
   }
 
-  /* Structural Sidebar Drawer Setup */
   .suggestionPanel {
     position: absolute;
     top: 16px;
@@ -367,35 +349,39 @@ textarea {
     bottom: 16px;
     width: 360px;
     z-index: 100;
-    transform: translateX(400px); /* Tuck away off-screen */
+    transform: translateX(400px); /* Safely hidden away */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid var(--border-color);
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
   }
 
-  /* Force display drawer toggle trigger outwards so it serves as the handle tab */
-  .suggestionPanel .drawer-toggle-btn {
-    display: flex !important;
-    left: -145px; 
-    top: 20px;
+  /* Display the global floating tab button outside panel clip matrices */
+  .drawer-toggle-btn {
+    display: flex;
+    right: 16px;             /* Line up perfectly with the edge of the panel container */
+    bottom: 32px;            /* Elevated above layout baselines */
     white-space: nowrap;
   }
 
-  /* Open State Active Modifier rules */
+  /* Open State Modifier Triggered via JS */
   .suggestionPanel.drawer-open {
     transform: translateX(0);
   }
 
-  /* Pull button inside smoothly when open to act as a clear Close element */
-  .suggestionPanel.drawer-open .drawer-toggle-btn {
-    left: auto;
-    right: 20px;
-    top: 12px;
+  /* Reposition and adjust the global button inside the open panel headerspace */
+  .layout:has(.drawer-open) ~ .drawer-toggle-btn,
+  .suggestionPanel.drawer-open ~ .drawer-toggle-btn {
+    bottom: auto;
+    top: 102px;             /* Match alignment inside the drawer panel header */
+    right: 36px;
+    padding: 8px 14px;
+    background: #ef4444;    /* Changes to red to signal closing action */
+    color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
 }
 
-/* Tier 3: Mobile Viewports (< 768px wide) */
+/* Tier 3: Mobile Viewports (< 768px) */
 @media (max-width: 767px) {
   html, body { overflow: auto; }
   .layout {
@@ -407,7 +393,6 @@ textarea {
     padding-bottom: 85px;
   }
   .panel { height: auto; min-height: 400px; }
-  .suggestionPanel .drawer-toggle-btn { display: none !important; }
   .buttons { display: none; }
   .floating-action-dock { display: flex; }
 }
