@@ -103,30 +103,42 @@ function updateSuggestions() {
   const concern = $("concernType").value;
   const voc = $("voc").value;
 
-  let list = [];
+  let html = "";
 
   if (concern === "Technical") {
-    list = TECH_PROCEDURES[voc] || ["Select technical type"];
+
+    const procedures = TECH_PROCEDURES[voc] || [];
+
+    html = procedures.map(p =>
+      `• ${p.text} <a href="${p.link}" target="_blank">[Open Guide]</a>`
+    ).join("<br>");
+
   }
 
   else if (concern === "Aftersales") {
+
     const cat = getAftersalesCategory(voc);
-    list = AFTERSALES[cat] || [];
+    const list = AFTERSALES[cat] || [];
+
+    html = list.map(i => `• ${i}`).join("<br>");
+
   }
 
   else if (concern === "Inquiry") {
-    list = ["Check details", "Verify account", "Respond accordingly"];
+    html = ["Check details", "Verify account", "Respond accordingly"]
+      .map(i => `• ${i}`).join("<br>");
   }
 
   else if (concern === "Complaint") {
-    list = ["Acknowledge issue", "Investigate", "Escalate if needed"];
+    html = ["Acknowledge issue", "Investigate", "Escalate if needed"]
+      .map(i => `• ${i}`).join("<br>");
   }
 
   else {
-    list = ["Select Concern Type"];
+    html = "• Select Concern Type";
   }
 
-  $("suggestions").innerHTML = list.map(i => "• " + i).join("<br>");
+  $("suggestions").innerHTML = html;
 }
 
 /* =========================
