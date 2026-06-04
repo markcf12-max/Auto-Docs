@@ -164,27 +164,37 @@ function updateSuggestions() {
   if (!$("suggestions")) return;
   const concern = $("concernType")?.value;
   const voc = $("voc")?.value;
-  let html = "";
+  
+  // Notice Banner for empowerment guidelines
+  const matrixNotice = `<div style="background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 14px; border-radius: 4px; font-weight: bold; color: #f87171;">⚠️ Please check our Aftersales Empowerment Matrix</div>`;
 
-  if (!concern || !voc) {
+  if (!concern) {
     $("suggestions").innerHTML = "Select Concern & VOC";
+    return;
+  }
+
+  let html = matrixNotice;
+
+  if (!voc) {
+    html += `<i style="color: #94a3b8;">Select a VOC Option to load specific guidelines...</i>`;
+    $("suggestions").innerHTML = html;
     return;
   }
 
   if (concern === "Technical") {
     const procedures = TECH_PROCEDURES[voc] || [];
-    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
+    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
   else if (concern === "Aftersales") {
     const procedures = AFTERSALES_PROCEDURES[voc] || [];
-    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
+    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
   } 
   else if (concern === "Inquiry") {
     const procedures = INQUIRY_PROCEDURES[voc] || [];
-    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Search knowledge base resources<br>• Respond clearly to customer request";
+    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Search knowledge base resources<br>• Respond clearly to customer request";
   } 
   else if (concern === "Complaint") {
-    html = ["Acknowledge issue", "Investigate details closely", "Escalate if needed"].map(i => `• ${i}`).join("<br>");
+    html += ["Acknowledge issue", "Investigate details closely", "Escalate if needed"].map(i => `• ${i}`).join("<br>");
   }
   $("suggestions").innerHTML = html;
 }
@@ -250,28 +260,23 @@ function downloadTxt() {
    BALANCED RESET METHOD
 ========================= */
 function resetForm() {
-  // 1. Wipe out local storage tracking
   localStorage.removeItem(STORAGE_KEY);
   
-  // 2. Clear values out of text inputs and textareas
   document.querySelectorAll("input, textarea").forEach(el => {
     el.value = "";
   });
   
-  // 3. Snap dropdown element back to the index 0 placeholder string
   const concernDropdown = $("concernType");
   if (concernDropdown) {
     concernDropdown.selectedIndex = 0;
   }
   
-  // 4. Force empty values on VOC datalist configs
   const vocInput = $("voc");
   if (vocInput) vocInput.value = "";
   
   const datalist = $("vocOptions");
   if (datalist) datalist.innerHTML = "";
   
-  // 5. Instantly refresh the screen panels cleanly
   if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
   updateOutput();
 }
