@@ -27,22 +27,25 @@ function loadData() {
 }
 
 /* =========================
-   TECH DATA
+   TECH DATA WITH LINKS ✅
 ========================= */
-const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "#",
-  "SMS CONNECTIVITY": "#",
-  "DATA CONNECTIVITY": "#",
-  "ROAMING CONNECTIVITY": "#",
-  "COVERAGE CONNECTIVITY": "#"
-};
-
 const TECH_PROCEDURES = {
-  "VOICE CONNECTIVITY": ["Check voice service", "Validate account"],
-  "SMS CONNECTIVITY": ["Check SMS provisioning"],
-  "DATA CONNECTIVITY": ["Check data session"],
-  "ROAMING CONNECTIVITY": ["Verify roaming status"],
-  "COVERAGE CONNECTIVITY": ["Check signal coverage"]
+  "VOICE CONNECTIVITY": [
+    { text: "Check voice service", link: "#" },
+    { text: "Validate account", link: "#" }
+  ],
+  "SMS CONNECTIVITY": [
+    { text: "Check SMS provisioning", link: "#" }
+  ],
+  "DATA CONNECTIVITY": [
+    { text: "Check data session", link: "#" }
+  ],
+  "ROAMING CONNECTIVITY": [
+    { text: "Verify roaming status", link: "#" }
+  ],
+  "COVERAGE CONNECTIVITY": [
+    { text: "Check signal coverage", link: "#" }
+  ]
 };
 
 /* =========================
@@ -96,7 +99,7 @@ ${$("wocas").value}`;
 }
 
 /* =========================
-   SUGGESTIONS
+   ✅ UPDATED SUGGESTIONS (WITH LINKS)
 ========================= */
 function updateSuggestions() {
 
@@ -109,9 +112,11 @@ function updateSuggestions() {
 
     const procedures = TECH_PROCEDURES[voc] || [];
 
-    html = procedures.map(p =>
-      `• ${p.text} <a href="${p.link}" target="_blank">[Open Guide]</a>`
-    ).join("<br>");
+    html = procedures.length
+      ? procedures.map(p =>
+          `• ${p.text} ${p.link ? `<a href="${p.link}" target="_blank">[Open Guide]</a>` : ""}`
+        ).join("<br>")
+      : "• Select technical type";
 
   }
 
@@ -125,13 +130,17 @@ function updateSuggestions() {
   }
 
   else if (concern === "Inquiry") {
+
     html = ["Check details", "Verify account", "Respond accordingly"]
       .map(i => `• ${i}`).join("<br>");
+
   }
 
   else if (concern === "Complaint") {
+
     html = ["Acknowledge issue", "Investigate", "Escalate if needed"]
       .map(i => `• ${i}`).join("<br>");
+
   }
 
   else {
@@ -142,7 +151,7 @@ function updateSuggestions() {
 }
 
 /* =========================
-   VOC SWITCH FIX
+   VOC SWITCH
 ========================= */
 function updateVocOptions() {
 
@@ -209,7 +218,7 @@ function init() {
 }
 
 /* =========================
-   BUTTON FUNCTIONS (IMPORTANT FIX)
+   BUTTON FUNCTIONS
 ========================= */
 function copyDoc() {
   navigator.clipboard.writeText($("output").textContent || "");
@@ -237,7 +246,7 @@ function resetForm() {
 }
 
 /* =========================
-   GLOBAL EXPORT (CRITICAL FIX)
+   GLOBAL EXPORT
 ========================= */
 window.copyDoc = copyDoc;
 window.downloadTxt = downloadTxt;
