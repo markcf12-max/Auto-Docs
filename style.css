@@ -12,6 +12,14 @@
   --border-color: #e5e7eb;
   --shadow-color: rgba(0, 0, 0, 0.08);
 
+  /* Validation Colors */
+  --state-amber: #d97706;
+  --state-amber-bg: rgba(217, 119, 6, 0.04);
+  --state-green: #059669;
+  --state-green-bg: rgba(5, 150, 105, 0.04);
+  --state-crimson: #dc2626;
+  --state-crimson-bg: rgba(220, 38, 38, 0.04);
+
   /* Side panels light defaults (Original sharp dark themes) */
   --bg-output-panel: linear-gradient(180deg, #0f172a, #0b1220);
   --text-output: #e5e7eb;
@@ -31,6 +39,11 @@ body.dark-mode {
   --text-muted: #94a3b8;
   --border-color: #334155;
   --shadow-color: rgba(0, 0, 0, 0.3);
+
+  /* Validation Shifts in Dark Mode */
+  --state-amber: #fbbf24;
+  --state-green: #34d399;
+  --state-crimson: #f87171;
 
   /* Smooth adjustments for side panels when dark mode is fully active */
   --bg-output-panel: #1e293b;
@@ -101,17 +114,6 @@ html, body {
   background: rgba(128, 128, 128, 0.15);
 }
 
-/* 3-PANEL MATRIX GRID SETUP */
-.layout {
-  display: grid;
-  /* Expanded grid spacing values optimized for widescreen visibility */
-  grid-template-columns: 45fr 30fr 25fr;
-  gap: 16px;
-  padding: 16px;
-  height: calc(100vh - 70px); /* Fill the exact bottom frame of the screen */
-  width: 100vw;
-}
-
 /* PANEL BASIC ARCHITECTURE */
 .panel {
   background: var(--bg-panel);
@@ -133,6 +135,8 @@ html, body {
 .outputPanel {
   background: var(--bg-output-panel);
   color: var(--text-output);
+  position: relative;
+  border: 2px solid transparent;
 }
 
 .suggestionPanel {
@@ -163,7 +167,7 @@ pre {
 }
 
 /* ==========================================================================
-   FIELDS AND INPUT CONTROL SCHEMES
+   FIELDS AND INPUT CONTROL SCHEMES & VALIDATION MIXINS
    ========================================================================== */
 .group {
   margin-bottom: 14px;
@@ -213,6 +217,24 @@ textarea {
   gap: 12px;
 }
 
+/* Real-time Validation Interactive State Styles */
+.val-amber { border-color: var(--state-amber) !important; background-color: var(--state-amber-bg); }
+.val-green { border-color: var(--state-green) !important; background-color: var(--state-green-bg); animation: microPulse 0.3s ease-out 1; }
+.val-crimson { border-color: var(--state-crimson) !important; background-color: var(--state-crimson-bg); }
+
+@keyframes microPulse {
+  0% { box-shadow: 0 0 0 0px rgba(5, 150, 105, 0.35); }
+  100% { box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
+}
+
+/* Clipboard Copy Confirmation Animation Ring */
+@keyframes panelFlash {
+  0% { border-color: transparent; box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.6); }
+  50% { border-color: #3b82f6; box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3); }
+  100% { border-color: transparent; box-shadow: 0 0 0 0px rgba(59, 130, 246, 0); }
+}
+.panel-flash-active { animation: panelFlash 0.45s ease-out 1; }
+
 /* ==========================================================================
    BUTTONS AND INTERACTION ARRAYS
    ========================================================================== */
@@ -223,7 +245,7 @@ textarea {
   padding-top: 10px;
 }
 
-button {
+.buttons button {
   flex: 1;
   padding: 11px;
   border: none;
@@ -231,16 +253,39 @@ button {
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
-  transition: opacity 0.15s ease;
+  transition: background 0.2s, opacity 0.15s ease;
 }
 
-button:hover {
+.buttons button:hover {
   opacity: 0.9;
 }
 
-button:nth-child(1) { background: #2563eb; color: white; }
-button:nth-child(2) { background: #10b981; color: white; }
-button:nth-child(3) { background: #ef4444; color: white; }
+.buttons button:nth-child(1) { background: #2563eb; color: white; }
+.buttons button:nth-child(2) { background: #10b981; color: white; }
+.buttons button:nth-child(3) { background: #ef4444; color: white; }
+
+/* Drawer Toggle layout control for intermediate screen widths (Option B) */
+.drawer-toggle-btn {
+  display: none;
+  position: absolute;
+  right: 16px;
+  bottom: 20px;
+  z-index: 99;
+  background: #eab308;
+  color: #111827;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.35);
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.1s ease;
+}
+.drawer-toggle-btn:active { transform: scale(0.96); }
 
 #suggestions {
   flex: 1;
@@ -260,23 +305,116 @@ button:nth-child(3) { background: #ef4444; color: white; }
   text-decoration: underline;
 }
 
+/* Floating Toast Banner Layout */
+.toast-notification {
+  position: fixed;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #10b981;
+  color: white;
+  padding: 11px 22px;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);
+  transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast-notification.show { top: 20px; }
+
+/* Floating Navigation Dock Ribbon Array for Mobile */
+.floating-action-dock {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  background: var(--bg-panel);
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  z-index: 99;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+}
+.floating-action-dock button { flex:1; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; }
+
 /* ==========================================================================
-   MEDIA SCALING RULES (RESPONSIVE STACK OVERRIDE)
+   3-TIER RESPONSIBLE FLUID GRIDS (WITH INTERMEDIATE OPTION B SLIDE DRAWER)
    ========================================================================== */
-@media (max-width: 1100px) {
+
+/* Tier 1: Desktop Monitors (> 1100px Wide Workspace) */
+@media (min-width: 1101px) {
+  .layout {
+    display: grid;
+    grid-template-columns: 45fr 30fr 25fr;
+    gap: 16px;
+    padding: 16px;
+    height: calc(100vh - 70px);
+    width: 100vw;
+  }
+}
+
+/* Tier 2: Compact & Split Screens Workspace Matrix (768px - 1100px wide) */
+@media (max-width: 1100px) and (min-width: 768px) {
+  .layout {
+    display: grid;
+    grid-template-columns: 55fr 45fr;
+    gap: 16px;
+    padding: 16px;
+    height: calc(100vh - 70px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Transform Playbooks into the Option B Hidden Side Overlay Drawer Container */
+  .suggestionPanel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: 360px;
+    z-index: 100;
+    transform: translateX(400px); /* Tuck offscreen completely */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-color);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Class assigned via Javascript when clicking drawer toggle handle */
+  .suggestionPanel.drawer-open {
+    transform: translateX(0);
+  }
+
+  .drawer-toggle-btn {
+    display: flex;
+  }
+}
+
+/* Tier 3: Mobile Display Layout Matrix (< 768px Width Screens) */
+@media (max-width: 767px) {
   html, body {
-    overflow: auto; /* Allow natural page body scrolling on smaller displays */
+    overflow: auto; /* Allow natural layout body overflow scrolling */
   }
 
   .layout {
+    display: grid;
     grid-template-columns: 1fr;
     height: auto;
     width: 100%;
     overflow: visible;
+    padding-bottom: 85px; /* Block content overlap against the bottom action dock */
   }
 
   .panel {
     height: auto;
     min-height: 400px;
   }
+
+  .buttons { display: none; } /* Hide the static bottom panel buttons */
+  .floating-action-dock { display: flex; } /* Display sticky mobile structural dock ribbon */
 }
