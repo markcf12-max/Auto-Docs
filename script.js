@@ -47,11 +47,7 @@ function toggleTheme() {
 function updateThemeIcon(isDark) {
   const icon = document.querySelector("#themeToggle i");
   if (!icon) return;
-  if (isDark) {
-    icon.className = "fas fa-sun";
-  } else {
-    icon.className = "fas fa-moon";
-  }
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
 }
 
 /* =========================
@@ -73,12 +69,8 @@ const AFTERSALES_PROCEDURES = {
     { text: "Verify IMEI lock status in database", link: "https://yourguide-link.com/unlock" },
     { text: "Check tenure eligibility metrics", link: "#" }
   ],
-  "Change Plan: Downgrade and Upgrade": [
-    { text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" }
-  ],
-  "Bulk SIM Activation": [
-    { text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }
-  ]
+  "Change Plan: Downgrade and Upgrade": [{ text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" }],
+  "Bulk SIM Activation": [{ text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }]
 };
 
 const INQUIRY_PROCEDURES = {
@@ -132,7 +124,7 @@ const VOC_OPTIONS = {
     "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", "SIM REG: UPDATE ID",
     "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", "SIM REG: REGULATORY TEMPO DISCON",
     "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATED", "Reconnection from Voluntary TD",
-    "Reconnection from Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", "Case Management – Billing Dispute",
+    "Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", "Case Management – Billing Dispute",
     "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
   ],
   "Complaint": ["Positive", "Neutral", "Negative"]
@@ -181,15 +173,15 @@ function updateSuggestions() {
 
   if (concern === "Technical") {
     const procedures = TECH_PROCEDURES[voc] || [];
-    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
+    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
   else if (concern === "Aftersales") {
-    const procedures = AFTERSALES_PROCEDURES[voc] || [];
-    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
+    const procedures = AFAFTER_SALES_PROCEDURES = AFTERSALES_PROCEDURES[voc] || [];
+    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
   } 
   else if (concern === "Inquiry") {
     const procedures = INQUIRY_PROCEDURES[voc] || [];
-    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Search knowledge base resources<br>• Respond clearly to customer request";
+    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Search knowledge base resources<br>• Respond clearly to customer request";
   } 
   else if (concern === "Complaint") {
     html = ["Acknowledge issue", "Investigate details closely", "Escalate if needed"].map(i => `• ${i}`).join("<br>");
@@ -249,21 +241,27 @@ function downloadTxt() {
 }
 
 function resetForm() {
-  // Clear all text inputs, textareas, and dropdown selections explicitly
-  document.querySelectorAll("input, textarea, select").forEach(el => {
+  // Clear all text inputs and textareas
+  document.querySelectorAll("input, textarea").forEach(el => {
     el.value = "";
   });
   
   // Wipe out browser cash memory save files
   localStorage.removeItem(STORAGE_KEY);
   
-  // Explicitly force drop downs back to their baseline operational structures
-  $("concernType").value = "Technical"; 
-  updateVocOptions(false);
+  // FIXED: Reverts fully back to the "Select Category" placeholder index state
+  const concernDropdown = $("concernType");
+  if (concernDropdown) {
+    concernDropdown.value = "";
+  }
   
-  // Rerender screens
+  // Clear datalist elements completely
+  const datalist = $("vocOptions");
+  if (datalist) datalist.innerHTML = "";
+  
+  // Rerender screens cleanly
   updateOutput();
-  updateSuggestions();
+  if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 }
 
 window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme;
