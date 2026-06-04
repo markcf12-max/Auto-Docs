@@ -20,7 +20,7 @@
   --state-crimson: #dc2626;
   --state-crimson-bg: rgba(220, 38, 38, 0.04);
 
-  /* Side panels light defaults (Original sharp dark themes) */
+  /* Side panels light defaults */
   --bg-output-panel: linear-gradient(180deg, #0f172a, #0b1220);
   --text-output: #e5e7eb;
   --header-output: #94a3b8;
@@ -66,7 +66,7 @@ html, body {
   height: 100vh;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Lock viewport to maximize application real estate */
+  overflow: hidden;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   background: var(--bg-app);
   color: var(--text-main);
@@ -119,7 +119,7 @@ html, body {
   background: var(--bg-panel);
   border-radius: 14px;
   padding: 20px;
-  overflow-y: auto; /* Allow independent internal content scrolling */
+  overflow-y: auto;
   min-height: 0;
   box-shadow: 0 10px 25px var(--shadow-color);
   transition: background 0.2s ease, box-shadow 0.2s ease;
@@ -127,7 +127,6 @@ html, body {
   flex-direction: column;
 }
 
-/* EXPLICIT INDIVIDUAL PANEL CONTEXT OVERRIDES */
 .inputPanel {
   background: var(--bg-panel); 
 }
@@ -145,7 +144,6 @@ html, body {
   position: relative;
 }
 
-/* PANELS HEADER ELEMENT */
 .outputHeader {
   font-size: 11px;
   font-weight: 700;
@@ -155,7 +153,6 @@ html, body {
   color: var(--header-output);
 }
 
-/* GENERATED OUTPUT LOG AREA */
 pre {
   white-space: pre-wrap;
   word-break: break-word;
@@ -185,9 +182,7 @@ pre {
   margin-bottom: 6px;
 }
 
-input,
-textarea,
-select {
+input, textarea, select {
   width: 100%;
   padding: 11px 14px;
   border-radius: 10px;
@@ -199,9 +194,7 @@ select {
   transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+input:focus, textarea:focus, select:focus {
   border-color: #2563eb;
   background: var(--bg-input-focus);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
@@ -218,7 +211,6 @@ textarea {
   gap: 12px;
 }
 
-/* Real-time Validation Interactive State Styles */
 .val-amber { border-color: var(--state-amber) !important; background-color: var(--state-amber-bg); }
 .val-green { border-color: var(--state-green) !important; background-color: var(--state-green-bg); animation: microPulse 0.3s ease-out 1; }
 .val-crimson { border-color: var(--state-crimson) !important; background-color: var(--state-crimson-bg); }
@@ -228,7 +220,6 @@ textarea {
   100% { box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
 }
 
-/* Clipboard Copy Confirmation Animation Ring */
 @keyframes panelFlash {
   0% { border-color: transparent; box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.6); }
   50% { border-color: #3b82f6; box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3); }
@@ -242,7 +233,7 @@ textarea {
 .buttons {
   display: flex;
   gap: 10px;
-  margin-top: auto; /* Lock standard actions cleanly to panel floor */
+  margin-top: auto;
   padding-top: 10px;
 }
 
@@ -257,17 +248,14 @@ textarea {
   transition: background 0.2s, opacity 0.15s ease;
 }
 
-.buttons button:hover {
-  opacity: 0.9;
-}
-
+.buttons button:hover { opacity: 0.9; }
 .buttons button:nth-child(1) { background: #2563eb; color: white; }
 .buttons button:nth-child(2) { background: #10b981; color: white; }
 .buttons button:nth-child(3) { background: #ef4444; color: white; }
 
 /* Drawer Toggle Button Master Styles */
 .drawer-toggle-btn {
-  display: none; /* Hidden on full desktops by default */
+  display: none; /* Hidden on large monitor grid splits */
   position: absolute;
   z-index: 110;
   background: #eab308;
@@ -300,11 +288,9 @@ textarea {
   margin: 4px 0;
 }
 
-#suggestions a:hover {
-  text-decoration: underline;
-}
+#suggestions a:hover { text-decoration: underline; }
 
-/* Floating Toast Banner Layout */
+/* Toast Notifications */
 .toast-notification {
   position: fixed;
   top: -60px;
@@ -325,7 +311,7 @@ textarea {
 }
 .toast-notification.show { top: 20px; }
 
-/* Floating Navigation Dock Ribbon Array for Mobile */
+/* Mobile Bottom Dock */
 .floating-action-dock {
   display: none;
   position: fixed;
@@ -343,10 +329,10 @@ textarea {
 .floating-action-dock button { flex:1; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; }
 
 /* ==========================================================================
-   3-TIER RESPONSIBLE FLUID GRIDS (WITH INTERMEDIATE OPTION B SLIDE DRAWER)
+   RESPONSIVE WORKING MODES
    ========================================================================== */
 
-/* Tier 1: Desktop Monitors (> 1100px Wide Workspace) */
+/* Tier 1: Wide Desktop Monitors (> 1100px) */
 @media (min-width: 1101px) {
   .layout {
     display: grid;
@@ -356,9 +342,12 @@ textarea {
     height: calc(100vh - 70px);
     width: 100vw;
   }
+  .suggestionPanel .drawer-toggle-btn {
+    display: none !important; /* Never display drawer handles when fully split open */
+  }
 }
 
-/* Tier 2: Compact & Split Screens Workspace Matrix (768px - 1100px wide) */
+/* Tier 2: Medium/Compact Screens (768px - 1100px) */
 @media (max-width: 1100px) and (min-width: 768px) {
   .layout {
     display: grid;
@@ -370,7 +359,7 @@ textarea {
     overflow: hidden;
   }
 
-  /* Transform Playbooks into the Option B Hidden Side Overlay Drawer Container */
+  /* Structural Sidebar Drawer Setup */
   .suggestionPanel {
     position: absolute;
     top: 16px;
@@ -378,25 +367,26 @@ textarea {
     bottom: 16px;
     width: 360px;
     z-index: 100;
-    transform: translateX(400px); /* Tuck offscreen completely */
+    transform: translateX(400px); /* Tuck away off-screen */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid var(--border-color);
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
   }
 
-  /* When closed, pop the button anchor outwards to the left flank as an accessible tab handle */
+  /* Force display drawer toggle trigger outwards so it serves as the handle tab */
   .suggestionPanel .drawer-toggle-btn {
-    display: flex;
+    display: flex !important;
     left: -145px; 
     top: 20px;
+    white-space: nowrap;
   }
 
-  /* Class assigned via Javascript when clicking drawer toggle handle */
+  /* Open State Active Modifier rules */
   .suggestionPanel.drawer-open {
     transform: translateX(0);
   }
 
-  /* When open, lock the button button smoothly inside the header alignment rules */
+  /* Pull button inside smoothly when open to act as a clear Close element */
   .suggestionPanel.drawer-open .drawer-toggle-btn {
     left: auto;
     right: 20px;
@@ -405,26 +395,19 @@ textarea {
   }
 }
 
-/* Tier 3: Mobile Display Layout Matrix (< 768px Width Screens) */
+/* Tier 3: Mobile Viewports (< 768px wide) */
 @media (max-width: 767px) {
-  html, body {
-    overflow: auto; /* Allow natural layout body overflow scrolling */
-  }
-
+  html, body { overflow: auto; }
   .layout {
     display: grid;
     grid-template-columns: 1fr;
     height: auto;
     width: 100%;
     overflow: visible;
-    padding-bottom: 85px; /* Block content overlap against the bottom action dock */
+    padding-bottom: 85px;
   }
-
-  .panel {
-    height: auto;
-    min-height: 400px;
-  }
-
-  .buttons { display: none; } /* Hide the static bottom panel buttons */
-  .floating-action-dock { display: flex; } /* Display sticky mobile structural dock ribbon */
+  .panel { height: auto; min-height: 400px; }
+  .suggestionPanel .drawer-toggle-btn { display: none !important; }
+  .buttons { display: none; }
+  .floating-action-dock { display: flex; }
 }
