@@ -7,14 +7,6 @@ const STORAGE_KEY = "auto_docs_v4";
 /* =========================
    DATA
 ========================= */
-const TECH_LINKS = {
-  "VOICE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
-  "SMS CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
-  "DATA CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
-  "ROAMING CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/",
-  "COVERAGE CONNECTIVITY": "https://pldt365.sharepoint.com/sites/LIT365/files/2023Advisories/"
-};
-
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": ["Check voice service", "Verify provisioning", "Escalate if needed"],
   "SMS CONNECTIVITY": ["Check SMS service", "Validate routing", "Escalate if needed"],
@@ -23,13 +15,21 @@ const TECH_PROCEDURES = {
   "COVERAGE CONNECTIVITY": ["Check coverage", "Validate area", "Escalate if needed"]
 };
 
-const AFTERSALES_PROCEDURES = {
+const TECH_LINKS = {
+  "VOICE CONNECTIVITY": "#",
+  "SMS CONNECTIVITY": "#",
+  "DATA CONNECTIVITY": "#",
+  "ROAMING CONNECTIVITY": "#",
+  "COVERAGE CONNECTIVITY": "#"
+};
+
+const AFTERSALES = {
   ACCOUNT: ["Validate ownership", "Check account status", "Proceed accordingly"],
   DEVICE: ["Check device status", "Verify warranty", "Process request"],
   PLAN: ["Check plan eligibility", "Apply changes", "Confirm billing impact"],
   BILLING: ["Review billing", "Check discrepancy", "Escalate if needed"],
-  BULK: ["Validate bulk request", "Check scope", "Execute process"],
-  SPECIAL: ["Follow SOP", "Coordinate team", "Ensure compliance"]
+  BULK: ["Validate bulk request", "Execute process"],
+  SPECIAL: ["Follow SOP", "Coordinate team"]
 };
 
 /* =========================
@@ -52,7 +52,7 @@ function loadData() {
 }
 
 /* =========================
-   OUTPUT (LIVE)
+   OUTPUT
 ========================= */
 function updateOutput() {
   $("output").textContent = `
@@ -81,20 +81,20 @@ ${$("wocas").value}
 /* =========================
    AFTERSALES CATEGORY
 ========================= */
-function getAftersalesCategory(voc) {
+function getCategory(voc) {
   const v = (voc || "").toUpperCase();
 
   if (v.includes("DEVICE")) return "DEVICE";
   if (v.includes("PLAN")) return "PLAN";
   if (v.includes("BILL")) return "BILLING";
   if (v.includes("BULK")) return "BULK";
-  if (v.includes("ACCOUNT") || v.includes("OWNERSHIP")) return "ACCOUNT";
+  if (v.includes("ACCOUNT")) return "ACCOUNT";
 
   return "SPECIAL";
 }
 
 /* =========================
-   VOC DROPDOWN SWITCH
+   VOC SWITCH
 ========================= */
 function updateVocOptions() {
   const concern = $("concernType").value;
@@ -136,7 +136,7 @@ function updateVocOptions() {
 }
 
 /* =========================
-   SUGGESTIONS ENGINE
+   SUGGESTIONS
 ========================= */
 function updateSuggestions() {
   const concern = $("concernType").value;
@@ -144,34 +144,20 @@ function updateSuggestions() {
 
   let list = [];
 
-  /* TECH */
   if (concern === "Technical") {
     const steps = TECH_PROCEDURES[voc] || [];
-    list = [
-      `TECH: ${voc}`,
-      ...steps,
-      "",
-      `Guide: ${TECH_LINKS[voc] || ""}`
-    ];
+    list = [`TECH: ${voc}`, ...steps, "", `Guide: ${TECH_LINKS[voc] || ""}`];
   }
 
-  /* AFTERSALES */
   else if (concern === "Aftersales") {
-    const cat = getAftersalesCategory(voc);
-    const steps = AFTERSALES_PROCEDURES[cat] || [];
-    list = [`AFTERSALES: ${voc}`, ...steps];
+    const cat = getCategory(voc);
+    list = [`AFTERSALES: ${voc}`, ...(AFTERSALES[cat] || [])];
   }
 
-  /* INQUIRY */
   else if (concern === "Inquiry") {
-    list = [
-      "Check account details",
-      "Verify request",
-      "Provide resolution or escalate"
-    ];
+    list = ["Check account", "Verify request", "Provide resolution"];
   }
 
-  /* VOC ADD-ONS */
   if (voc === "Negative") list.push("Apologize & escalate");
   if (voc === "Positive") list.push("Confirm resolution");
   if (voc === "Neutral") list.push("Standard handling");
@@ -203,16 +189,15 @@ function init() {
   });
 }
 
+window.addEventListener("DOMContentLoaded", init);
+
 /* =========================
-   COPY
+   BUTTON FUNCTIONS (FIXED GLOBAL)
 ========================= */
 function copyDoc() {
   navigator.clipboard.writeText($("output").textContent || "");
 }
 
-/* =========================
-   DOWNLOAD
-========================= */
 function downloadTxt() {
   const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
@@ -225,27 +210,14 @@ function downloadTxt() {
   URL.revokeObjectURL(url);
 }
 
-/* =========================
-   RESET (FIXED)
-========================= */
 function resetForm() {
   document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
   localStorage.removeItem(STORAGE_KEY);
 
-  $("output").textContent = "Start filling out the form...";
+  $("output").textContent = "";
   $("suggestions").textContent = "Select Concern & VOC";
 
   updateVocOptions();
   updateOutput();
   updateSuggestions();
 }
-
-/* =========================
-   INIT
-========================= */
-window.addEventListener("DOMContentLoaded", init);
-
-/* expose buttons */
-window.copyDoc = copyDoc;
-window.downloadTxt = downloadTxt;
-window.resetForm = resetForm;
