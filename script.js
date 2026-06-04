@@ -3,6 +3,7 @@ function $(id) {
 }
 
 const STORAGE_KEY = "auto_docs_v5";
+const THEME_KEY = "auto_docs_theme";
 
 /* =========================
    DATA STORAGE
@@ -24,66 +25,69 @@ function loadData() {
 }
 
 /* =========================
-   TECH DATA PROCEDURES & LINKS
+   DARK MODE SYSTEM 🌙
+========================= */
+function initTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    updateThemeIcon(true);
+  } else {
+    updateThemeIcon(false);
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  if (isDark) {
+    icon.className = "fas fa-sun";
+  } else {
+    icon.className = "fas fa-moon";
+  }
+}
+
+/* =========================
+   VOC PROCEDURES MAPPING CONFIG DATA
 ========================= */
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": [
     { text: "Check voice service status", link: "https://yourguide-link.com/voice" },
     { text: "Validate network profile", link: "https://yourguide-link.com/network" }
   ],
-  "SMS CONNECTIVITY": [
-    { text: "Check SMS provisioning", link: "https://yourguide-link.com/sms" }
-  ],
-  "DATA CONNECTIVITY": [
-    { text: "Check data session profiles", link: "https://yourguide-link.com/data" }
-  ],
-  "ROAMING CONNECTIVITY": [
-    { text: "Verify roaming routing flags", link: "https://yourguide-link.com/roaming" }
-  ],
-  "COVERAGE CONNECTIVITY": [
-    { text: "Check physical coverage index maps", link: "https://yourguide-link.com/coverage" }
-  ]
+  "SMS CONNECTIVITY": [{ text: "Check SMS provisioning", link: "https://yourguide-link.com/sms" }],
+  "DATA CONNECTIVITY": [{ text: "Check data session profiles", link: "https://yourguide-link.com/data" }],
+  "ROAMING CONNECTIVITY": [{ text: "Verify roaming routing flags", link: "https://yourguide-link.com/roaming" }],
+  "COVERAGE CONNECTIVITY": [{ text: "Check physical coverage index maps", link: "https://yourguide-link.com/coverage" }]
 };
 
-/* =========================
-   AFTERSALES DETAILED PROCEDURES
-========================= */
 const AFTERSALES_PROCEDURES = {
   "Device Unlocking": [
     { text: "Verify IMEI lock status in database", link: "https://yourguide-link.com/unlock" },
     { text: "Check tenure eligibility metrics", link: "#" }
   ],
   "Change Plan: Downgrade and Upgrade": [
-    { text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" },
-    { text: "Calculate pro-rated dynamic billing shifts", link: "#" }
+    { text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" }
   ],
   "Bulk SIM Activation": [
     { text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }
   ]
 };
 
-/* =========================
-   INQUIRY DETAILED PROCEDURES
-========================= */
 const INQUIRY_PROCEDURES = {
-  "SIM REGISTRATION": [
-    { text: "Open official consumer registration validation console", link: "https://yourguide-link.com/sim-reg" }
-  ],
-  "BALANCE:CLARIFICATION ON BILLED CHARGES": [
-    { text: "Pull ledger micro-transactions record sheet", link: "https://yourguide-link.com/ledger" }
-  ],
-  "PUK/PIN": [
-    { text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }
-  ]
+  "SIM REGISTRATION": [{ text: "Open official consumer registration validation console", link: "https://yourguide-link.com/sim-reg" }],
+  "BALANCE:CLARIFICATION ON BILLED CHARGES": [{ text: "Pull ledger micro-transactions record sheet", link: "https://yourguide-link.com/ledger" }],
+  "PUK/PIN": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
 };
 
-/* =========================
-   RAW DATA LISTS FOR SEARCH FILTERING
-========================= */
 const VOC_OPTIONS = {
-  "Technical": [
-    "VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY"
-  ],
+  "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY"],
   "Aftersales": [
     "Increase/Decrease in Credit Limit", "Feature Deactivation", "Feature Activation", "Device Unlocking",
     "Contract Renewal/Retention", "Change Plan: Downgrade and Upgrade", "Change of Ownership from Enterprise to Consumer with NPOT Rollback",
@@ -130,18 +134,15 @@ const VOC_OPTIONS = {
     "Reconnection from Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", "Case Management – Billing Dispute",
     "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
   ],
-  "Complaint": [
-    "Positive", "Neutral", "Negative"
-  ]
+  "Complaint": ["Positive", "Neutral", "Negative"]
 };
 
 /* =========================
-   OUTPUT (LIVE)
+   OUTPUT GENERATOR
 ========================= */
 function updateOutput() {
   if (!$("output")) return;
-
-  const output =
+  $("output").textContent = 
 `CASE: ${$("case")?.value || ""}
 CONCERN TYPE: ${$("concernType")?.value || ""}
 VOC: ${$("voc")?.value || ""}
@@ -161,94 +162,69 @@ ${$("action")?.value || ""}
 
 WOCAS:
 ${$("wocas")?.value || ""}`;
-
-  $("output").textContent = output;
 }
 
 /* =========================
-   SUGGESTIONS GENERATOR (WITH LINKS)
+   PROCEDURE HANDLING
 ========================= */
 function updateSuggestions() {
   if (!$("suggestions")) return;
-
   const concern = $("concernType")?.value;
   const voc = $("voc")?.value;
   let html = "";
 
   if (concern === "Technical") {
     const procedures = TECH_PROCEDURES[voc] || [];
-    html = procedures.length
-      ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>")
-      : "• Type or select a valid Technical Type above to view procedures.";
+    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
   else if (concern === "Aftersales") {
     const procedures = AFTERSALES_PROCEDURES[voc] || [];
-    html = procedures.length
-      ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>")
-      : "• Review account status<br>• Validate identity authentication checks<br>• Process system updates via guidelines";
+    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
   } 
   else if (concern === "Inquiry") {
     const procedures = INQUIRY_PROCEDURES[voc] || [];
-    html = procedures.length
-      ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>")
-      : "• Search knowledge base resources<br>• Address billing, profile or activation rules<br>• Respond clearly to customer request";
+    html = procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Search knowledge base resources<br>• Respond clearly to customer request";
   } 
   else if (concern === "Complaint") {
-    html = ["Acknowledge issue", "Investigate details closely", "Escalate if operational limits reached"].map(i => `• ${i}`).join("<br>");
+    html = ["Acknowledge issue", "Investigate details closely", "Escalate if needed"].map(i => `• ${i}`).join("<br>");
   }
-
   $("suggestions").innerHTML = html;
 }
 
-/* =========================
-   DYNAMIC VOC AUTOCOMPLETE REFRESH
-========================= */
-function updateVocOptions(isInitialLoad = false) {
+function updateVocOptions(keepExistingValue = false) {
   const concern = $("concernType").value;
   const datalist = $("vocOptions");
   const vocInput = $("voc");
-
   if (!datalist || !vocInput) return;
 
-  // Grab options array based on chosen concern
   const options = VOC_OPTIONS[concern] || [];
-
-  // Generate the updated datalist HTML elements
   datalist.innerHTML = options.map(opt => `<option value="${opt}"></option>`).join("");
 
-  // Clean the value state on category swap, or select the first automated option match
-  if (!isInitialLoad) {
-    vocInput.value = options[0] || "";
+  // Keep search box blank on category switch so it does not auto-populate items!
+  if (!keepExistingValue) {
+    vocInput.value = "";
   }
 }
 
 /* =========================
-   INITIALIZATION & EVENT BINDING
+   INITIALIZATION
 ========================= */
 function init() {
+  initTheme();
   loadData();
-  
-  // Initialize dynamic matching datalist components
   updateVocOptions(true); 
   updateOutput();
   updateSuggestions();
 
-  // Watch input changes across standard inputs
   document.querySelectorAll("input, textarea, select").forEach(el => {
-    
-    // Using input layout capturing ensures instant search updates as the agent types phrases
     el.addEventListener("input", () => {
       saveData();
       updateOutput();
-      if (el.id === "voc") {
-        updateSuggestions();
-      }
+      if (el.id === "voc") updateSuggestions();
     });
 
     el.addEventListener("change", () => {
-      if (el.id === "concernType") {
-        updateVocOptions(false);
-      }
+      if (el.id === "concernType") updateVocOptions(false);
       saveData();
       updateSuggestions();
       updateOutput();
@@ -256,39 +232,22 @@ function init() {
   });
 }
 
-/* =========================
-   BUTTON FUNCTIONS
-========================= */
-function copyDoc() {
-  navigator.clipboard.writeText($("output").textContent || "");
-}
-
+function copyDoc() { navigator.clipboard.writeText($("output").textContent || ""); }
 function downloadTxt() {
   const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = "auto-docs.txt";
-  a.click();
+  a.href = url; a.download = "auto-docs.txt"; a.click();
   URL.revokeObjectURL(url);
 }
-
 function resetForm() {
   document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
   localStorage.removeItem(STORAGE_KEY);
-  
-  // Set explicit dynamic baseline fallback rules
   $("concernType").selectedIndex = 0; 
   updateVocOptions(false);
   updateOutput();
   updateSuggestions();
 }
 
-/* =========================
-   GLOBAL EXPORT & START
-========================= */
-window.copyDoc = copyDoc;
-window.downloadTxt = downloadTxt;
-window.resetForm = resetForm;
-
+window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme;
 window.addEventListener("DOMContentLoaded", init);
