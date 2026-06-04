@@ -313,7 +313,7 @@ function updateSuggestions() {
   }
 
   /* =========================
-     AFTERSALES (NEW LOGIC)
+     AFTERSALES
   ========================= */
   if (concern === "Aftersales") {
 
@@ -340,45 +340,56 @@ function updateSuggestions() {
     return;
   }
 
-/* =========================
-   DEFAULT (INQUIRY ETC.)
-========================= */
+  /* =========================
+     INQUIRY / DEFAULT
+  ========================= */
 
-let list = [];
+  let list = [];
 
-if (concern === "Inquiry") {
+  if (concern === "Inquiry") {
 
-if (concern === "Inquiry") {
+    const INQUIRY_PROCEDURES = {
+      "APP RELATED": ["Check application functionality and user access."],
+      "ACTIVATION": ["Verify activation status and provisioning."],
+      "ADA ENROLLMENT": ["Validate enrollment status and eligibility."],
+      "APPLICATION REQUIREMENTS": ["Check required documents and completeness."],
+      "APPLICATION STATUS": ["Check current processing status."],
+      "AVAILMENT OF ADD-ONS": ["Validate add-on eligibility and subscription."],
+      "BALANCE TRANSFER": ["Check balance transfer eligibility and status."],
+      "BALANCE:ACCOUNT RECONCILIATION": ["Verify account reconciliation records."],
+      "BALANCE:CLARIFICATION ON BILLED CHARGES": ["Review billed charges and breakdown."],
+      "GENERAL INQUIRY": [
+        "Verify concern details.",
+        "Check account context.",
+        "Provide accurate resolution or escalate if needed."
+      ]
+    };
 
-  const INQUIRY_PROCEDURES = {
-    "APP RELATED": ["Check application functionality and user access."],
-    "ACTIVATION": ["Verify activation status and provisioning."],
-    "ADA ENROLLMENT": ["Validate enrollment status and eligibility."],
-    "APPLICATION REQUIREMENTS": ["Check required documents and completeness."],
-    "APPLICATION STATUS": ["Check current processing status."],
-    "AVAILMENT OF ADD-ONS": ["Validate add-on eligibility and subscription."],
-    "BALANCE TRANSFER": ["Check balance transfer eligibility and status."],
-    "BALANCE:ACCOUNT RECONCILIATION": ["Verify account reconciliation records."],
-    "BALANCE:CLARIFICATION ON BILLED CHARGES": ["Review billed charges and breakdown."],
-    "GENERAL INQUIRY": [
-      "Verify concern details.",
-      "Check account context.",
-      "Provide accurate resolution or escalate if needed."
-    ]
-  };
+    const steps = INQUIRY_PROCEDURES[voc?.trim()];
 
-  const steps = INQUIRY_PROCEDURES[voc?.trim()];
-
-  if (Array.isArray(steps)) {
-    list.push(...steps);
-  } else {
-    list.push("Review inquiry and validate account details");
+    if (Array.isArray(steps)) {
+      list.push(...steps);
+    } else {
+      list.push("Review inquiry and validate account details");
+    }
   }
 
-  $("suggestions").innerHTML = list.join("<br>");
-  return;
-}
+  /* =========================
+     OTHER CONCERNS
+  ========================= */
+  if (concern === "Complaint") list.push("Escalate issue");
+  if (concern === "Aftersales") list.push("Validate transaction");
+  if (concern === "Other") list.push("Review manually");
 
+  /* =========================
+     VOC ADD-ONS
+  ========================= */
+  if (voc === "Negative") list.push("Apologize & escalate");
+  if (voc === "Positive") list.push("Confirm resolution");
+  if (voc === "Neutral") list.push("Standard processing");
+
+  $("suggestions").innerHTML = list.join("<br>");
+}
 /* =========================
    SAVE / LOAD
 ========================= */
