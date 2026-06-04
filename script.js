@@ -2,19 +2,33 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const STORAGE_KEY = "auto_docs_v4";
+const STORAGE_KEY = "auto_docs_v5";
 
 /* =========================
-   DATA
+   DATA STORAGE
 ========================= */
-const TECH_PROCEDURES = {
-  "VOICE CONNECTIVITY": ["Check voice service", "Verify provisioning", "Escalate if needed"],
-  "SMS CONNECTIVITY": ["Check SMS service", "Validate routing", "Escalate if needed"],
-  "DATA CONNECTIVITY": ["Check data service", "Verify network", "Escalate if needed"],
-  "ROAMING CONNECTIVITY": ["Check roaming status", "Verify eligibility", "Provide roaming support"],
-  "COVERAGE CONNECTIVITY": ["Check coverage", "Validate area", "Escalate if needed"]
-};
+function saveData() {
+  const data = {};
 
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    data[el.id] = el.value;
+  });
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadData() {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+  Object.keys(saved).forEach(id => {
+    const el = $(id);
+    if (el) el.value = saved[id];
+  });
+}
+
+/* =========================
+   TECH DATA
+========================= */
 const TECH_LINKS = {
   "VOICE CONNECTIVITY": "#",
   "SMS CONNECTIVITY": "#",
@@ -23,40 +37,42 @@ const TECH_LINKS = {
   "COVERAGE CONNECTIVITY": "#"
 };
 
-const AFTERSALES = {
-  ACCOUNT: ["Validate ownership", "Check account status", "Proceed accordingly"],
-  DEVICE: ["Check device status", "Verify warranty", "Process request"],
-  PLAN: ["Check plan eligibility", "Apply changes", "Confirm billing impact"],
-  BILLING: ["Review billing", "Check discrepancy", "Escalate if needed"],
-  BULK: ["Validate bulk request", "Execute process"],
-  SPECIAL: ["Follow SOP", "Coordinate team"]
+const TECH_PROCEDURES = {
+  "VOICE CONNECTIVITY": ["Check voice service", "Validate account"],
+  "SMS CONNECTIVITY": ["Check SMS provisioning"],
+  "DATA CONNECTIVITY": ["Check data session"],
+  "ROAMING CONNECTIVITY": ["Verify roaming status"],
+  "COVERAGE CONNECTIVITY": ["Check signal coverage"]
 };
 
 /* =========================
-   HELPERS
+   AFTERSALES
 ========================= */
-function saveData() {
-  const data = {};
-  document.querySelectorAll("input, textarea, select").forEach(el => {
-    data[el.id] = el.value;
-  });
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
+const AFTERSALES = {
+  ACCOUNT: ["Validate ownership", "Check eligibility"],
+  DEVICE: ["Check device status", "Verify warranty"],
+  PLAN: ["Validate plan change rules"],
+  BILLING: ["Check billing records"],
+  SPECIAL: ["Review manually"]
+};
 
-function loadData() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  Object.keys(saved).forEach(id => {
-    const el = $(id);
-    if (el) el.value = saved[id];
-  });
+function getAftersalesCategory(voc) {
+  const v = voc.toUpperCase();
+
+  if (v.includes("OWNERSHIP") || v.includes("ASSIGNEE")) return "ACCOUNT";
+  if (v.includes("DEVICE") || v.includes("SIM")) return "DEVICE";
+  if (v.includes("PLAN") || v.includes("UPGRADE")) return "PLAN";
+  if (v.includes("BILL")) return "BILLING";
+  return "SPECIAL";
 }
 
 /* =========================
-   OUTPUT
+   OUTPUT (LIVE)
 ========================= */
 function updateOutput() {
-  $("output").textContent = `
-CASE: ${$("case").value}
+
+  const output =
+`CASE: ${$("case").value}
 CONCERN TYPE: ${$("concernType").value}
 VOC: ${$("voc").value}
 
@@ -74,36 +90,56 @@ ACTION:
 ${$("action").value}
 
 WOCAS:
-${$("wocas").value}
-`.trim();
+${$("wocas").value}`;
+
+  $("output").textContent = output;
 }
 
 /* =========================
-   AFTERSALES CATEGORY
+   SUGGESTIONS
 ========================= */
-function getCategory(voc) {
-  const v = (voc || "").toUpperCase();
+function updateSuggestions() {
 
-  if (v.includes("DEVICE")) return "DEVICE";
-  if (v.includes("PLAN")) return "PLAN";
-  if (v.includes("BILL")) return "BILLING";
-  if (v.includes("BULK")) return "BULK";
-  if (v.includes("ACCOUNT")) return "ACCOUNT";
+  const concern = $("concernType").value;
+  const voc = $("voc").value;
 
-  return "SPECIAL";
+  let list = [];
+
+  if (concern === "Technical") {
+    list = TECH_PROCEDURES[voc] || ["Select technical type"];
+  }
+
+  else if (concern === "Aftersales") {
+    const cat = getAftersalesCategory(voc);
+    list = AFTERSALES[cat] || [];
+  }
+
+  else if (concern === "Inquiry") {
+    list = ["Check details", "Verify account", "Respond accordingly"];
+  }
+
+  else if (concern === "Complaint") {
+    list = ["Acknowledge issue", "Investigate", "Escalate if needed"];
+  }
+
+  else {
+    list = ["Select Concern Type"];
+  }
+
+  $("suggestions").innerHTML = list.map(i => "• " + i).join("<br>");
 }
 
 /* =========================
-   VOC SWITCH
+   VOC SWITCH FIX
 ========================= */
 function updateVocOptions() {
+
   const concern = $("concernType").value;
   const voc = $("voc");
-  const current = voc.value;
 
   if (concern === "Technical") {
     voc.innerHTML = `
-      <option value="">Select Connectivity</option>
+      <option value="">Select</option>
       <option>VOICE CONNECTIVITY</option>
       <option>SMS CONNECTIVITY</option>
       <option>DATA CONNECTIVITY</option>
@@ -114,85 +150,54 @@ function updateVocOptions() {
 
   else if (concern === "Aftersales") {
     voc.innerHTML = `
-      <option value="">Select Type</option>
-      <option>DEVICE</option>
-      <option>PLAN</option>
-      <option>BILLING</option>
-      <option>BULK</option>
-      <option>ACCOUNT</option>
+      <option value="">Select</option>
+      <option>INCREASE CREDIT LIMIT</option>
+      <option>DEVICE UNLOCKING</option>
+      <option>PLAN UPGRADE</option>
+      <option>BILLING ISSUE</option>
     `;
   }
 
   else {
     voc.innerHTML = `
-      <option value="">Select VOC</option>
+      <option value="">Select</option>
       <option>Positive</option>
       <option>Neutral</option>
       <option>Negative</option>
     `;
   }
 
-  voc.value = current;
-}
-
-/* =========================
-   SUGGESTIONS
-========================= */
-function updateSuggestions() {
-  const concern = $("concernType").value;
-  const voc = $("voc").value;
-
-  let list = [];
-
-  if (concern === "Technical") {
-    const steps = TECH_PROCEDURES[voc] || [];
-    list = [`TECH: ${voc}`, ...steps, "", `Guide: ${TECH_LINKS[voc] || ""}`];
-  }
-
-  else if (concern === "Aftersales") {
-    const cat = getCategory(voc);
-    list = [`AFTERSALES: ${voc}`, ...(AFTERSALES[cat] || [])];
-  }
-
-  else if (concern === "Inquiry") {
-    list = ["Check account", "Verify request", "Provide resolution"];
-  }
-
-  if (voc === "Negative") list.push("Apologize & escalate");
-  if (voc === "Positive") list.push("Confirm resolution");
-  if (voc === "Neutral") list.push("Standard handling");
-
-  $("suggestions").innerHTML = list.join("<br>");
+  updateSuggestions();
 }
 
 /* =========================
    EVENTS
 ========================= */
 function init() {
+
   loadData();
+
   updateOutput();
   updateSuggestions();
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
+
     el.addEventListener("input", () => {
       saveData();
       updateOutput();
-      updateSuggestions();
     });
 
     el.addEventListener("change", () => {
       if (el.id === "concernType") updateVocOptions();
       saveData();
-      updateOutput();
       updateSuggestions();
+      updateOutput();
     });
   });
 }
 
-window.addEventListener("DOMContentLoaded", init);
-
 /* =========================
-   BUTTON FUNCTIONS (FIXED GLOBAL)
+   BUTTON FUNCTIONS (IMPORTANT FIX)
 ========================= */
 function copyDoc() {
   navigator.clipboard.writeText($("output").textContent || "");
@@ -212,12 +217,21 @@ function downloadTxt() {
 
 function resetForm() {
   document.querySelectorAll("input, textarea, select").forEach(el => el.value = "");
+
   localStorage.removeItem(STORAGE_KEY);
 
-  $("output").textContent = "";
-  $("suggestions").textContent = "Select Concern & VOC";
-
-  updateVocOptions();
   updateOutput();
   updateSuggestions();
 }
+
+/* =========================
+   GLOBAL EXPORT (CRITICAL FIX)
+========================= */
+window.copyDoc = copyDoc;
+window.downloadTxt = downloadTxt;
+window.resetForm = resetForm;
+
+/* =========================
+   START
+========================= */
+window.addEventListener("DOMContentLoaded", init);
