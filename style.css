@@ -1,13 +1,64 @@
+/* ==========================================================================
+   THEME PALETTES & VARIABLES
+   ========================================================================== */
+:root {
+  /* Light Mode Colors */
+  --bg-app: #f5f7fb;
+  --bg-panel: #ffffff;
+  --bg-input: #f9fafb;
+  --bg-input-focus: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+
+  /* Side panels light defaults (Original sharp dark themes) */
+  --bg-output-panel: linear-gradient(180deg, #0f172a, #0b1220);
+  --text-output: #e5e7eb;
+  --header-output: #94a3b8;
+  --bg-suggestion-panel: linear-gradient(180deg, #111827, #0b1220);
+  --text-suggestion: #e5e7eb;
+  --link-color: #60a5fa;
+}
+
+body.dark-mode {
+  /* Dark Mode Colors */
+  --bg-app: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-input: #334155;
+  --bg-input-focus: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+
+  /* Smooth adjustments for side panels when dark mode is fully active */
+  --bg-output-panel: #1e293b;
+  --text-output: #f8fafc;
+  --header-output: #64748b;
+  --bg-suggestion-panel: #1e293b;
+  --text-suggestion: #f8fafc;
+  --link-color: #38bdf8;
+}
+
+/* ==========================================================================
+   CORE LAYOUT
+   ========================================================================== */
 html, body {
   height: 100%;
   margin: 0;
   font-family: system-ui, Arial;
-  background: #f5f7fb;
+  background: var(--bg-app);
+  color: var(--text-main);
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-/* TOP BAR */
+/* TOP BAR & SWITCH DESIGN */
 .topbar {
   padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .topbar h1 {
@@ -17,63 +68,79 @@ html, body {
 
 .topbar p {
   margin: 4px 0 0;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
-/* LAYOUT */
+.theme-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.theme-btn:hover {
+  background: rgba(128, 128, 128, 0.15);
+}
+
+/* LAYOUT PANEL SETUP */
 .layout {
   display: grid;
   grid-template-columns: 2fr 1.2fr 1fr;
   gap: 14px;
   padding: 0 20px 20px;
-
   height: calc(100vh - 90px);
   overflow: hidden;
 }
 
-/* PANEL */
+/* PANEL STANDARD */
 .panel {
-  background: white;
+  background: var(--bg-panel);
   border-radius: 16px;
   padding: 16px;
-
   overflow-y: auto;
   min-height: 0;
-
-  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  box-shadow: 0 12px 30px var(--shadow-color);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* INPUT PANEL */
+/* INPUT PANEL COMPONENT */
 .inputPanel {
-  background: #ffffff;
+  /* Leverages variable configuration to respond to global themes */
+  background: var(--bg-panel); 
 }
 
-/* OUTPUT */
+/* OUTPUT CONFIGS */
 .outputPanel {
-  background: linear-gradient(180deg, #0f172a, #0b1220);
-  color: #e5e7eb;
+  background: var(--bg-output-panel);
+  color: var(--text-output);
 }
 
-/* SUGGESTION */
+/* SUGGESTION CONFIGS */
 .suggestionPanel {
-  background: linear-gradient(180deg, #111827, #0b1220);
-  color: #e5e7eb;
-
+  background: var(--bg-suggestion-panel);
+  color: var(--text-suggestion);
   display: flex;
   flex-direction: column;
 }
 
-/* HEADER */
+/* PANELS HEADER ELEMENT */
 .outputHeader {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   margin-bottom: 12px;
-  color: #94a3b8;
+  color: var(--header-output);
 }
 
-/* TEXT OUTPUT */
+/* CODE / GENERIC TEXT BLOCKS */
 pre {
   white-space: pre-wrap;
   font-size: 13px;
@@ -81,36 +148,33 @@ pre {
   margin: 0;
 }
 
-/* GROUP */
+/* ==========================================================================
+   FIELDS AND INPUT CONTROL SCHEMES
+   ========================================================================== */
 .group {
   margin-bottom: 14px;
 }
 
-/* LABEL */
 .label {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
-/* INPUTS (MODERN FIX) */
 input,
 textarea,
 select {
   width: 100%;
   padding: 12px 14px;
-
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-
-  background: #f9fafb;
-
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-main);
   font-size: 14px;
   outline: none;
-
   transition: 0.2s ease;
 }
 
@@ -118,8 +182,8 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: #2563eb;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  background: var(--bg-input-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 textarea {
@@ -127,14 +191,15 @@ textarea {
   resize: vertical;
 }
 
-/* GRID */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-/* BUTTONS */
+/* ==========================================================================
+   BUTTON LAYOUTS & SUGGESTIONS
+   ========================================================================== */
 .buttons {
   display: flex;
   gap: 10px;
@@ -148,14 +213,17 @@ button {
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
+  transition: opacity 0.15s ease;
+}
+
+button:hover {
+  opacity: 0.9;
 }
 
 button:nth-child(1) { background: #2563eb; color: white; }
 button:nth-child(2) { background: #10b981; color: white; }
-button:nth-child(3) { background: #111827; color: white; }
-button:nth-child(4) { background: #ef4444; color: white; }
+button:nth-child(3) { background: #ef4444; color: white; } /* Handled Reset button alignment index shift */
 
-/* SUGGESTION */
 #suggestions {
   flex: 1;
   overflow-y: auto;
@@ -163,7 +231,20 @@ button:nth-child(4) { background: #ef4444; color: white; }
   line-height: 1.6;
 }
 
-/* RESPONSIVE */
+#suggestions a {
+  color: var(--link-color);
+  text-decoration: none;
+  display: inline-block;
+  margin: 4px 0;
+}
+
+#suggestions a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   MEDIA SCALING RULES
+   ========================================================================== */
 @media (max-width: 1100px) {
   .layout {
     grid-template-columns: 1fr;
@@ -173,15 +254,4 @@ button:nth-child(4) { background: #ef4444; color: white; }
   .panel {
     height: auto;
   }
-}
-
-#suggestions a {
-  color: #60a5fa;
-  text-decoration: none;
-  display: block;
-  margin: 4px 0;
-}
-
-#suggestions a:hover {
-  text-decoration: underline;
 }
