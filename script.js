@@ -247,13 +247,18 @@ function init() {
   });
 }
 
-function copyDoc() { navigator.clipboard.writeText($("output").textContent || ""); }
-function downloadTxt() {
-  const blob = new Blob([$("output").textContent], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "auto-docs.txt"; a.click();
-  URL.revokeObjectURL(url);
+function copyDoc() { 
+  navigator.clipboard.writeText($("output").textContent || ""); 
+  const copyBtn = document.querySelector("button[onclick='copyDoc()']");
+  if (copyBtn) {
+    const originalText = copyBtn.textContent;
+    copyBtn.textContent = "Copied! ✓";
+    copyBtn.style.background = "#059669"; // Turn darker green temporarily
+    setTimeout(() => {
+      copyBtn.textContent = originalText;
+      copyBtn.style.background = "#2563eb";
+    }, 1500);
+  }
 }
 
 /* =========================
