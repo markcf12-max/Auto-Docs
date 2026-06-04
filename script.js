@@ -109,7 +109,7 @@ function updateSuggestions() {
     const procedures = TECH_PROCEDURES[voc] || [];
     html = procedures.length
       ? procedures.map(p => 
-          `• ${p.text} ${p.link ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open Guide]</a>` : ""}`
+          `• ${p.text} ${p.link ? `<a href="${p.link}" target="_blank" style="color: #0066cc; text-decoration: underline;">[Open HLR GUIDE]</a>` : ""}`
         ).join("<br>")
       : "• Select technical type (VOC)";
   } 
