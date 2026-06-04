@@ -120,7 +120,7 @@ const VOC_OPTIONS = {
     "UNSUCCESSFUL MNP (POSTPAID)–UNDECIDED", "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE",
     "GENERAL INQUIRY", "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION",
     "SIM REG: SIM VALIDITY EXTENSION", "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM",
-    "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH OF OWNER",
+    "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER",
     "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", "SIM REG: UPDATE ID",
     "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", "SIM REG: REGULATORY TEMPO DISCON",
     "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATED", "Reconnection from Voluntary TD",
@@ -165,7 +165,6 @@ function updateSuggestions() {
   const concern = $("concernType")?.value;
   const voc = $("voc")?.value;
   
-  // Notice Banner for empowerment guidelines
   const matrixNotice = `<div style="background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 14px; border-radius: 4px; font-weight: bold; color: #f87171;">⚠️ Please check our Aftersales Empowerment Matrix</div>`;
 
   if (!concern) {
@@ -220,6 +219,17 @@ function updateVocOptions(keepExistingValue = false) {
 }
 
 /* =========================
+   DOWNLOAD TEXT METHOD (Added to prevent script crashes)
+========================= */
+function downloadTxt() {
+  const blob = new Blob([$("output").textContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "auto-docs.txt"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* =========================
    INITIALIZATION
 ========================= */
 function init() {
@@ -230,12 +240,16 @@ function init() {
   updateSuggestions();
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
+    // Fired on every single keystroke or selection change
     el.addEventListener("input", () => {
       saveData();
       updateOutput();
-      if (el.id === "voc") updateSuggestions();
+      if (el.id === "voc" || el.id === "concernType") {
+        updateSuggestions();
+      }
     });
 
+    // Fired specifically when items are selected/blurred
     el.addEventListener("change", () => {
       if (el.id === "concernType") {
         updateVocOptions(false);
@@ -253,7 +267,7 @@ function copyDoc() {
   if (copyBtn) {
     const originalText = copyBtn.textContent;
     copyBtn.textContent = "Copied! ✓";
-    copyBtn.style.background = "#059669"; // Turn darker green temporarily
+    copyBtn.style.background = "#059669"; 
     setTimeout(() => {
       copyBtn.textContent = originalText;
       copyBtn.style.background = "#2563eb";
