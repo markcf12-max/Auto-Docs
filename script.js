@@ -99,7 +99,7 @@ const VOC_OPTIONS = {
     "COVERAGE", "DATA CONNECTIVITY:INTERMITTENT CONNECTION", "DATA CONNECTIVITY:NO CONNECTION", "DATA CONNECTIVITY:SPECIFIC WEBSITE/APPLICATION",
     "DATA CONNECTIVITY:SLOW CONNECTION", "DEACTIVATION OF FLEXIBUNDLES", "DISCONNECTION", "DISPUTE: MSF CHARGES", "DISPUTE: CALL CHARGES",
     "DISPUTE:DATA CHARGES", "DISPUTE:SMS CHARGES", "DISPUTE: PCC", "DISPUTE:VAS CHARGES", "FAIR USE POLICY", "FAST DEPLETION",
-    "FLP RESENDING OF LOAD", "HANDSET UNLOCKING", "HOAX CALL/SMS", "HOME PREPAID WIFI", "INABILITY TO CALL THE HOTLINE/SPECIAL NUMBER",
+    "FLP RESENDING of LOAD", "HANDSET UNLOCKING", "HOAX CALL/SMS", "HOME PREPAID WIFI", "INABILITY TO CALL THE HOTLINE/SPECIAL NUMBER",
     "INTERNATIONAL ROAMING- STATUS", "INABILITY TO REGISTER", "LIFTING:DATA", "LIFTING:INCOMING/OUTGOING/DATA", "LIFTING:REDIRECTION",
     "MENU UPDATE", "MOBILE APPLICATION", "OTHER PROCEDURAL CONCERN", "PASALOAD", "PAYMENT ARRANGEMENT", "PAYMENT CHANNEL",
     "PLAN DOWNGRADE/UPGRADE", "PLAN INCLUSION", "PRODUCT/PROMO INQUIRY", "PROMO MECHANICS", "PROMO RATES/INCLUSION", "PUK/PIN",
@@ -195,7 +195,6 @@ function updateVocOptions(keepExistingValue = false) {
   const vocInput = $("voc");
   if (!datalist || !vocInput) return;
 
-  // Fix: If category is empty/blank, wipe out everything safely and stop executing.
   if (!concern || concern === "") {
     datalist.innerHTML = "";
     vocInput.value = "";
@@ -247,30 +246,32 @@ function downloadTxt() {
   URL.revokeObjectURL(url);
 }
 
+/* =========================
+   BALANCED RESET METHOD
+========================= */
 function resetForm() {
-  // 1. Wipe out storage immediately first
+  // 1. Wipe out local storage tracking
   localStorage.removeItem(STORAGE_KEY);
   
-  // 2. Explicitly target and empty out all input elements
+  // 2. Clear values out of text inputs and textareas
   document.querySelectorAll("input, textarea").forEach(el => {
     el.value = "";
   });
   
-  // 3. Force the dropdown element to index 0 (the blank option string)
+  // 3. Snap dropdown element back to the index 0 placeholder string
   const concernDropdown = $("concernType");
   if (concernDropdown) {
     concernDropdown.selectedIndex = 0;
-    concernDropdown.value = ""; 
   }
   
-  // 4. Force empty settings on your datalist module
+  // 4. Force empty values on VOC datalist configs
   const vocInput = $("voc");
   if (vocInput) vocInput.value = "";
   
   const datalist = $("vocOptions");
   if (datalist) datalist.innerHTML = "";
   
-  // 5. Hard refresh text boxes and suggestion panes directly
+  // 5. Instantly refresh the screen panels cleanly
   if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
   updateOutput();
 }
