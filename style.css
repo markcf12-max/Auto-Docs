@@ -142,6 +142,7 @@ html, body {
 .suggestionPanel {
   background: var(--bg-suggestion-panel);
   color: var(--text-suggestion);
+  position: relative;
 }
 
 /* PANELS HEADER ELEMENT */
@@ -264,13 +265,11 @@ textarea {
 .buttons button:nth-child(2) { background: #10b981; color: white; }
 .buttons button:nth-child(3) { background: #ef4444; color: white; }
 
-/* Drawer Toggle layout control for intermediate screen widths (Option B) */
+/* Drawer Toggle Button Master Styles */
 .drawer-toggle-btn {
-  display: none;
+  display: none; /* Hidden on full desktops by default */
   position: absolute;
-  right: 16px;
-  bottom: 20px;
-  z-index: 99;
+  z-index: 110;
   background: #eab308;
   color: #111827;
   border: none;
@@ -280,12 +279,12 @@ textarea {
   font-size: 12px;
   letter-spacing: 0.5px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.35);
+  box-shadow: -4px 4px 14px rgba(0, 0, 0, 0.25);
   align-items: center;
   gap: 8px;
-  transition: transform 0.1s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.drawer-toggle-btn:active { transform: scale(0.96); }
+.drawer-toggle-btn:hover { background: #facc15; }
 
 #suggestions {
   flex: 1;
@@ -385,13 +384,24 @@ textarea {
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
   }
 
+  /* When closed, pop the button anchor outwards to the left flank as an accessible tab handle */
+  .suggestionPanel .drawer-toggle-btn {
+    display: flex;
+    left: -145px; 
+    top: 20px;
+  }
+
   /* Class assigned via Javascript when clicking drawer toggle handle */
   .suggestionPanel.drawer-open {
     transform: translateX(0);
   }
 
-  .drawer-toggle-btn {
-    display: flex;
+  /* When open, lock the button button smoothly inside the header alignment rules */
+  .suggestionPanel.drawer-open .drawer-toggle-btn {
+    left: auto;
+    right: 20px;
+    top: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
 }
 
