@@ -5,6 +5,7 @@ function $(id) {
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
 const HISTORY_KEY = "auto_docs_history"; 
+const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
 /* ==========================================================================
    REAL-TIME REGULAR EXPRESSION VALIDATORS
@@ -35,23 +36,29 @@ function validateMinField(el) {
 
   if (val.length === 0) return;
 
-  if (val.startsWith('09')) {
-    if (val.length === 11) el.classList.add('val-green');
-    else if (val.length > 11) el.classList.add('val-crimson');
-    else el.classList.add('val-amber');
-  } 
-  else if (val.startsWith('63')) {
-    if (val.length === 12) el.classList.add('val-green');
-    else if (val.length > 12) el.classList.add('val-crimson');
-    else el.classList.add('val-amber');
-  } 
-  else if (val.startsWith('9')) {
-    if (val.length === 10) el.classList.add('val-green');
-    else if (val.length > 10) el.classList.add('val-crimson');
-    else el.classList.add('val-amber');
-  } 
-  else {
-    el.classList.add('val-crimson'); 
+  // Since letters are now allowed for bulk requests, check if it's purely a standard number profile first
+  if (/^\d+$/.test(val)) {
+    if (val.startsWith('09')) {
+      if (val.length === 11) el.classList.add('val-green');
+      else if (val.length > 11) el.classList.add('val-crimson');
+      else el.classList.add('val-amber');
+    } 
+    else if (val.startsWith('63')) {
+      if (val.length === 12) el.classList.add('val-green');
+      else if (val.length > 12) el.classList.add('val-crimson');
+      else el.classList.add('val-amber');
+    } 
+    else if (val.startsWith('9')) {
+      if (val.length === 10) el.classList.add('val-green');
+      else if (val.length > 10) el.classList.add('val-crimson');
+      else el.classList.add('val-amber');
+    } 
+    else {
+      el.classList.add('val-crimson'); 
+    }
+  } else {
+    // If it contains letters (e.g., "BULK REQUEST"), flag it green as standard custom textual input
+    el.classList.add('val-green');
   }
 }
 
@@ -122,10 +129,13 @@ function pushToHistory(caseNumber, textContent) {
 
   history.unshift({ id: displayId, time: timestamp, text: textContent });
   
-  // Upgraded limit to 50 items to safely collect full shift workloads
   if (history.length > 50) history.pop(); 
   
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  
+  // Any new copy action resets the download status flag back to unsaved
+  localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
+  
   renderHistoryView();
   updateFloatingBanner();
 }
@@ -160,16 +170,19 @@ function loadHistoryItem(index) {
   showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
 
+/* Updated Banner Tracking Rule logic */
 function updateFloatingBanner() {
   const banner = $('floatingShiftBanner');
   if (!banner) return;
 
+  const isDownloaded = localStorage.getItem(DOWNLOADED_STATE_KEY) === "true";
   const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   
-  if (history.length > 0) {
+  // Confirms explicit check status of download trigger
+  if (isDownloaded && history.length > 0) {
     banner.style.background = "#10b981"; 
     banner.style.color = "#ffffff";
-    banner.innerHTML = `<i class="fas fa-check-circle"></i> SHIFT WORK COPIED & HISTORICALLY BACKED UP (${history.length})`;
+    banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${history.length})`;
   } else {
     banner.style.background = "#fbbf24"; 
     banner.style.color = "#1e293b";
@@ -202,6 +215,11 @@ function downloadHistoryLog() {
   a.download = `ShiftHistory-Logs-${dateStr}.txt`; 
   a.click();
   URL.revokeObjectURL(url);
+  
+  // Flag system that download file extraction has succeeded
+  localStorage.setItem(DOWNLOADED_STATE_KEY, "true");
+  
+  updateFloatingBanner();
   showToast("Shift history download complete!");
 }
 
@@ -290,7 +308,7 @@ const VOC_OPTIONS = {
     "SERVICE DOWNTIME:DATA", "SERVICE DOWNTIME:LOADING", "SERVICE DOWNTIME:REGISTRATION", "SERVICE DOWNTIME:SMS", "SERVICE DOWNTIME:VAS",
     "SIM UPGRADE", "SMS CONNECTIVITY:INCOMING", "SMS CONNECTIVITY:MULTIPLE", "SMS CONNECTIVITY:DELAYED", "SMS CONNECTIVITY:OUTGOING",
     "SMS CONNECTIVITY:PREMIUM SMS", "SOA:BILL REPRINT", "SOA:E-STATEMENT", "STATUS: ACCOUNT", "SOA:NON RECEIPT/DELAYED",
-    "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING OF DEALER/RETAILER SIM", "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION",
+    "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING of DEALER/RETAILER SIM", "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION",
     "VAS TECH:UNABLE TO REGISTER", "VOICE CONNECTIVITY: INCOMING", "VOICE CONNECTIVITY: OUTGOING", "VOICE QUALITY", "BALANCE: AMOUNT TO SETTLE",
     "DISSATISFACTION", "MNP INQUIRY", "SUCCESSFUL MNP INTERPORT-IN (TO POSTPAID)", "SUCCESSFUL MNP INTERPORT-IN (TO PREPAID)",
     "SUCCESSFUL MNP INTERPORT-OUT", "SUCCESSFUL MNP INTRAPORT (TO POSTPAID)", "SUCCESSFUL MNP INTRAPORT (TO PREPAID)", "MNP SIM ACTIVATION",
@@ -431,8 +449,7 @@ function init() {
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
     el.addEventListener("input", () => {
-      if(el.id === "min") el.value = el.value.replace(/\D/g, '');
-      
+      // Stripped old non-digit filters from MIN layout to freely support text/letters
       if(el.id === "case") validateCaseField(el);
       if(el.id === "min") validateMinField(el);
 
@@ -505,6 +522,7 @@ function resetForm(e) {
 
 function clearShiftHistory() {
   localStorage.removeItem(HISTORY_KEY);
+  localStorage.removeItem(DOWNLOADED_STATE_KEY);
   renderHistoryView();
   updateFloatingBanner();
   showToast("Shift History Cleared!");
