@@ -18,14 +18,44 @@ const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 let bannerTimeout = null; 
 
 /**
- * Fallback to uniquely identify agents on browser profiles.
- * This guarantees the tool knows whose data to query from the cloud after a crash.
+ * Validates the typed ID against the master database list.
+ * Continues prompting until a completely valid ID is supplied.
  */
-function getAgentId() {
+async function verifyAndGetAgentId() {
   let id = localStorage.getItem("auto_docs_agent_id");
-  if (!id) {
-    id = prompt("Please enter your Agent ID/Name to configure crash tracking:") || "Unknown_Agent";
-    localStorage.setItem("auto_docs_agent_id", id);
+  
+  while (!id) {
+    let inputId = prompt("🔒 Access Protected.\nPlease enter your official Employee ID to configure session tracking:");
+    
+    // If they click cancel or leave it empty, keep looping
+    if (!inputId || !inputId.trim()) {
+      alert("Employee ID is strictly required to use this workbench.");
+      continue;
+    }
+    
+    inputId = inputId.trim();
+
+    try {
+      // Query our new master table for a match
+      const { data, error } = await supabaseClient
+        .from('employees')
+        .select('employee_id')
+        .eq('employee_id', inputId);
+
+      if (error) throw error;
+
+      // If the database returns a record, it's valid!
+      if (data && data.length > 0) {
+        id = inputId;
+        localStorage.setItem("auto_docs_agent_id", id);
+        alert(`✅ Welcome authenticated agent: ${id}`);
+      } else {
+        alert("❌ Access Denied: That Employee ID is not registered in our system. Please check for typos.");
+      }
+    } catch (err) {
+      console.error("Database validation error:", err);
+      alert("⚠️ Verification system communication failure. Please verify your internet connection.");
+    }
   }
   return id;
 }
@@ -122,7 +152,7 @@ async function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
   const caseNum = $("case")?.value.trim() || "DRAFT";
-  const agentId = getAgentId();
+  const agentId = await verifyAndGetAgentId();
 
   // Streams real-time form inputs directly into cloud servers via upsert
   try {
@@ -153,7 +183,7 @@ function loadData() {
  * matching this user's profile to prevent accident crash losses.
  */
 async function checkAndRestoreCrashData() {
-  const agentId = getAgentId();
+  const agentId = await verifyAndGetAgentId();
   
   try {
     const { data, error } = await supabaseClient
@@ -515,7 +545,7 @@ function initTheme() {
   updateThemeIcon(isDark);
 }
 
-function init() {
+async function init() {
   initTheme(); 
   loadData();
   updateVocOptions(true); 
@@ -524,8 +554,11 @@ function init() {
   renderHistoryView();
   updateFloatingBanner();
 
-  // Instant execution check for active database entries
-  checkAndRestoreCrashData();
+  // Run database gatekeeper verification step immediately on workspace startup
+  await verifyAndGetAgentId();
+  
+  // Clear layout fields or hydrate backup logs safely from cloud database
+  await checkAndRestoreCrashData();
 
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
