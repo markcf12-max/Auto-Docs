@@ -36,7 +36,6 @@ function validateMinField(el) {
 
   if (val.length === 0) return;
 
-  // Since letters are now allowed for bulk requests, check if it's purely a standard number profile first
   if (/^\d+$/.test(val)) {
     if (val.startsWith('09')) {
       if (val.length === 11) el.classList.add('val-green');
@@ -57,7 +56,6 @@ function validateMinField(el) {
       el.classList.add('val-crimson'); 
     }
   } else {
-    // If it contains letters (e.g., "BULK REQUEST"), flag it green as standard custom textual input
     el.classList.add('val-green');
   }
 }
@@ -132,8 +130,6 @@ function pushToHistory(caseNumber, textContent) {
   if (history.length > 50) history.pop(); 
   
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  
-  // Any new copy action resets the download status flag back to unsaved
   localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
   
   renderHistoryView();
@@ -170,7 +166,6 @@ function loadHistoryItem(index) {
   showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
 
-/* Updated Banner Tracking Rule logic */
 function updateFloatingBanner() {
   const banner = $('floatingShiftBanner');
   if (!banner) return;
@@ -178,7 +173,6 @@ function updateFloatingBanner() {
   const isDownloaded = localStorage.getItem(DOWNLOADED_STATE_KEY) === "true";
   const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   
-  // Confirms explicit check status of download trigger
   if (isDownloaded && history.length > 0) {
     banner.style.background = "#10b981"; 
     banner.style.color = "#ffffff";
@@ -216,7 +210,6 @@ function downloadHistoryLog() {
   a.click();
   URL.revokeObjectURL(url);
   
-  // Flag system that download file extraction has succeeded
   localStorage.setItem(DOWNLOADED_STATE_KEY, "true");
   
   updateFloatingBanner();
@@ -308,7 +301,7 @@ const VOC_OPTIONS = {
     "SERVICE DOWNTIME:DATA", "SERVICE DOWNTIME:LOADING", "SERVICE DOWNTIME:REGISTRATION", "SERVICE DOWNTIME:SMS", "SERVICE DOWNTIME:VAS",
     "SIM UPGRADE", "SMS CONNECTIVITY:INCOMING", "SMS CONNECTIVITY:MULTIPLE", "SMS CONNECTIVITY:DELAYED", "SMS CONNECTIVITY:OUTGOING",
     "SMS CONNECTIVITY:PREMIUM SMS", "SOA:BILL REPRINT", "SOA:E-STATEMENT", "STATUS: ACCOUNT", "SOA:NON RECEIPT/DELAYED",
-    "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING of DEALER/RETAILER SIM", "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION",
+    "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING OF DEALER/RETAILER SIM", "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION",
     "VAS TECH:UNABLE TO REGISTER", "VOICE CONNECTIVITY: INCOMING", "VOICE CONNECTIVITY: OUTGOING", "VOICE QUALITY", "BALANCE: AMOUNT TO SETTLE",
     "DISSATISFACTION", "MNP INQUIRY", "SUCCESSFUL MNP INTERPORT-IN (TO POSTPAID)", "SUCCESSFUL MNP INTERPORT-IN (TO PREPAID)",
     "SUCCESSFUL MNP INTERPORT-OUT", "SUCCESSFUL MNP INTRAPORT (TO POSTPAID)", "SUCCESSFUL MNP INTRAPORT (TO PREPAID)", "MNP SIM ACTIVATION",
@@ -349,13 +342,13 @@ function updateOutput() {
     ticketHeaderTag = "SR NUMBER";
   }
 
+  // Maps the new single line "SUBJ" text clean into generated manifest strings
   $("output").textContent = 
 `${ticketHeaderTag}: ${displayValue}
 CONCERN TYPE: ${$("concernType")?.value || ""}
 VOC: ${$("voc")?.value || ""}
 
-DETAILS:
-${$("details")?.value || ""}
+SUBJ: ${$("subj")?.value || ""}
 
 NAME: ${$("name")?.value || ""}
 MIN: ${$("min")?.value || ""}
@@ -449,7 +442,6 @@ function init() {
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
     el.addEventListener("input", () => {
-      // Stripped old non-digit filters from MIN layout to freely support text/letters
       if(el.id === "case") validateCaseField(el);
       if(el.id === "min") validateMinField(el);
 
