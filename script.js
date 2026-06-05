@@ -243,20 +243,8 @@ function initTheme() {
   }
 }
 
-function toggleTheme() {
-  const isDark = document.body.classList.toggle("dark-mode");
-  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  updateThemeIcon(isDark);
-}
-
-function updateThemeIcon(isDark) {
-  const icon = document.querySelector("#themeToggle i");
-  if (!icon) return;
-  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
-}
-
 /* ==========================================================================
-   VOC PROCEDURES MAPPING CONFIG DATA
+   VOC PROCEDURES MAPPING CONFIG DATA (CONSOLIDATED AFTER SALES MATRIX)
    ========================================================================== */
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": [
@@ -269,16 +257,14 @@ const TECH_PROCEDURES = {
   "COVERAGE CONNECTIVITY": [{ text: "Check physical coverage index maps", link: "https://yourguide-link.com/coverage" }]
 };
 
+// Consolidated inquiry database workflows securely coupled straight into aftersales structural tracking mapping
 const AFTERSALES_PROCEDURES = {
   "Device Unlocking": [
     { text: "Verify IMEI lock status in database", link: "https://yourguide-link.com/unlock" },
     { text: "Check tenure eligibility metrics", link: "#" }
   ],
   "Change Plan: Downgrade and Upgrade": [{ text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" }],
-  "Bulk SIM Activation": [{ text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }]
-};
-
-const INQUIRY_PROCEDURES = {
+  "Bulk SIM Activation": [{ text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }],
   "SIM REGISTRATION": [{ text: "Open official consumer registration validation console", link: "https://yourguide-link.com/sim-reg" }],
   "BALANCE:CLARIFICATION ON BILLED CHARGES": [{ text: "Pull ledger micro-transactions record sheet", link: "https://yourguide-link.com/ledger" }],
   "PUK/PIN": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
@@ -293,9 +279,7 @@ const VOC_OPTIONS = {
     "Change CPE/Handset/Device Replacement", "Change Billing Address", "Change Assignee", "Bulk Voluntary Temporary Disconnection",
     "Bulk Voluntary Permanent Disconnection", "Bulk SIM Activation", "Bulk Feature Deactivation", "Bulk Feature Activation",
     "Bulk Change Assignee", "Billing Account Transfer", "A2P Aftersales Transactions via Soprano Help Center",
-    "3G Sunset Spare SIM Process of CSP-Born Accounts (Smart only)", "3G Sunset SIM Replacement Process of SFDC-Born Accounts"
-  ],
-  "Inquiry": [
+    "3G Sunset Spare SIM Process of CSP-Born Accounts (Smart only)", "3G Sunset SIM Replacement Process of SFDC-Born Accounts",
     "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", "AVAILMENT of ADD-ONS",
     "BALANCE TRANSFER", "BALANCE:ACCOUNT RECONCILIATION", "BALANCE:CLARIFICATION ON BILLED CHARGES", "BALANCE:COLLECTION REMINDER",
     "BALANCE:NON-RECEIPT OF BILL", "BALANCE:POSTING OF PAYMENT", "BALANCE:PRO-RATA", "BALANCE:REMAINING ALLOCATION", "BALANCE:TOP UP",
@@ -332,8 +316,24 @@ const VOC_OPTIONS = {
     "Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", "Case Management – Billing Dispute",
     "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
   ],
+  "Inquiry": [], // Dynamic operational routing maps elements cleanly to Aftersales structural arrays
   "Complaint": ["Positive", "Neutral", "Negative"]
 };
+
+// Auto-populate the inquiry legacy key container pointer array logic reference at execution initialization
+VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+}
 
 /* ==========================================================================
    OUTPUT GENERATOR
@@ -403,13 +403,9 @@ function updateSuggestions() {
     const procedures = TECH_PROCEDURES[voc] || [];
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
-  else if (concern === "Aftersales") {
+  else if (concern === "Aftersales" || concern === "Inquiry") {
     const procedures = AFTERSALES_PROCEDURES[voc] || [];
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
-  } 
-  else if (concern === "Inquiry") {
-    const procedures = INQUIRY_PROCEDURES[voc] || [];
-    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Search knowledge base resources<br>• Respond clearly to customer request";
   } 
   else if (concern === "Complaint") {
     html += ["Acknowledge issue", "Investigate details closely", "Escalate if needed"].map(i => `• ${i}`).join("<br>");
