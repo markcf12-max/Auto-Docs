@@ -307,9 +307,10 @@ button[type="button"] {
   border-top: 1px solid var(--border-color);
   z-index: 1000;
   box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+  box-sizing: border-box;
 }
 
-/* Mobile Media Queries (Viewports smaller than 1024px) */
+/* Mobile Media Queries (Viewports smaller than 1024px or ultra-narrow viewports) */
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;
@@ -334,12 +335,30 @@ button[type="button"] {
     right: 0;
   }
   
-  .drawer-toggle-btn, .floating-action-dock {
-    display: grid;
-    display: flex;
+  .drawer-toggle-btn {
+    display: flex !important;
+  }
+
+  .floating-action-dock {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr; /* Split cleanly side-by-side */
+    width: 100% !important;
+    left: 0 !important;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .floating-action-dock button {
+    width: 100% !important;
+    padding: 14px !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    box-shadow: none !important;
   }
   
   .inputPanel .buttons {
-    display: none; /* Hide standard buttons inside panel view on mobile */
+    display: none !important; /* Hide standard inline buttons on small viewport sizes */
   }
 }
