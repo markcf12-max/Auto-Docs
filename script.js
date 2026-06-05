@@ -221,11 +221,18 @@ function updateOutput() {
   
   const caseVal = $("case")?.value.trim() || "";
   let ticketHeaderTag = "CASE/SR VALUE";
-  if (caseVal.length === 8) ticketHeaderTag = "CASE NUMBER";
-  if (caseVal.length === 10) ticketHeaderTag = "SR NUMBER";
+  let displayValue = caseVal;
+
+  if (caseVal.length === 0) {
+    displayValue = "N/A";
+  } else if (caseVal.length === 8) {
+    ticketHeaderTag = "CASE NUMBER";
+  } else if (caseVal.length === 10) {
+    ticketHeaderTag = "SR NUMBER";
+  }
 
   $("output").textContent = 
-`${ticketHeaderTag}: ${caseVal}
+`${ticketHeaderTag}: ${displayValue}
 CONCERN TYPE: ${$("concernType")?.value || ""}
 VOC: ${$("voc")?.value || ""}
 
@@ -381,7 +388,7 @@ function copyDoc() {
 }
 
 /* ==========================================================================
-   BALANCED RESET METHOD
+   IN-BUTTON CLEAR CONFIRMATION METHOD (NO SYSTEM ALERTS)
    ========================================================================== */
 function resetForm(e) {
   if (e) {
@@ -389,10 +396,38 @@ function resetForm(e) {
     e.stopPropagation();
   }
 
+  // Locating the reset button targeting standard clear actions
+  const clearBtn = document.querySelector("button[onclick*='resetForm']");
+  
+  if (clearBtn) {
+    if (!clearBtn.dataset.confirmed || clearBtn.dataset.confirmed === "false") {
+      // First click: Request inline verification
+      clearBtn.dataset.confirmed = "true";
+      clearBtn.dataset.originalText = clearBtn.innerHTML;
+      clearBtn.innerHTML = "Are you sure? Click again";
+      clearBtn.style.background = "#dc2626"; // Crimson warning background
+      
+      // Automatic reset to regular state if user waits or hesitates for 4 seconds
+      setTimeout(() => {
+        if (clearBtn.dataset.confirmed === "true") {
+          clearBtn.dataset.confirmed = "false";
+          clearBtn.innerHTML = clearBtn.dataset.originalText;
+          clearBtn.style.background = ""; 
+        }
+      }, 4000);
+      return;
+    }
+    
+    // Second click: Process execution & reverse button layout
+    clearBtn.dataset.confirmed = "false";
+    clearBtn.innerHTML = clearBtn.dataset.originalText || "Clear Logs";
+    clearBtn.style.background = "";
+  }
+
   const toast = $('toast');
   if (toast) toast.classList.remove('show');
 
-  if(!confirm("Clear all active manifest field logs?")) return;
+  // Clear data allocations
   localStorage.removeItem(STORAGE_KEY);
   
   document.querySelectorAll("input, textarea").forEach(el => {
@@ -401,9 +436,7 @@ function resetForm(e) {
   });
   
   const concernDropdown = $("concernType");
-  if (concernDropdown) {
-    concernDropdown.selectedIndex = 0;
-  }
+  if (concernDropdown) concernDropdown.selectedIndex = 0;
   
   const vocInput = $("voc");
   if (vocInput) vocInput.value = "";
