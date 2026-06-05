@@ -2,12 +2,34 @@ function $(id) {
   return document.getElementById(id);
 }
 
+/* ==========================================================================
+   SUPABASE CLOUD DATABASE CONFIGURATION
+   ========================================================================== */
+// TODO: Replace these strings with your actual API credentials from your Supabase Dashboard
+const SUPABASE_URL = "https://your-project-id.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-key-here";
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
 const HISTORY_KEY = "auto_docs_history"; 
 const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
 let bannerTimeout = null; 
+
+/**
+ * Fallback to uniquely identify agents on browser profiles.
+ * This guarantees the tool knows whose data to query from the cloud after a crash.
+ */
+function getAgentId() {
+  let id = localStorage.getItem("auto_docs_agent_id");
+  if (!id) {
+    id = prompt("Please enter your Agent ID/Name to configure crash tracking:") || "Unknown_Agent";
+    localStorage.setItem("auto_docs_agent_id", id);
+  }
+  return id;
+}
 
 /* ==========================================================================
    REAL-TIME REGULAR EXPRESSION VALIDATORS
@@ -89,22 +111,89 @@ function showToast(msg, isError = false) {
 }
 
 /* ==========================================================================
-   DATA STORAGE & HISTORY BACKUPS SYSTEM
+   DATA STORAGE & BACKUPS REGISTRY ENGINE (SUPABASE RE-WIRED)
    ========================================================================== */
-function saveData() {
+async function saveData() {
   const data = {};
   document.querySelectorAll("input, textarea, select").forEach(el => {
     if (el.id) data[el.id] = el.value;
   });
+  
+  // Keep local storage as a secondary fallback layer
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  const caseNum = $("case")?.value.trim() || "DRAFT";
+  const agentId = getAgentId();
+
+  // Streams real-time form inputs directly into cloud servers via upsert
+  try {
+    await supabase
+      .from('case_logs')
+      .upsert([
+        { 
+          agent_id: agentId, 
+          case_number: caseNum, 
+          form_data: data 
+        }
+      ], { onConflict: 'agent_id, case_number' });
+  } catch (error) {
+    console.warn("Database storage sync interrupted, local storage safe.", error);
+  }
 }
 
 function loadData() {
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
   Object.keys(saved).forEach(id => {
     const el = $(id);
-    if (el) el.value = saved[id];
+    if (el && id !== "voc") el.value = saved[id];
   });
+}
+
+/**
+ * Checks the central cloud database immediately on startup for records
+ * matching this user's profile to prevent accident crash losses.
+ */
+async function checkAndRestoreCrashData() {
+  const agentId = getAgentId();
+  
+  try {
+    const { data, error } = await supabase
+      .from('case_logs')
+      .select('form_data, case_number')
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error || !data || data.length === 0) return;
+
+    const lastSavedCase = data[0].case_number;
+    const savedFormState = data[0].form_data;
+
+    // Verify if current fields are already populated to minimize false prompts
+    const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
+    if (hasActiveInput) return;
+
+    const confirmRestore = confirm(`🔄 Auto Docs Cloud Recovery:\n\nWe detected an interrupted session for Case ID/SR [${lastSavedCase}]. Would you like to restore your lost progress?`);
+    
+    if (confirmRestore) {
+      Object.keys(savedFormState).forEach(id => {
+        const el = $(id);
+        if (el && id !== "voc") el.value = savedFormState[id];
+      });
+
+      // Synchronize data dropdown options seamlessly
+      if ($("concernType")?.value) updateVocOptions(true);
+      if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+
+      updateOutput();
+      updateSuggestions();
+      if($('case')) validateCaseField($('case'));
+      if($('min')) validateMinField($('min'));
+      showToast("Progress successfully salvaged from cloud database!");
+    }
+  } catch (e) {
+    console.error("Cloud hydration query bypass error:", e);
+  }
 }
 
 function pushToHistory(caseNumber, textContent) {
@@ -204,7 +293,7 @@ function downloadHistoryLog() {
   }
 
   let fileContent = `==================================================\n`;
-  fileContent += `          SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
+  fileContent += `         SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
   fileContent += `==================================================\n\n`;
 
   history.forEach((item, idx) => {
@@ -269,7 +358,6 @@ const AFTERSALES_PROCEDURES = {
   "PUK/PIN": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
 };
 
-// Removed obsolete Sentiment Objects completely 
 const VOC_OPTIONS = {
   "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY"],
   "Aftersales": [
@@ -320,7 +408,6 @@ const VOC_OPTIONS = {
   "Complaint": []
 };
 
-// Mirror synchronization logic (Inquiry and Complaint now share Aftersales array pool architecture)
 VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
 VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
 
@@ -392,7 +479,6 @@ function updateSuggestions() {
     const procedures = TECH_PROCEDURES[voc] || [];
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
-  // Combined Complaint logic with Aftersales and Inquiry suggestions map target
   else if (concern === "Aftersales" || concern === "Inquiry" || concern === "Complaint") {
     const procedures = AFTERSALES_PROCEDURES[voc] || [];
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
@@ -421,7 +507,7 @@ function updateVocOptions(keepExistingValue = false) {
 }
 
 /* ==========================================================================
-   INITIALIZATION
+   INITIALIZATION LAYERS
 ========================================================================== */
 function initTheme() {
   const savedTheme = localStorage.getItem(THEME_KEY);
@@ -438,6 +524,9 @@ function init() {
   updateSuggestions();
   renderHistoryView();
   updateFloatingBanner();
+
+  // Instant execution check for active database entries
+  checkAndRestoreCrashData();
 
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
