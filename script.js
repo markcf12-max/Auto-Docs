@@ -118,16 +118,16 @@ function pushToHistory(caseNumber, textContent) {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
 
-  // Check if content matches the latest history item to prevent double entry
   if (history.length > 0 && history[0].text === textContent) return;
 
   history.unshift({ id: displayId, time: timestamp, text: textContent });
   
-  if (history.length > 20) history.pop(); // Upgraded to store up to 20 lines for safety
+  // Upgraded limit to 50 items to safely collect full shift workloads
+  if (history.length > 50) history.pop(); 
   
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   renderHistoryView();
-  updateFloatingBanner(); // Changes warning notice to complete status instantly
+  updateFloatingBanner();
 }
 
 function renderHistoryView() {
@@ -160,7 +160,6 @@ function loadHistoryItem(index) {
   showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
 
-/* Updates the status header based on logs */
 function updateFloatingBanner() {
   const banner = $('floatingShiftBanner');
   if (!banner) return;
@@ -168,17 +167,16 @@ function updateFloatingBanner() {
   const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   
   if (history.length > 0) {
-    banner.style.background = "#10b981"; // Success Emerald Green
+    banner.style.background = "#10b981"; 
     banner.style.color = "#ffffff";
     banner.innerHTML = `<i class="fas fa-check-circle"></i> SHIFT WORK COPIED & HISTORICALLY BACKED UP (${history.length})`;
   } else {
-    banner.style.background = "#fbbf24"; // Alert Amber
+    banner.style.background = "#fbbf24"; 
     banner.style.color = "#1e293b";
     banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT`;
   }
 }
 
-/* Bulk downloads history stack records into a structured master text manifest */
 function downloadHistoryLog() {
   const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   if (history.length === 0) {
@@ -417,17 +415,6 @@ function updateVocOptions(keepExistingValue = false) {
 }
 
 /* ==========================================================================
-   DOWNLOAD TEXT METHOD
-========================================================================== */
-function downloadTxt() {
-  const blob = new Blob([$("output").textContent], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = `Log-${$("case")?.value || 'auto-docs'}.txt`; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ==========================================================================
    INITIALIZATION
 ========================================================================== */
 function init() {
@@ -437,7 +424,7 @@ function init() {
   updateOutput();
   updateSuggestions();
   renderHistoryView();
-  updateFloatingBanner(); // Init check for floating indicator text configuration
+  updateFloatingBanner();
 
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
@@ -479,8 +466,6 @@ function copyDoc() {
   }
 
   showToast(`Manifest Logs Copied! (${outputText.length} chars)`);
-
-  // Force push content directly into history array
   pushToHistory($("case")?.value, outputText);
 }
 
@@ -518,7 +503,6 @@ function resetForm(e) {
   showToast("Logs cleared!");
 }
 
-/* Clear backup log data entirely */
 function clearShiftHistory() {
   localStorage.removeItem(HISTORY_KEY);
   renderHistoryView();
@@ -526,5 +510,5 @@ function clearShiftHistory() {
   showToast("Shift History Cleared!");
 }
 
-window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem; window.downloadHistoryLog = downloadHistoryLog; window.clearShiftHistory = clearShiftHistory;
+window.copyDoc = copyDoc; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem; window.downloadHistoryLog = downloadHistoryLog; window.clearShiftHistory = clearShiftHistory;
 window.addEventListener("DOMContentLoaded", init);
