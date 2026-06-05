@@ -3,13 +3,11 @@ function $(id) {
 }
 
 /* ==========================================================================
-   SUPABASE CLOUD DATABASE CONFIGURATION (FIXED DECLARATION)
+   SUPABASE CLOUD DATABASE CONFIGURATION (AUTHENTICATED)
    ========================================================================== */
-// TODO: Replace these strings with your actual API credentials from your Supabase Dashboard
-const SUPABASE_URL = "https://your-project-id.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-key-here";
+const SUPABASE_URL = "https://xgawbrwzdpqcbpwnrybe.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnYXdicnd6ZHBxY2Jwd25yeWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Mzc0MzAsImV4cCI6MjA5NjIxMzQzMH0.l1bXiP7LDzIyIn3IzPKDKIFHCHp2KbHnjTbWOKyardI";
 
-// Changed variable name to 'supabaseClient' to prevent conflicts with the global 'supabase' window object
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const STORAGE_KEY = "auto_docs_v5";
