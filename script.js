@@ -1,3 +1,15 @@
+/* ==========================================================================
+   INDEXEDDB (DEXIE.JS) LOCAL-FIRST RESILIENCE LAYER
+   ========================================================================== */
+import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.4/+esm';
+
+// Create a local, firewall-immune transactional database inside the browser
+const db = new Dexie('AutoDocsLocalDB');
+db.version(1).stores({
+  session_backup: 'id',          // Keeps current form state safe from sudden PC reboots
+  shift_history: '++local_id, id' // Backs up copied logs locally
+});
+
 function $(id) {
   return document.getElementById(id);
 }
@@ -19,7 +31,7 @@ let bannerTimeout = null;
 
 /**
  * Validates the typed ID against the master database list.
- * Continues prompting until a completely valid ID is supplied.
+ * Safely falls back if network is entirely firewall blocked.
  */
 async function verifyAndGetAgentId() {
   let id = localStorage.getItem("auto_docs_agent_id");
@@ -27,7 +39,6 @@ async function verifyAndGetAgentId() {
   while (!id) {
     let inputId = prompt("🔒 Access Protected.\nPlease enter your official Employee ID to configure session tracking:");
     
-    // If they click cancel or leave it empty, keep looping
     if (!inputId || !inputId.trim()) {
       alert("Employee ID is strictly required to use this workbench.");
       continue;
@@ -36,7 +47,6 @@ async function verifyAndGetAgentId() {
     inputId = inputId.trim();
 
     try {
-      // Query our new master table for a match
       const { data, error } = await supabaseClient
         .from('employees')
         .select('employee_id')
@@ -44,7 +54,6 @@ async function verifyAndGetAgentId() {
 
       if (error) throw error;
 
-      // If the database returns a record, it's valid!
       if (data && data.length > 0) {
         id = inputId;
         localStorage.setItem("auto_docs_agent_id", id);
@@ -53,8 +62,11 @@ async function verifyAndGetAgentId() {
         alert("❌ Access Denied: That Employee ID is not registered in our system. Please check for typos.");
       }
     } catch (err) {
-      console.error("Database validation error:", err);
-      alert("⚠️ Verification system communication failure. Please verify your internet connection.");
+      console.warn("⚠️ Firewall/Network blocked database validation. Applying local offline override flag.");
+      // If firewall blocks access, allow the agent in locally using their submitted ID
+      id = inputId;
+      localStorage.setItem("auto_docs_agent_id", id);
+      alert(`⚠️ Offline Local Session Activated for Agent ID: ${id}`);
     }
   }
   return id;
@@ -140,7 +152,7 @@ function showToast(msg, isError = false) {
 }
 
 /* ==========================================================================
-   DATA STORAGE & BACKUPS REGISTRY ENGINE (SUPABASE RE-WIRED)
+   DATA STORAGE & BACKUPS REGISTRY ENGINE (FIREWALL-PROOF INDEXEDDB ADAPTER)
    ========================================================================== */
 async function saveData() {
   const data = {};
@@ -148,13 +160,20 @@ async function saveData() {
     if (el.id) data[el.id] = el.value;
   });
   
-  // Keep local storage as a secondary fallback layer
+  // Tier 1 Backup: Traditional LocalStorage fallback
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  // Tier 2 Backup: Robust Database Fallback to user's local hard disk (Survives cache purges)
+  try {
+    await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
+  } catch (indexedDbErr) {
+    console.error("IndexedDB transactional write failure:", indexedDbErr);
+  }
 
   const caseNum = $("case")?.value.trim() || "DRAFT";
   const agentId = await verifyAndGetAgentId();
 
-  // Streams real-time form inputs directly into cloud servers via upsert
+  // Tier 3 Cloud Sync: Discards errors gracefully if the network is firewall blocked
   try {
     await supabaseClient
       .from('case_logs')
@@ -166,25 +185,39 @@ async function saveData() {
         }
       ], { onConflict: 'agent_id, case_number' });
   } catch (error) {
-    console.warn("Database storage sync interrupted, local storage safe.", error);
+    console.warn("Cloud connection drops detected. Workspace operational state maintained via IndexedDB.", error);
   }
 }
 
-function loadData() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  Object.keys(saved).forEach(id => {
-    const el = $(id);
-    if (el && id !== "voc") el.value = saved[id];
-  });
+async function loadData() {
+  try {
+    // Attempt loading from hard disk database structure first
+    const localDbState = await db.session_backup.get('current_workspace_state');
+    const saved = localDbState ? localDbState.data : JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    
+    Object.keys(saved).forEach(id => {
+      const el = $(id);
+      if (el && id !== "voc") el.value = saved[id];
+    });
+  } catch(e) {
+    // Final fallback if local browser storage has exceptions
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    Object.keys(saved).forEach(id => {
+      const el = $(id);
+      if (el && id !== "voc") el.value = saved[id];
+    });
+  }
 }
 
 /**
- * Checks the central cloud database immediately on startup for records
- * matching this user's profile to prevent accident crash losses.
+ * Recovers crashed inputs from either cloud repositories or local IndexedDB profiles.
  */
 async function checkAndRestoreCrashData() {
   const agentId = await verifyAndGetAgentId();
-  
+  let lastSavedCase = "";
+  let savedFormState = null;
+  let source = "cloud";
+
   try {
     const { data, error } = await supabaseClient
       .from('case_logs')
@@ -193,72 +226,121 @@ async function checkAndRestoreCrashData() {
       .order('created_at', { ascending: false })
       .limit(1);
 
-    if (error || !data || data.length === 0) return;
-
-    const lastSavedCase = data[0].case_number;
-    const savedFormState = data[0].form_data;
-
-    // Verify if current fields are already populated to minimize false prompts
-    const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
-    if (hasActiveInput) return;
-
-    const confirmRestore = confirm(`🔄 Auto Docs Cloud Recovery:\n\nWe detected an interrupted session for Case ID/SR [${lastSavedCase}]. Would you like to restore your lost progress?`);
-    
-    if (confirmRestore) {
-      Object.keys(savedFormState).forEach(id => {
-        const el = $(id);
-        if (el && id !== "voc") el.value = savedFormState[id];
-      });
-
-      // Synchronize data dropdown options seamlessly
-      if ($("concernType")?.value) updateVocOptions(true);
-      if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
-
-      updateOutput();
-      updateSuggestions();
-      if($('case')) validateCaseField($('case'));
-      if($('min')) validateMinField($('min'));
-      showToast("Progress successfully salvaged from cloud database!");
+    if (!error && data && data.length > 0) {
+      lastSavedCase = data[0].case_number;
+      savedFormState = data[0].form_data;
     }
   } catch (e) {
-    console.error("Cloud hydration query bypass error:", e);
+    console.warn("Cloud hydration blocked by firewall. Inspecting internal browser database store...");
+  }
+
+  // If cloud fails or is blocked by firewall, pull the local storage database instance state
+  if (!savedFormState) {
+    try {
+      const backupState = await db.session_backup.get('current_workspace_state');
+      if (backupState && backupState.data) {
+        savedFormState = backupState.data;
+        lastSavedCase = savedFormState['case'] || "Unsaved Workspace Data";
+        source = "local hard drive backup";
+      }
+    } catch(err) {
+      console.error("Local database cluster recovery state unreadable:", err);
+    }
+  }
+
+  if (!savedFormState) return;
+
+  const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
+  if (hasActiveInput) return;
+
+  const confirmRestore = confirm(`🔄 Auto Docs Session Recovery Engine:\n\nWe detected an interrupted session (${source}) for Case [${lastSavedCase}]. Would you like to restore your progress?`);
+  
+  if (confirmRestore) {
+    Object.keys(savedFormState).forEach(id => {
+      const el = $(id);
+      if (el && id !== "voc") el.value = savedFormState[id];
+    });
+
+    if ($("concernType")?.value) updateVocOptions(true);
+    if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+
+    updateOutput();
+    updateSuggestions();
+    if($('case')) validateCaseField($('case'));
+    if($('min')) validateMinField($('min'));
+    showToast(`Progress successfully recovered from ${source}!`);
   }
 }
 
-function pushToHistory(caseNumber, textContent) {
-  let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+async function pushToHistory(caseNumber, textContent) {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
 
+  // Check the robust local storage matrix array
+  let history = [];
+  try {
+    history = await db.shift_history.reverse().toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
+
   if (history.length > 0 && history[0].text === textContent) return;
 
-  history.unshift({ id: displayId, time: timestamp, text: textContent });
-  if (history.length > 50) history.pop(); 
+  const newLog = { id: displayId, time: timestamp, text: textContent };
   
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  // Update both systems synchronously 
+  try {
+    await db.shift_history.add(newLog);
+    // Limit store capacity rules
+    const count = await db.shift_history.count();
+    if (count > 50) {
+      const oldest = await db.shift_history.orderBy('local_id').first();
+      if(oldest) await db.shift_history.delete(oldest.local_id);
+    }
+  } catch(e) { console.error(e); }
+
+  let lsHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  lsHistory.unshift(newLog);
+  if (lsHistory.length > 50) lsHistory.pop();
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(lsHistory));
+  
   localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
   
-  renderHistoryView();
+  await renderHistoryView();
   updateFloatingBanner();
 }
 
-function deleteHistoryItem(index, e) {
+async function deleteHistoryItem(index, e) {
   if(e) e.stopPropagation();
+  
+  try {
+    const items = await db.shift_history.toArray();
+    if(items[index]) {
+      await db.shift_history.delete(items[index].local_id);
+    }
+  } catch(err) { console.error(err); }
   
   let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   history.splice(index, 1);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   
-  renderHistoryView();
+  await renderHistoryView();
   updateFloatingBanner();
   showToast("Selected log deleted from shift summary.");
 }
 
-function renderHistoryView() {
+async function renderHistoryView() {
   const container = $('historyContainer');
   if (!container) return;
 
-  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  let history = [];
+  try {
+    // Read directly from IndexedDB
+    history = await db.shift_history.toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
+
   if (history.length === 0) {
     container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet...</i>`;
     return;
@@ -270,10 +352,10 @@ function renderHistoryView() {
         <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
       </span>
       <div style="display: flex; gap: 4px;">
-        <button type="button" onclick="loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+        <button type="button" onclick="window.loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
           Recopy
         </button>
-        <button type="button" onclick="deleteHistoryItem(${index}, event)" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+        <button type="button" onclick="window.deleteHistoryItem(${index}, event)" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
           <i class="fas fa-trash-alt"></i>
         </button>
       </div>
@@ -281,25 +363,36 @@ function renderHistoryView() {
   `).join("");
 }
 
-function loadHistoryItem(index) {
-  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+async function loadHistoryItem(index) {
+  let history = [];
+  try {
+    history = await db.shift_history.toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
   if (!history[index]) return;
   
   navigator.clipboard.writeText(history[index].text);
   showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
 
-function updateFloatingBanner() {
+async function updateFloatingBanner() {
   const banner = $('floatingShiftBanner');
   if (!banner) return;
 
   const isDownloaded = localStorage.getItem(DOWNLOADED_STATE_KEY) === "true";
-  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   
-  if (isDownloaded && history.length > 0) {
+  let historyCount = 0;
+  try {
+    historyCount = await db.shift_history.count();
+  } catch(e) {
+    historyCount = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]").length;
+  }
+  
+  if (isDownloaded && historyCount > 0) {
     banner.style.background = "#10b981"; 
     banner.style.color = "#ffffff";
-    banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${history.length})`;
+    banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${historyCount})`;
     
     if(bannerTimeout) clearTimeout(bannerTimeout);
     bannerTimeout = setTimeout(() => {
@@ -314,8 +407,14 @@ function updateFloatingBanner() {
   }
 }
 
-function downloadHistoryLog() {
-  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+async function downloadHistoryLog() {
+  let history = [];
+  try {
+    history = await db.shift_history.toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
+
   if (history.length === 0) {
     showToast("No history data to download yet!", true);
     return;
@@ -344,6 +443,58 @@ function downloadHistoryLog() {
   
   updateFloatingBanner();
   showToast("Shift history download complete!");
+}
+
+async function clearShiftHistory() {
+  if (confirm("🚨 Warning:\n\nThis will completely wipe your local history data manifest stack for this entire shift. Proceed?")) {
+    try {
+      await db.shift_history.clear();
+    } catch(e) { console.error(e); }
+    localStorage.setItem(HISTORY_KEY, "[]");
+    localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
+    await renderHistoryView();
+    updateFloatingBanner();
+    showToast("Shift summary history logs entirely flushed.");
+  }
+}
+
+async function resetForm(event) {
+  if (event) event.preventDefault();
+  if (confirm("Are you sure you want to clear all interactive configuration inputs?")) {
+    document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+    const select = $("concernType");
+    if (select) select.selectedIndex = 0;
+    
+    updateVocOptions(false);
+    
+    // Clear out local cache profiles securely
+    localStorage.removeItem(STORAGE_KEY);
+    try {
+      await db.session_backup.delete('current_workspace_state');
+    } catch(e) {}
+    
+    updateOutput();
+    updateSuggestions();
+    
+    document.querySelectorAll("input").forEach(el => el.classList.remove('val-green', 'val-amber', 'val-crimson'));
+    showToast("Form fields reset successfully.");
+  }
+}
+
+function copyDoc() {
+  const outputText = $("output")?.textContent;
+  if (!outputText || outputText.includes("Generating real-time output preview")) {
+    showToast("No active documentation content found to copy!", true);
+    return;
+  }
+
+  navigator.clipboard.writeText(outputText).then(() => {
+    showToast("Documentation notes successfully copied to system clipboard!");
+    const caseNum = $("case")?.value || "N/A";
+    pushToHistory(caseNum, outputText);
+  }).catch(err => {
+    showToast("Clipboard injection routine blocked.", true);
+  });
 }
 
 /* ==========================================================================
@@ -547,17 +698,17 @@ function initTheme() {
 
 async function init() {
   initTheme(); 
-  loadData();
+  await loadData();
   updateVocOptions(true); 
   updateOutput();
   updateSuggestions();
-  renderHistoryView();
+  await renderHistoryView();
   updateFloatingBanner();
 
   // Run database gatekeeper verification step immediately on workspace startup
   await verifyAndGetAgentId();
   
-  // Clear layout fields or hydrate backup logs safely from cloud database
+  // Clear layout fields or hydrate backup logs safely from cloud database/IndexedDB
   await checkAndRestoreCrashData();
 
   if($('case')) validateCaseField($('case'));
@@ -574,91 +725,28 @@ async function init() {
         updateSuggestions();
       }
     });
+  });
 
-    el.addEventListener("change", () => {
-      if (el.id === "concernType") {
-        updateVocOptions(false);
-      }
-      saveData();
+  const concernSelect = $("concernType");
+  if (concernSelect) {
+    concernSelect.addEventListener("change", () => {
+      updateVocOptions(false);
       updateSuggestions();
+      saveData();
       updateOutput();
     });
-  });
-}
-
-function copyDoc() { 
-  let missingFields = [];
-  if (!$("case")?.value.trim()) missingFields.push("SR/CASE");
-  if (!$("concernType")?.value) missingFields.push("CONCERN TYPE");
-  if (!$("voc")?.value.trim()) missingFields.push("VOC");
-  if (!$("subj")?.value.trim()) missingFields.push("SUBJ");
-
-  if (missingFields.length > 0) {
-    showToast(`Missing required entries: ${missingFields.join(", ")}`, true);
-    return; 
   }
-
-  const outputText = $("output").textContent || "";
-  navigator.clipboard.writeText(outputText); 
-  
-  const previewFrame = $('outputPanelFrame');
-  if(previewFrame) {
-    previewFrame.classList.remove('panel-flash-active');
-    void previewFrame.offsetWidth; 
-    previewFrame.classList.add('panel-flash-active');
-  }
-
-  showToast(`Manifest Logs Copied! (${outputText.length} chars)`);
-  pushToHistory($("case")?.value, outputText);
 }
 
-function resetForm(e) {
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  const toast = $('toast');
-  if (toast) toast.classList.remove('show');
-
-  localStorage.removeItem(STORAGE_KEY);
-  
-  document.querySelectorAll("input, textarea").forEach(el => {
-    el.value = "";
-    el.classList.remove('val-amber', 'val-green', 'val-crimson');
-  });
-  
-  const concernDropdown = $("concernType");
-  if (concernDropdown) concernDropdown.selectedIndex = 0;
-  
-  const vocInput = $("voc");
-  if (vocInput) vocInput.value = "";
-  
-  const datalist = $("vocOptions");
-  if (datalist) datalist.innerHTML = "";
-  
-  if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
-  
-  updateOutput();
-  showToast("Logs cleared!");
-}
-
-function clearShiftHistory() {
-  localStorage.removeItem(HISTORY_KEY);
-  localStorage.removeItem(DOWNLOADED_STATE_KEY);
-  if(bannerTimeout) clearTimeout(bannerTimeout);
-  renderHistoryView();
-  updateFloatingBanner();
-  showToast("Shift History Cleared!");
-}
-
-window.copyDoc = copyDoc; 
-window.resetForm = resetForm; 
-window.toggleTheme = toggleTheme; 
-window.toggleDrawer = toggleDrawer; 
-window.loadHistoryItem = loadHistoryItem; 
-window.downloadHistoryLog = downloadHistoryLog; 
-window.clearShiftHistory = clearShiftHistory; 
+// Bind methods explicitly to window context to accommodate module isolation scoping
+window.toggleTheme = toggleTheme;
+window.toggleDrawer = toggleDrawer;
+window.copyDoc = copyDoc;
+window.resetForm = resetForm;
+window.downloadHistoryLog = downloadHistoryLog;
+window.clearShiftHistory = clearShiftHistory;
+window.loadHistoryItem = loadHistoryItem;
 window.deleteHistoryItem = deleteHistoryItem;
 
-window.addEventListener("DOMContentLoaded", init);
+// Boot up structural context module
+document.addEventListener("DOMContentLoaded", init);
