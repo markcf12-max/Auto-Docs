@@ -9,10 +9,16 @@ const THEME_KEY = "auto_docs_theme";
    REAL-TIME REGULAR EXPRESSION VALIDATORS
    ========================================================================== */
 function validateCaseField(el) {
-  const val = el.value.trim();
+  const val = el.value.trim().toUpperCase();
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
   
   if (val.length === 0) return; 
+  
+  // If agent explicitly types NA or N/A, mark it valid immediately
+  if (val === "NA" || val === "N/A") {
+    el.classList.add('val-green');
+    return;
+  }
   
   if (val.length === 8 || val.length === 10) {
     el.classList.add('val-green');
@@ -225,6 +231,8 @@ function updateOutput() {
 
   if (caseVal.length === 0) {
     displayValue = "N/A";
+  } else if (caseVal.toUpperCase() === "NA" || caseVal.toUpperCase() === "N/A") {
+    displayValue = caseVal.toUpperCase();
   } else if (caseVal.length === 8) {
     ticketHeaderTag = "CASE NUMBER";
   } else if (caseVal.length === 10) {
@@ -340,7 +348,8 @@ function init() {
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
     el.addEventListener("input", () => {
-      if(el.id === "case" || el.id === "min") el.value = el.value.replace(/\D/g, '');
+      // Allow letters in the case field so text like 'NA' can be typed, but keep stripping non-digits from 'min'
+      if(el.id === "min") el.value = el.value.replace(/\D/g, '');
       
       if(el.id === "case") validateCaseField(el);
       if(el.id === "min") validateMinField(el);
@@ -388,7 +397,7 @@ function copyDoc() {
 }
 
 /* ==========================================================================
-   IN-BUTTON CLEAR CONFIRMATION METHOD (NO SYSTEM ALERTS)
+   INSTANT SINGLE-CLICK RESET METHOD (NO POPUPS)
    ========================================================================== */
 function resetForm(e) {
   if (e) {
@@ -396,38 +405,9 @@ function resetForm(e) {
     e.stopPropagation();
   }
 
-  // Locating the reset button targeting standard clear actions
-  const clearBtn = document.querySelector("button[onclick*='resetForm']");
-  
-  if (clearBtn) {
-    if (!clearBtn.dataset.confirmed || clearBtn.dataset.confirmed === "false") {
-      // First click: Request inline verification
-      clearBtn.dataset.confirmed = "true";
-      clearBtn.dataset.originalText = clearBtn.innerHTML;
-      clearBtn.innerHTML = "Are you sure? Click again";
-      clearBtn.style.background = "#dc2626"; // Crimson warning background
-      
-      // Automatic reset to regular state if user waits or hesitates for 4 seconds
-      setTimeout(() => {
-        if (clearBtn.dataset.confirmed === "true") {
-          clearBtn.dataset.confirmed = "false";
-          clearBtn.innerHTML = clearBtn.dataset.originalText;
-          clearBtn.style.background = ""; 
-        }
-      }, 4000);
-      return;
-    }
-    
-    // Second click: Process execution & reverse button layout
-    clearBtn.dataset.confirmed = "false";
-    clearBtn.innerHTML = clearBtn.dataset.originalText || "Clear Logs";
-    clearBtn.style.background = "";
-  }
-
   const toast = $('toast');
   if (toast) toast.classList.remove('show');
 
-  // Clear data allocations
   localStorage.removeItem(STORAGE_KEY);
   
   document.querySelectorAll("input, textarea").forEach(el => {
@@ -445,7 +425,9 @@ function resetForm(e) {
   if (datalist) datalist.innerHTML = "";
   
   if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+  
   updateOutput();
+  showToast("Logs cleared!");
 }
 
 window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer;
