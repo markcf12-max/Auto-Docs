@@ -228,9 +228,9 @@ function downloadHistoryLog() {
   showToast("Shift history download complete!");
 }
 
-/* =========================
+/* ==========================================================================
    DARK MODE SYSTEM 🌙
-========================= */
+   ========================================================================== */
 function toggleTheme() {
   const isDark = document.body.classList.toggle("dark-mode");
   localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
@@ -269,12 +269,7 @@ const AFTERSALES_PROCEDURES = {
   "PUK/PIN": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
 };
 
-const COMPLAINT_PROCEDURES = {
-  "Positive": [{ text: "Log feedback profile matrix notes", link: "#" }],
-  "Neutral": [{ text: "Note general standard operation logs", link: "#" }],
-  "Negative": [{ text: "Flag context parameters directly for prioritization rules", link: "#" }]
-};
-
+// Removed obsolete Sentiment Objects completely 
 const VOC_OPTIONS = {
   "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY"],
   "Aftersales": [
@@ -322,11 +317,12 @@ const VOC_OPTIONS = {
     "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
   ],
   "Inquiry": [], 
-  "Complaint": ["Positive", "Neutral", "Negative"]
+  "Complaint": []
 };
 
-// Direct mirror definition setup for shared list architecture sync
+// Mirror synchronization logic (Inquiry and Complaint now share Aftersales array pool architecture)
 VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
+VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
 
 /* ==========================================================================
    OUTPUT GENERATOR
@@ -396,13 +392,10 @@ function updateSuggestions() {
     const procedures = TECH_PROCEDURES[voc] || [];
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
-  else if (concern === "Aftersales" || concern === "Inquiry") {
+  // Combined Complaint logic with Aftersales and Inquiry suggestions map target
+  else if (concern === "Aftersales" || concern === "Inquiry" || concern === "Complaint") {
     const procedures = AFTERSALES_PROCEDURES[voc] || [];
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
-  } 
-  else if (concern === "Complaint") {
-    const procedures = COMPLAINT_PROCEDURES[voc] || [];
-    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Acknowledge issue<br>• Investigate details closely<br>• Escalate if needed";
   }
   $("suggestions").innerHTML = html;
 }
@@ -430,9 +423,6 @@ function updateVocOptions(keepExistingValue = false) {
 /* ==========================================================================
    INITIALIZATION
 ========================================================================== */
-/* ==========================================================================
-   INITIALIZATION
-========================================================================== */
 function initTheme() {
   const savedTheme = localStorage.getItem(THEME_KEY);
   const isDark = savedTheme === "dark";
@@ -441,7 +431,7 @@ function initTheme() {
 }
 
 function init() {
-  initTheme(); // Now safely defined right above!
+  initTheme(); 
   loadData();
   updateVocOptions(true); 
   updateOutput();
