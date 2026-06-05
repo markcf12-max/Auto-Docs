@@ -4,23 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auto Docs Workbench v5</title>
-  <!-- FontAwesome for UI Icons -->
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Floating Shift Validation Banner -->
   <div id="floatingShiftBanner" class="floating-banner">
     <i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT
   </div>
 
-  <!-- Global Toast Alerts -->
   <div id="toast" class="toast-notification">
     <span id="toastMessage">Action completed successfully.</span>
   </div>
 
-  <!-- Main Workspace Header -->
   <header class="app-header">
     <div class="header-left">
       <h1><i class="fas fa-file-invoice"></i> Auto Docs <span class="version-tag">v5.0</span></h1>
@@ -32,10 +32,8 @@
     </div>
   </header>
 
-  <!-- Application Layout Matrix -->
   <main class="layout">
     
-    <!-- Left Panel: Input Control Deck -->
     <section class="inputPanel">
       <form id="docForm" onsubmit="event.preventDefault();">
         
@@ -111,7 +109,6 @@
           <textarea id="wocas" rows="2" placeholder="WOCAS mapping keywords classification notes..."></textarea>
         </div>
 
-        <!-- Inline Control Buttons (Hidden on Responsive Mobile Layouts) -->
         <div class="buttons">
           <button type="button" class="btn-primary" onclick="copyDoc()">
             <i class="fas fa-copy"></i> Copy Note
@@ -123,14 +120,12 @@
       </form>
     </section>
 
-    <!-- Center Panel: Real-Time Render Preview Frame -->
     <section id="outputPanelFrame" class="outputPanel">
       <div class="panel-header">
         <h3><i class="fas fa-eye"></i> Standard Output Copy Preview</h3>
       </div>
       <pre id="output">Generating real-time output preview manifest structure...</pre>
       
-      <!-- Shift History Log Window -->
       <div class="history-section">
         <div class="history-header">
           <h4><i class="fas fa-history"></i> Current Shift Copied Manifest Logs</h4>
@@ -149,9 +144,7 @@
       </div>
     </section>
 
-    <!-- Right Panel: Playbook & Dynamic Escalation Guidance Procedures -->
     <section id="playbookPanel" class="suggestionPanel">
-      <!-- Internal Mobile Drawer Exit Header Row -->
       <div class="drawer-internal-header">
         <h3><i class="fas fa-book-open"></i> Playbook System</h3>
         <button type="button" class="btn-drawer-close" onclick="toggleDrawer(event)">
@@ -169,7 +162,6 @@
 
   </main>
 
-  <!-- Mobile Floating Trigger Dock Panel elements -->
   <button type="button" id="drawerToggle" class="drawer-toggle-btn" onclick="toggleDrawer(event)">
     <i class="fas fa-book-open"></i> <span>View Playbooks</span>
   </button>
