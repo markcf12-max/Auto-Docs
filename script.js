@@ -33,14 +33,13 @@ function validateCaseField(el) {
 }
 
 function validateMinField(el) {
-  const val = el.value.trim();
-  el.classList.remove('val-amber', 'val-green', 'val-crimson');
-
-  if (val.length === 0) return;
-
-  // ALL strict prefix limits (09, 63, 9) and length caps have been removed.
-  // Any bulk list paste or continuous input will now automatically highlight green.
-  el.classList.add('val-green');
+  // Completely stripped! No restrictions, no red highlights for any numbers.
+  el.classList.remove('val-amber', 'val-crimson');
+  if (el.value.trim().length > 0) {
+    el.classList.add('val-green');
+  } else {
+    el.classList.remove('val-green');
+  }
 }
 
 function toggleDrawer(e) {
