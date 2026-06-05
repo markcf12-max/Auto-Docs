@@ -273,7 +273,7 @@ body {
   line-height: 1.6;
 }
 .drawer-internal-header {
-  display: none; /* Block remains hidden completely on full desktop scaling display grids */
+  display: none;
 }
 
 /* ==========================================================================
@@ -311,14 +311,13 @@ body {
   box-sizing: border-box;
 }
 
-/* Mobile Media Queries (Viewports smaller than 1024px or ultra-narrow viewports) */
+/* Mobile Media Queries */
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;
-    margin-bottom: 60px; /* Offset to prevent structural overlap with action bar dock overlay */
+    margin-bottom: 60px;
   }
   
-  /* Convert playbook panel into an absolute sliding side overlay drawer */
   .suggestionPanel {
     position: fixed;
     top: 0;
@@ -337,7 +336,6 @@ body {
     right: 0;
   }
   
-  /* Trigger layout visibility context changes for active controls inside mobile drawers */
   .playbook-desktop-title {
     display: none !important;
   }
@@ -346,7 +344,7 @@ body {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    margin-top: 40px; /* Lower the text & elements clean under the fixed top alert banner */
+    margin-top: 40px; 
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
@@ -363,7 +361,7 @@ body {
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
-    margin-top: 4px; /* Minor push adjustments to perfectly align button layout mapping */
+    margin-top: 4px;
   }
   
   .drawer-toggle-btn {
@@ -372,7 +370,7 @@ body {
 
   .floating-action-dock {
     display: grid !important;
-    grid-template-columns: 1fr 1fr; /* Clean layout balancing splitting side-by-side */
+    grid-template-columns: 1fr 1fr;
     width: 100% !important;
     left: 0 !important;
     padding: 10px;
@@ -394,6 +392,6 @@ body {
   }
   
   .inputPanel .buttons {
-    display: none !important; /* Conceal standard embedded layout form tracking buttons */
+    display: none !important;
   }
 }
