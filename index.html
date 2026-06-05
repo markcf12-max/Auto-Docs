@@ -63,7 +63,7 @@
 
       <div class="group">
         <div class="label">SR/CASE</div>
-        <input id="case" placeholder="Case: 8 digits | SR: 10 digits" maxlength="12">
+        <input id="case" placeholder="Case: 8 digits | SR: 10 digits" maxlength="12" autocomplete="off">
       </div>
 
       <div class="grid">
@@ -87,42 +87,41 @@
 
       <div class="group">
         <div class="label">SUBJ</div>
-        <input type="text" id="subj" placeholder="Type the email subject line here...">
+        <input type="text" id="subj" placeholder="Type the email subject line here..." autocomplete="off">
       </div>
 
       <div class="grid">
         <div class="group">
           <div class="label">NAME</div>
-          <input id="name" placeholder="Client Name">
+          <input id="name" placeholder="Client Name" autocomplete="name">
         </div>
 
         <div class="group">
           <div class="label">MIN (MOBILE NUMBER / BULK)</div>
-          <!-- Removed maxlength entirely to allow infinite bulk entries -->
-          <input type="text" id="min" placeholder="09XX, 63XX, or paste continuous bulk list here...">
+          <input type="text" id="min" placeholder="09XX, 63XX, or paste continuous bulk list here..." autocomplete="tel">
         </div>
       </div>
 
       <div class="group">
         <div class="label">COMPANY NAME</div>
-        <input id="company" placeholder="Corporate account label">
+        <input id="company" placeholder="Corporate account label" autocomplete="organization">
       </div>
 
       <div class="grid">
         <div class="group">
           <div class="label">EMAIL ADDRESS</div>
-          <input id="email" placeholder="client@domain.com">
+          <input id="email" placeholder="client@domain.com" autocomplete="email">
         </div>
 
         <div class="group">
           <div class="label">THREAD NUMBER</div>
-          <input id="thread" placeholder="CRM System Reference">
+          <input id="thread" placeholder="CRM System Reference" autocomplete="off">
         </div>
       </div>
 
       <div class="group">
         <div class="label">DATE & TIME RECEIVED</div>
-        <input id="datetime" placeholder="YYYY-MM-DD HH:MM">
+        <input id="datetime" placeholder="YYYY-MM-DD HH:MM" autocomplete="off">
       </div>
 
       <div class="group">
