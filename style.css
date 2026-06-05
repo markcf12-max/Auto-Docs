@@ -1,5 +1,5 @@
 /* ==========================================================================
-   1. GLOBAL SYSTEM STYLES & VARIABLES
+   1. VARIABLE DESIGN TOKENS & PALETTE ROOT MATRIX
    ========================================================================== */
 :root {
   --bg-app: #f8fafc;
@@ -7,10 +7,12 @@
   --text-main: #0f172a;
   --text-muted: #64748b;
   --border-color: #e2e8f0;
-  --input-bg: #ffffff;
-  --accent-blue: #2563eb;
-  --accent-hover: #1d4ed8;
-  --panel-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --secondary: #64748b;
+  --secondary-hover: #475569;
+  --radius: 8px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
 .dark-mode {
@@ -19,264 +21,263 @@
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: #334155;
-  --input-bg: #111827;
-  --accent-blue: #3b82f6;
-  --accent-hover: #60a5fa;
-  --panel-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary: #475569;
+  --secondary-hover: #334155;
 }
 
+/* ==========================================================================
+   2. CORE RESET ENGINE & BASE LAYOUT HULL
+   ========================================================================== */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
-  min-height: 100vh;
   padding: 20px;
-  padding-bottom: 80px; /* Space for mobile footer dock */
+  padding-top: 55px; /* Offset spacing context for global tracking header */
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ==========================================================================
-   2. APP CONTAINER & TOPBAR NAVIGATION
+   3. SYSTEM HEADERS & FLOATING ALERTS COMPONENT LAYOUTS
    ========================================================================== */
-.app {
-  max-width: 1600px;
-  margin: 0 auto;
+.floating-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-align: center;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  background: #fbbf24;
+  color: #1e293b;
+  transition: background 0.3s, color 0.3s;
 }
 
-.topbar {
+.toast-notification {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 30px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.toast-notification.show {
+  top: 45px;
+}
+
+.app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
 }
-
-.topbar h1 {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+.app-header h1 {
+  font-size: 20px;
+  font-weight: 700;
 }
-
-.topbar p {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 2px;
+.version-tag {
+  font-size: 12px;
+  padding: 2px 6px;
+  background: var(--primary);
+  color: white;
+  border-radius: 4px;
+  vertical-align: middle;
 }
-
-.theme-btn {
-  background: var(--bg-panel);
+#themeToggle {
+  background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-main);
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
   cursor: pointer;
-  box-shadow: var(--panel-shadow);
-  transition: all 0.2s ease;
-}
-
-.theme-btn:hover {
-  transform: translateY(-1px);
 }
 
 /* ==========================================================================
-   3. RESPONSIVE GRID LAYOUT MATRIX
+   4. APPS THREE-PANEL CSS GRID HUB ARCHITECTURE
    ========================================================================== */
 .layout {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: 16px;
+  align-items: start;
 }
 
-/* Base Panel Blueprint */
-.panel {
-  background-color: var(--bg-panel);
+.inputPanel, .outputPanel, .suggestionPanel {
+  background: var(--bg-panel);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--panel-shadow);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
 }
 
 /* ==========================================================================
-   4. FORM UI COMPONENTS & INPUT GROUPS
+   5. INPUT CONTROL COMPONENT DESIGN STYLES
    ========================================================================== */
-.group {
-  margin-bottom: 16px;
+.form-group {
+  margin-bottom: 12px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-app);
+  color: var(--text-main);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--primary);
 }
 
-.grid {
+.form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
+}
+.tri-grid {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
-.label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+/* Real-time Field Form Validation Status Glow Rules */
+.val-green {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+.val-amber {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15) !important;
+}
+.val-crimson {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
 }
 
-input, textarea, select {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--input-bg);
-  color: var(--text-main);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s, background-color 0.3s, color 0.3s;
-}
-
-input:focus, textarea:focus, select:focus {
-  border-color: var(--accent-blue);
-}
-
-textarea {
-  height: 100px;
-  resize: vertical;
-}
-
-/* Form Action Buttons */
 .buttons {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-  margin-top: 20px;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 10px;
+  margin-top: 15px;
 }
-
-button[type="button"] {
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 600;
+.buttons button, .history-actions button {
+  padding: 10px;
   border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
   border: none;
-  transition: background 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-
-.buttons button:first-child {
-  background-color: var(--accent-blue);
-  color: white;
-}
-
-.buttons button:first-child:hover {
-  background-color: var(--accent-hover);
-}
-
-.buttons button:last-child {
-  background-color: #ef4444;
-  color: white;
-}
-
-.buttons button:last-child:hover {
-  background-color: #dc2626;
-}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--secondary); color: white; }
+.btn-secondary:hover { background: var(--secondary-hover); }
 
 /* ==========================================================================
-   5. REAL-TIME VALIDATION PLUGINS (BORDER HIGHLIGHTS)
+   6. OUTPUT PREVIEW & COPIED TRACK HISTORY SHEETS
    ========================================================================== */
-.val-green {
-  border: 2px solid #10b981 !important;
-  background-color: rgba(16, 185, 129, 0.03) !important;
+.panel-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
 }
-
-.val-amber {
-  border: 2px solid #f59e0b !important;
-  background-color: rgba(245, 158, 11, 0.03) !important;
-}
-
-.val-crimson {
-  border: 2px solid #ef4444 !important;
-  background-color: rgba(239, 68, 68, 0.03) !important;
-}
-
-/* ==========================================================================
-   6. OUTPUT PREVIEW & PLAYBOOK PANELS
-   ========================================================================== */
-.outputHeader {
+.panel-header h3 {
   font-size: 14px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   color: var(--text-muted);
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 10px;
-  margin-bottom: 15px;
 }
 
 #output {
   white-space: pre-wrap;
+  word-wrap: break-word;
+  background: var(--bg-app);
+  padding: 12px;
+  border-radius: 6px;
   font-family: "Courier New", Courier, monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-main);
-  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.4;
+  border: 1px dashed var(--border-color);
+  min-height: 250px;
 }
 
-/* Flash Animation when copying manifest */
-@keyframes panelFlash {
-  0% { background-color: rgba(59, 130, 246, 0.2); }
-  100% { background-color: var(--bg-panel); }
+@keyframes panelFlashAnimation {
+  0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
 }
-
 .panel-flash-active {
-  animation: panelFlash 0.4s ease-out;
+  animation: panelFlashAnimation 0.6s ease-out;
 }
 
-/* Suggestion Panel System */
-#suggestions {
+.history-section {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 15px;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.history-header h4 { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.history-actions { display: flex; gap: 6px; }
+.history-actions button { padding: 4px 8px; font-size: 11px; background: var(--bg-app); border: 1px solid var(--border-color); color: var(--text-main); }
+
+.history-box {
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.02);
+}
+
+/* ==========================================================================
+   7. PLAYBOOK INTERFACE STRUCTURE LAYOUTS
+   ========================================================================== */
+.suggestions-content {
   font-size: 13px;
   line-height: 1.6;
-  color: var(--text-main);
+}
+.drawer-internal-header {
+  display: none; /* Block remains hidden completely on full desktop scaling display grids */
 }
 
 /* ==========================================================================
-   7. TOAST NOTIFICATIONS & OVERLAYS
-   ========================================================================== */
-.toast-notification {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.toast-notification.show {
-  display: block !important;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-#floatingShiftBanner {
-  position: fixed; 
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  z-index: 9999; 
-  text-align: center; 
-  font-weight: 700; 
-  font-size: 11px;
-  padding: 6px 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25); 
-  transition: all 0.3s ease; 
-  letter-spacing: 0.3px;
-}
-
-.toast-notification {
-  top: 40px !important; 
-}
-
-/* ==========================================================================
-   8. MOBILE COLLAPSIBLE DRAWERS & ACCORDIONS (RESPONSIVE VIEWPORT PATCHES)
+   8. MOBILE COLLAPSIBLE DRAWERS & RESPONSIVE VIEWPORT PATCHES
    ========================================================================== */
 .drawer-toggle-btn {
   display: none;
@@ -314,9 +315,10 @@ button[type="button"] {
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;
+    margin-bottom: 60px; /* Offset to prevent structural overlap with action bar dock overlay */
   }
   
-  /* Convert playbook panel into an overlay slide-out drawer */
+  /* Convert playbook panel into an absolute sliding side overlay drawer */
   .suggestionPanel {
     position: fixed;
     top: 0;
@@ -335,13 +337,39 @@ button[type="button"] {
     right: 0;
   }
   
+  /* Trigger layout visibility context changes for active controls inside mobile drawers */
+  .playbook-desktop-title {
+    display: none !important;
+  }
+  .drawer-internal-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .drawer-internal-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .btn-drawer-close {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
   .drawer-toggle-btn {
     display: flex !important;
   }
 
   .floating-action-dock {
     display: grid !important;
-    grid-template-columns: 1fr 1fr; /* Split cleanly side-by-side */
+    grid-template-columns: 1fr 1fr; /* Clean layout balancing splitting side-by-side */
     width: 100% !important;
     left: 0 !important;
     padding: 10px;
@@ -356,9 +384,13 @@ button[type="button"] {
     border-radius: 8px !important;
     cursor: pointer;
     box-shadow: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
   
   .inputPanel .buttons {
-    display: none !important; /* Hide standard inline buttons on small viewport sizes */
+    display: none !important; /* Conceal standard embedded layout form tracking buttons */
   }
 }
