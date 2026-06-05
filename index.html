@@ -58,8 +58,8 @@
   <!-- MAIN LAYOUT MATRIX -->
   <div class="layout">
 
-    <!-- INPUT PANEL -->
-    <div class="panel inputPanel">
+    <!-- INPUT PANEL (Wrapped in a form tag to satisfy the browser validator safely) -->
+    <form class="panel inputPanel" onsubmit="event.preventDefault();" autocomplete="on">
 
       <div class="group">
         <div class="label">SR/CASE</div>
@@ -98,7 +98,7 @@
 
         <div class="group">
           <div class="label">MIN (MOBILE NUMBER / BULK)</div>
-          <input type="text" id="min" placeholder="09XX, 63XX, or paste continuous bulk list here..." autocomplete="tel">
+          <input id="min" placeholder="09XX, 63XX, or paste continuous bulk list here..." autocomplete="tel">
         </div>
       </div>
 
@@ -135,8 +135,8 @@
       </div>
 
       <div class="buttons" style="grid-template-columns: 1fr 1fr;">
-        <button onclick="copyDoc()">Copy</button>
-        <button onclick="resetForm(event)">Reset</button>
+        <button type="button" onclick="copyDoc()">Copy</button>
+        <button type="button" onclick="resetForm(event)">Reset</button>
       </div>
 
       <!-- SHIFT BACKUP HISTORICAL STORAGE SECTION -->
@@ -157,7 +157,7 @@
         <div id="historyContainer"></div>
       </div>
 
-    </div>
+    </form>
 
     <!-- OUTPUT PANEL -->
     <div class="panel outputPanel" id="outputPanelFrame">
