@@ -7,7 +7,7 @@ const THEME_KEY = "auto_docs_theme";
 const HISTORY_KEY = "auto_docs_history"; 
 const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
-let bannerTimeout = null; // Handles the 10-second green countdown timer safely
+let bannerTimeout = null; 
 
 /* ==========================================================================
    REAL-TIME REGULAR EXPRESSION VALIDATORS
@@ -94,7 +94,6 @@ function showToast(msg, isError = false) {
   const toast = $('toast');
   if(!toast) return;
   
-  // Dynamically color toast alerts based on status types
   if(isError) {
     toast.style.background = "#ef4444";
     toast.style.color = "#ffffff";
@@ -107,7 +106,7 @@ function showToast(msg, isError = false) {
   
   $('toastMessage').textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); }, 3000); // 3 seconds for easier tracking
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
 }
 
 /* ==========================================================================
@@ -137,7 +136,6 @@ function pushToHistory(caseNumber, textContent) {
   if (history.length > 0 && history[0].text === textContent) return;
 
   history.unshift({ id: displayId, time: timestamp, text: textContent });
-  
   if (history.length > 50) history.pop(); 
   
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
@@ -147,7 +145,6 @@ function pushToHistory(caseNumber, textContent) {
   updateFloatingBanner();
 }
 
-/* Deletes an individual history item by index position */
 function deleteHistoryItem(index, e) {
   if(e) e.stopPropagation();
   
@@ -207,7 +204,6 @@ function updateFloatingBanner() {
     banner.style.color = "#ffffff";
     banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${history.length})`;
     
-    // Automatically reset state after 10 seconds back to default message loop
     if(bannerTimeout) clearTimeout(bannerTimeout);
     bannerTimeout = setTimeout(() => {
       localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
@@ -500,7 +496,6 @@ function init() {
 }
 
 function copyDoc() { 
-  // Validation Array check rule
   let missingFields = [];
   if (!$("case")?.value.trim()) missingFields.push("SR/CASE");
   if (!$("concernType")?.value) missingFields.push("CONCERN TYPE");
@@ -509,7 +504,7 @@ function copyDoc() {
 
   if (missingFields.length > 0) {
     showToast(`Missing required entries: ${missingFields.join(", ")}`, true);
-    return; // Break compilation tracking action completely
+    return; 
   }
 
   const outputText = $("output").textContent || "";
@@ -526,9 +521,6 @@ function copyDoc() {
   pushToHistory($("case")?.value, outputText);
 }
 
-/* ==========================================================================
-   INSTANT SINGLE-CLICK RESET METHOD (NO POPUPS)
-   ========================================================================== */
 function resetForm(e) {
   if (e) {
     e.preventDefault();
@@ -569,5 +561,14 @@ function clearShiftHistory() {
   showToast("Shift History Cleared!");
 }
 
-window.copyDoc = copyDoc; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem; window.downloadHistoryLog = downloadHistoryLog; window.clearShiftHistory = clearShiftHistory; window.deleteHistoryItem = deleteHistoryItem;
+/* Global Application Route Register mappings */
+window.copyDoc = copyDoc; 
+window.resetForm = resetForm; 
+window.toggleTheme = toggleTheme; 
+window.toggleDrawer = toggleDrawer; 
+window.loadHistoryItem = loadHistoryItem; 
+window.downloadHistoryLog = downloadHistoryLog; 
+window.clearShiftHistory = clearShiftHistory; 
+window.deleteHistoryItem = deleteHistoryItem;
+
 window.addEventListener("DOMContentLoaded", init);
