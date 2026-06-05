@@ -231,15 +231,16 @@ function downloadHistoryLog() {
 /* =========================
    DARK MODE SYSTEM 🌙
 ========================= */
-function initTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  if (savedTheme === "dark") {
-    document.body.classList.add("dark-mode");
-    updateThemeIcon(true);
-  } else {
-    document.body.classList.remove("dark-mode");
-    updateThemeIcon(false);
-  }
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
 }
 
 /* ==========================================================================
@@ -324,20 +325,8 @@ const VOC_OPTIONS = {
   "Complaint": ["Positive", "Neutral", "Negative"]
 };
 
-// Mirror the lists perfectly between Aftersales and Inquiry configurations
+// Direct mirror definition setup for shared list architecture sync
 VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
-
-function toggleTheme() {
-  const isDark = document.body.classList.toggle("dark-mode");
-  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  updateThemeIcon(isDark);
-}
-
-function updateThemeIcon(isDark) {
-  const icon = document.querySelector("#themeToggle i");
-  if (!icon) return;
-  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
-}
 
 /* ==========================================================================
    OUTPUT GENERATOR
