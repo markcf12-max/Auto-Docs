@@ -6,21 +6,43 @@
   <title>Auto Docs</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Styling patch to make the header banner smaller and layout spacing perfect */
+    #floatingShiftBanner {
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      z-index: 9999; 
+      text-align: center; 
+      font-weight: 700; 
+      font-size: 11px; /* Smaller font size */
+      padding: 6px 10px; /* Reduced vertical footprint padding */
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25); 
+      transition: all 0.3s ease; 
+      letter-spacing: 0.3px;
+    }
+    
+    /* Displaces toast lower so it never fights with the reminder banner */
+    .toast-notification {
+      top: 40px !important; 
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- Persistent Dynamic Floating Notification Bar -->
-<div id="floatingShiftBanner" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; text-align: center; font-weight: 800; font-size: 13px; padding: 10px 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.3); transition: all 0.4s ease; letter-spacing: 0.5px;">
+<!-- Streamlined Header Notification Bar -->
+<div id="floatingShiftBanner">
   <i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT
 </div>
 
-<!-- Floating Toast Alert Notification -->
-<div id="toast" class="toast-notification">
+<!-- Relocated Toast Notification Container -->
+<div id="toast" class="toast-notification" style="position: fixed; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 10px 20px; border-radius: 4px; font-weight: 600; font-size: 13px; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
   <i class="fas fa-check-circle"></i> <span id="toastMessage">Manifest Copied to Clipboard</span>
 </div>
 
-<div class="app" style="margin-top: 45px;">
+<div class="app" style="margin-top: 35px;">
 
   <!-- TOP BAR WITH THEME TOGGLE -->
   <div class="topbar">
@@ -76,7 +98,8 @@
 
         <div class="group">
           <div class="label">MIN (MOBILE NUMBER / BULK)</div>
-          <input type="text" id="min" placeholder="09XX, 63XX, or type 'BULK REQUEST'" maxlength="40">
+          <!-- Removed maxlength entirely to allow infinite bulk entries -->
+          <input type="text" id="min" placeholder="09XX, 63XX, or paste continuous bulk list here...">
         </div>
       </div>
 
