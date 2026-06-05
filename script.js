@@ -459,25 +459,43 @@ async function clearShiftHistory() {
 }
 
 async function resetForm(event) {
-  if (event) event.preventDefault();
-  if (confirm("Are you sure you want to clear all interactive configuration inputs?")) {
-    document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+  // 1. Block any default form submission behaviors or event bubbling duplicates
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  // 2. Strict confirmation wall (Guaranteed to only prompt ONCE)
+  const confirmClear = confirm("Are you sure you want to clear all interactive configuration inputs?");
+  if (!confirmClear) return;
+
+  try {
+    // 3. Clear all visual input and textarea values safely
+    document.querySelectorAll("input, textarea").forEach(el => {
+      el.value = "";
+      // Remove validation color borders
+      el.classList.remove('val-green', 'val-amber', 'val-crimson');
+    });
+
+    // 4. Reset the select dropdown back to default
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     
+    // 5. Empty the dependent VOC options selection list data
     updateVocOptions(false);
     
-    // Clear out local cache profiles securely
+    // 6. Securely wipe local fallback cache profiles from both layers
     localStorage.removeItem(STORAGE_KEY);
-    try {
-      await db.session_backup.delete('current_workspace_state');
-    } catch(e) {}
+    await db.session_backup.delete('current_workspace_state');
     
+    // 7. Re-render empty preview states
     updateOutput();
     updateSuggestions();
     
-    document.querySelectorAll("input").forEach(el => el.classList.remove('val-green', 'val-amber', 'val-crimson'));
     showToast("Form fields reset successfully.");
+  } catch(e) {
+    console.error("Local database reset exception:", e);
+    showToast("Error while clearing background data profiles.", true);
   }
 }
 
