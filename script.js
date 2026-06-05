@@ -4,11 +4,11 @@ function $(id) {
 
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
-const HISTORY_KEY = "auto_docs_history"; // New key for saved history logs
+const HISTORY_KEY = "auto_docs_history"; 
 
 /* ==========================================================================
    REAL-TIME REGULAR EXPRESSION VALIDATORS
-   ========================================================================== */
+   ========================================================================= */
 function validateCaseField(el) {
   const val = el.value.trim().toUpperCase();
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
@@ -94,9 +94,9 @@ function showToast(msg) {
   setTimeout(() => { toast.classList.remove('show'); }, 2200);
 }
 
-/* =========================
-   DATA STORAGE & HISTORY LOGIC
-========================= */
+/* ==========================================================================
+   DATA STORAGE & HISTORY BACKUPS SYSTEM
+   ========================================================================== */
 function saveData() {
   const data = {};
   document.querySelectorAll("input, textarea, select").forEach(el => {
@@ -118,17 +118,16 @@ function pushToHistory(caseNumber, textContent) {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
 
-  // Prevent duplicate consecutive copies
+  // Check if content matches the latest history item to prevent double entry
   if (history.length > 0 && history[0].text === textContent) return;
 
-  // Add item to beginning of array list
   history.unshift({ id: displayId, time: timestamp, text: textContent });
   
-  // Cap history list at 10 items to remain efficient
-  if (history.length > 10) history.pop();
+  if (history.length > 20) history.pop(); // Upgraded to store up to 20 lines for safety
   
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   renderHistoryView();
+  updateFloatingBanner(); // Changes warning notice to complete status instantly
 }
 
 function renderHistoryView() {
@@ -142,11 +141,11 @@ function renderHistoryView() {
   }
 
   container.innerHTML = history.map((item, index) => `
-    <div style="background: rgba(255,255,255,0.05); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1);">
-      <span style="font-size: 13px; font-weight: 500;">
-        <span style="color: #3b82f6;">[${item.time}]</span> Case/SR: <strong>${item.id}</strong>
+    <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
+      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 75%;">
+        <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
       </span>
-      <button type="button" onclick="loadHistoryItem(${index})" style="background: #1e293b; color: #60a5fa; border: 1px solid #3b82f6; padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+      <button type="button" onclick="loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
         Recopy
       </button>
     </div>
@@ -161,9 +160,82 @@ function loadHistoryItem(index) {
   showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
 
+/* Updates the status header based on logs */
+function updateFloatingBanner() {
+  const banner = $('floatingShiftBanner');
+  if (!banner) return;
+
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  
+  if (history.length > 0) {
+    banner.style.background = "#10b981"; // Success Emerald Green
+    banner.style.color = "#ffffff";
+    banner.innerHTML = `<i class="fas fa-check-circle"></i> SHIFT WORK COPIED & HISTORICALLY BACKED UP (${history.length})`;
+  } else {
+    banner.style.background = "#fbbf24"; // Alert Amber
+    banner.style.color = "#1e293b";
+    banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT`;
+  }
+}
+
+/* Bulk downloads history stack records into a structured master text manifest */
+function downloadHistoryLog() {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  if (history.length === 0) {
+    showToast("No history data to download yet!");
+    return;
+  }
+
+  let fileContent = `==================================================\n`;
+  fileContent += `          SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
+  fileContent += `==================================================\n\n`;
+
+  history.forEach((item, idx) => {
+    fileContent += `--- ENTRY #${idx + 1} | TIMESTAMP: [${item.time}] | REFERENCE ID: ${item.id} ---\n`;
+    fileContent += `${item.text}\n`;
+    fileContent += `\n==================================================\n\n`;
+  });
+
+  const blob = new Blob([fileContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url; 
+  a.download = `ShiftHistory-Logs-${dateStr}.txt`; 
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Shift history download complete!");
+}
+
 /* =========================
-   VOC PROCEDURES MAPPING CONFIG DATA
+   DARK MODE SYSTEM 🌙
 ========================= */
+function initTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    updateThemeIcon(true);
+  } else {
+    document.body.classList.remove("dark-mode");
+    updateThemeIcon(false);
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+}
+
+/* ==========================================================================
+   VOC PROCEDURES MAPPING CONFIG DATA
+   ========================================================================== */
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": [
     { text: "Check voice service status", link: "https://yourguide-link.com/voice" },
@@ -241,9 +313,9 @@ const VOC_OPTIONS = {
   "Complaint": ["Positive", "Neutral", "Negative"]
 };
 
-/* =========================
+/* ==========================================================================
    OUTPUT GENERATOR
-========================= */
+========================================================================== */
 function updateOutput() {
   if (!$("output")) return;
   
@@ -283,9 +355,9 @@ WOCAS:
 ${$("wocas")?.value || ""}`;
 }
 
-/* =========================
+/* ==========================================================================
    PROCEDURE HANDLING
-========================= */
+========================================================================== */
 function updateSuggestions() {
   if (!$("suggestions")) return;
   const concern = $("concernType")?.value;
@@ -344,9 +416,9 @@ function updateVocOptions(keepExistingValue = false) {
   }
 }
 
-/* =========================
+/* ==========================================================================
    DOWNLOAD TEXT METHOD
-========================= */
+========================================================================== */
 function downloadTxt() {
   const blob = new Blob([$("output").textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
@@ -355,16 +427,17 @@ function downloadTxt() {
   URL.revokeObjectURL(url);
 }
 
-/* =========================
+/* ==========================================================================
    INITIALIZATION
-========================= */
+========================================================================== */
 function init() {
   initTheme();
   loadData();
   updateVocOptions(true); 
   updateOutput();
   updateSuggestions();
-  renderHistoryView(); // Build previous session history cards if available
+  renderHistoryView();
+  updateFloatingBanner(); // Init check for floating indicator text configuration
 
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
@@ -407,19 +480,8 @@ function copyDoc() {
 
   showToast(`Manifest Logs Copied! (${outputText.length} chars)`);
 
-  // Pass current Case value and text payload to data history trackers
+  // Force push content directly into history array
   pushToHistory($("case")?.value, outputText);
-
-  const copyBtn = document.querySelector("button[onclick='copyDoc()']");
-  if (copyBtn) {
-    const originalText = copyBtn.textContent;
-    copyBtn.textContent = "Copied! ✓";
-    copyBtn.style.background = "#059669"; 
-    setTimeout(() => {
-      copyBtn.textContent = originalText;
-      copyBtn.style.background = "#2563eb";
-    }, 1500);
-  }
 }
 
 /* ==========================================================================
@@ -456,5 +518,13 @@ function resetForm(e) {
   showToast("Logs cleared!");
 }
 
-window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem;
+/* Clear backup log data entirely */
+function clearShiftHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistoryView();
+  updateFloatingBanner();
+  showToast("Shift History Cleared!");
+}
+
+window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem; window.downloadHistoryLog = downloadHistoryLog; window.clearShiftHistory = clearShiftHistory;
 window.addEventListener("DOMContentLoaded", init);
