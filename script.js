@@ -38,28 +38,9 @@ function validateMinField(el) {
 
   if (val.length === 0) return;
 
-  if (/^\d+$/.test(val)) {
-    if (val.startsWith('09')) {
-      if (val.length === 11) el.classList.add('val-green');
-      else if (val.length > 11) el.classList.add('val-crimson');
-      else el.classList.add('val-amber');
-    } 
-    else if (val.startsWith('63')) {
-      if (val.length === 12) el.classList.add('val-green');
-      else if (val.length > 12) el.classList.add('val-crimson');
-      else el.classList.add('val-amber');
-    } 
-    else if (val.startsWith('9')) {
-      if (val.length === 10) el.classList.add('val-green');
-      else if (val.length > 10) el.classList.add('val-crimson');
-      else el.classList.add('val-amber');
-    } 
-    else {
-      el.classList.add('val-crimson'); 
-    }
-  } else {
-    el.classList.add('val-green');
-  }
+  // ALL strict prefix limits (09, 63, 9) and length caps have been removed.
+  // Any bulk list paste or continuous input will now automatically highlight green.
+  el.classList.add('val-green');
 }
 
 function toggleDrawer(e) {
@@ -345,7 +326,7 @@ const VOC_OPTIONS = {
     "UNSUCCESSFUL MNP (POSTPAID)–UNDECIDED", "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE",
     "GENERAL INQUIRY", "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION",
     "SIM REG: SIM VALIDITY EXTENSION", "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM",
-    "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER",
+    "SIM REG: BARRING DUE TO DEATH of OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER",
     "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", "SIM REG: UPDATE ID",
     "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", "SIM REG: REGULATORY TEMPO DISCON",
     "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATED", "Reconnection from Voluntary TD",
