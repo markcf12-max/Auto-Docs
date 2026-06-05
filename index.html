@@ -10,16 +10,19 @@
 
 <body>
 
+<!-- Persistent Dynamic Floating Notification Bar -->
 <div id="floatingShiftBanner" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; text-align: center; font-weight: 800; font-size: 13px; padding: 10px 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.3); transition: all 0.4s ease; letter-spacing: 0.5px;">
   <i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT
 </div>
 
+<!-- Floating Toast Alert Notification -->
 <div id="toast" class="toast-notification">
   <i class="fas fa-check-circle"></i> <span id="toastMessage">Manifest Copied to Clipboard</span>
 </div>
 
 <div class="app" style="margin-top: 45px;">
 
+  <!-- TOP BAR WITH THEME TOGGLE -->
   <div class="topbar">
     <div>
       <h1>Auto Docs</h1>
@@ -30,8 +33,10 @@
     </button>
   </div>
 
+  <!-- MAIN LAYOUT MATRIX -->
   <div class="layout">
 
+    <!-- INPUT PANEL -->
     <div class="panel inputPanel">
 
       <div class="group">
@@ -70,8 +75,9 @@
         </div>
 
         <div class="group">
-          <div class="label">MIN (MOBILE NUMBER)</div>
-          <input id="min" placeholder="09XX (11d) | 63XX (12d) | 9XX (10d)" maxlength="15">
+          <div class="label">MIN (MOBILE NUMBER / BULK)</div>
+          <!-- Type changed to text to support custom letters for bulk case logs -->
+          <input type="text" id="min" placeholder="09XX, 63XX, or type 'BULK REQUEST'" maxlength="40">
         </div>
       </div>
 
@@ -112,6 +118,7 @@
         <button onclick="resetForm(event)">Reset</button>
       </div>
 
+      <!-- SHIFT BACKUP HISTORICAL STORAGE SECTION -->
       <div style="margin-top: 25px; padding: 15px; background: rgba(30, 41, 59, 0.4); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
           <h3 style="margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
@@ -131,21 +138,29 @@
 
     </div>
 
+    <!-- OUTPUT PANEL -->
     <div class="panel outputPanel" id="outputPanelFrame">
       <div class="outputHeader">Generated Output</div>
       <pre id="output"></pre>
     </div>
 
+    <!-- SUGGESTION PANEL (PLAYBOOKS) -->
     <div class="panel suggestionPanel" id="playbookPanel">
       <div class="outputHeader" id="playbookHeader">Suggested Procedures</div>
       <div id="suggestions">Select Concern & VOC</div>
     </div>
 
-  </div> <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
+  </div> <!-- End Layout -->
+
+  <!-- GLOBAL TOGGLE BUTTON -->
+  <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
     <i class="fas fa-book-open"></i> <span>View Playbooks</span>
   </button>
 
-</div> <div class="floating-action-dock" id="mobileDock" style="grid-template-columns: 1fr 1fr;">
+</div> <!-- End App -->
+
+<!-- Mobile Action Footer Dock Ribbon -->
+<div class="floating-action-dock" id="mobileDock" style="grid-template-columns: 1fr 1fr;">
   <button style="background: #2563eb; color: white; padding: 10px;" onclick="copyDoc()">Copy</button>
   <button style="background: #ef4444; color: white; padding: 10px;" onclick="resetForm(event)">Clear</button>
 </div>
