@@ -3,13 +3,14 @@ function $(id) {
 }
 
 /* ==========================================================================
-   SUPABASE CLOUD DATABASE CONFIGURATION
+   SUPABASE CLOUD DATABASE CONFIGURATION (FIXED DECLARATION)
    ========================================================================== */
 // TODO: Replace these strings with your actual API credentials from your Supabase Dashboard
 const SUPABASE_URL = "https://your-project-id.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-key-here";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Changed variable name to 'supabaseClient' to prevent conflicts with the global 'supabase' window object
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
@@ -127,7 +128,7 @@ async function saveData() {
 
   // Streams real-time form inputs directly into cloud servers via upsert
   try {
-    await supabase
+    await supabaseClient
       .from('case_logs')
       .upsert([
         { 
@@ -157,7 +158,7 @@ async function checkAndRestoreCrashData() {
   const agentId = getAgentId();
   
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('case_logs')
       .select('form_data, case_number')
       .eq('agent_id', agentId)
