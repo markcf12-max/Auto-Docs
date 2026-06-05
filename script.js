@@ -7,6 +7,8 @@ const THEME_KEY = "auto_docs_theme";
 const HISTORY_KEY = "auto_docs_history"; 
 const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
+let bannerTimeout = null; // Handles the 10-second green countdown timer safely
+
 /* ==========================================================================
    REAL-TIME REGULAR EXPRESSION VALIDATORS
    ========================================================================= */
@@ -60,9 +62,6 @@ function validateMinField(el) {
   }
 }
 
-/* ==========================================================================
-   OPTION B DRAWER STRUCTURAL VIEWPORT CONTROLLER
-   ========================================================================== */
 function toggleDrawer(e) {
   if(e) e.stopPropagation();
   const drawer = $('playbookPanel');
@@ -91,12 +90,24 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function showToast(msg) {
+function showToast(msg, isError = false) {
   const toast = $('toast');
   if(!toast) return;
+  
+  // Dynamically color toast alerts based on status types
+  if(isError) {
+    toast.style.background = "#ef4444";
+    toast.style.color = "#ffffff";
+    toast.style.borderLeft = "5px solid #b91c1c";
+  } else {
+    toast.style.background = "#10b981";
+    toast.style.color = "#ffffff";
+    toast.style.borderLeft = "5px solid #047857";
+  }
+  
   $('toastMessage').textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); }, 2200);
+  setTimeout(() => { toast.classList.remove('show'); }, 3000); // 3 seconds for easier tracking
 }
 
 /* ==========================================================================
@@ -136,6 +147,19 @@ function pushToHistory(caseNumber, textContent) {
   updateFloatingBanner();
 }
 
+/* Deletes an individual history item by index position */
+function deleteHistoryItem(index, e) {
+  if(e) e.stopPropagation();
+  
+  let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  history.splice(index, 1);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  
+  renderHistoryView();
+  updateFloatingBanner();
+  showToast("Selected log deleted from shift summary.");
+}
+
 function renderHistoryView() {
   const container = $('historyContainer');
   if (!container) return;
@@ -148,12 +172,17 @@ function renderHistoryView() {
 
   container.innerHTML = history.map((item, index) => `
     <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
-      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 75%;">
+      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
         <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
       </span>
-      <button type="button" onclick="loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
-        Recopy
-      </button>
+      <div style="display: flex; gap: 4px;">
+        <button type="button" onclick="loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+          Recopy
+        </button>
+        <button type="button" onclick="deleteHistoryItem(${index}, event)" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
     </div>
   `).join("");
 }
@@ -177,6 +206,14 @@ function updateFloatingBanner() {
     banner.style.background = "#10b981"; 
     banner.style.color = "#ffffff";
     banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${history.length})`;
+    
+    // Automatically reset state after 10 seconds back to default message loop
+    if(bannerTimeout) clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(() => {
+      localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
+      updateFloatingBanner();
+    }, 10000);
+
   } else {
     banner.style.background = "#fbbf24"; 
     banner.style.color = "#1e293b";
@@ -187,7 +224,7 @@ function updateFloatingBanner() {
 function downloadHistoryLog() {
   const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   if (history.length === 0) {
-    showToast("No history data to download yet!");
+    showToast("No history data to download yet!", true);
     return;
   }
 
@@ -283,7 +320,7 @@ const VOC_OPTIONS = {
     "3G Sunset Spare SIM Process of CSP-Born Accounts (Smart only)", "3G Sunset SIM Replacement Process of SFDC-Born Accounts"
   ],
   "Inquiry": [
-    "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", "AVAILMENT OF ADD-ONS",
+    "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", "AVAILMENT of ADD-ONS",
     "BALANCE TRANSFER", "BALANCE:ACCOUNT RECONCILIATION", "BALANCE:CLARIFICATION ON BILLED CHARGES", "BALANCE:COLLECTION REMINDER",
     "BALANCE:NON-RECEIPT OF BILL", "BALANCE:POSTING OF PAYMENT", "BALANCE:PRO-RATA", "BALANCE:REMAINING ALLOCATION", "BALANCE:TOP UP",
     "BALANCE:UNBILLED", "BAN", "BAR SMS", "BARRING:DATA", "BARRING:LOSS", "BILL DETAILS:DUE DATE/CUTOFF", "BIN ABUSE", "BIN FRAUD",
@@ -301,7 +338,7 @@ const VOC_OPTIONS = {
     "SERVICE DOWNTIME:DATA", "SERVICE DOWNTIME:LOADING", "SERVICE DOWNTIME:REGISTRATION", "SERVICE DOWNTIME:SMS", "SERVICE DOWNTIME:VAS",
     "SIM UPGRADE", "SMS CONNECTIVITY:INCOMING", "SMS CONNECTIVITY:MULTIPLE", "SMS CONNECTIVITY:DELAYED", "SMS CONNECTIVITY:OUTGOING",
     "SMS CONNECTIVITY:PREMIUM SMS", "SOA:BILL REPRINT", "SOA:E-STATEMENT", "STATUS: ACCOUNT", "SOA:NON RECEIPT/DELAYED",
-    "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING OF DEALER/RETAILER SIM", "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION",
+    "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING of DEALER/RETAILER SIM", "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION",
     "VAS TECH:UNABLE TO REGISTER", "VOICE CONNECTIVITY: INCOMING", "VOICE CONNECTIVITY: OUTGOING", "VOICE QUALITY", "BALANCE: AMOUNT TO SETTLE",
     "DISSATISFACTION", "MNP INQUIRY", "SUCCESSFUL MNP INTERPORT-IN (TO POSTPAID)", "SUCCESSFUL MNP INTERPORT-IN (TO PREPAID)",
     "SUCCESSFUL MNP INTERPORT-OUT", "SUCCESSFUL MNP INTRAPORT (TO POSTPAID)", "SUCCESSFUL MNP INTRAPORT (TO PREPAID)", "MNP SIM ACTIVATION",
@@ -342,7 +379,6 @@ function updateOutput() {
     ticketHeaderTag = "SR NUMBER";
   }
 
-  // Maps the new single line "SUBJ" text clean into generated manifest strings
   $("output").textContent = 
 `${ticketHeaderTag}: ${displayValue}
 CONCERN TYPE: ${$("concernType")?.value || ""}
@@ -464,6 +500,18 @@ function init() {
 }
 
 function copyDoc() { 
+  // Validation Array check rule
+  let missingFields = [];
+  if (!$("case")?.value.trim()) missingFields.push("SR/CASE");
+  if (!$("concernType")?.value) missingFields.push("CONCERN TYPE");
+  if (!$("voc")?.value.trim()) missingFields.push("VOC");
+  if (!$("subj")?.value.trim()) missingFields.push("SUBJ");
+
+  if (missingFields.length > 0) {
+    showToast(`Missing required entries: ${missingFields.join(", ")}`, true);
+    return; // Break compilation tracking action completely
+  }
+
   const outputText = $("output").textContent || "";
   navigator.clipboard.writeText(outputText); 
   
@@ -515,10 +563,11 @@ function resetForm(e) {
 function clearShiftHistory() {
   localStorage.removeItem(HISTORY_KEY);
   localStorage.removeItem(DOWNLOADED_STATE_KEY);
+  if(bannerTimeout) clearTimeout(bannerTimeout);
   renderHistoryView();
   updateFloatingBanner();
   showToast("Shift History Cleared!");
 }
 
-window.copyDoc = copyDoc; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem; window.downloadHistoryLog = downloadHistoryLog; window.clearShiftHistory = clearShiftHistory;
+window.copyDoc = copyDoc; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem; window.downloadHistoryLog = downloadHistoryLog; window.clearShiftHistory = clearShiftHistory; window.deleteHistoryItem = deleteHistoryItem;
 window.addEventListener("DOMContentLoaded", init);
