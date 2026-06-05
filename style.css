@@ -341,10 +341,12 @@ body {
   .playbook-desktop-title {
     display: none !important;
   }
+  
   .drawer-internal-header {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
+    margin-top: 40px; /* Lower the text & elements clean under the fixed top alert banner */
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
@@ -361,6 +363,7 @@ body {
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
+    margin-top: 4px; /* Minor push adjustments to perfectly align button layout mapping */
   }
   
   .drawer-toggle-btn {
