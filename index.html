@@ -3,150 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auto Docs</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Auto Docs Workbench v5</title>
+  <!-- FontAwesome for UI Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div id="floatingShiftBanner">
+  <!-- Floating Shift Validation Banner -->
+  <div id="floatingShiftBanner" class="floating-banner">
     <i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT
   </div>
 
-  <div id="toast" class="toast-notification" style="position: fixed; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 10px 20px; border-radius: 4px; font-weight: 600; font-size: 13px; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-    <i class="fas fa-check-circle"></i> <span id="toastMessage">Manifest Copied to Clipboard</span>
+  <!-- Global Toast Alerts -->
+  <div id="toast" class="toast-notification">
+    <span id="toastMessage">Action completed successfully.</span>
   </div>
 
-  <div class="app" style="margin-top: 35px;">
-
-    <div class="topbar">
-      <div>
-        <h1>Auto Docs</h1>
-        <p>Case Generator System</p>
-      </div>
-      <button id="themeToggle" class="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+  <!-- Main Workspace Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <h1><i class="fas fa-file-invoice"></i> Auto Docs <span class="version-tag">v5.0</span></h1>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="themeToggle" onclick="toggleTheme()" title="Toggle Visual Mode">
         <i class="fas fa-moon"></i>
       </button>
     </div>
+  </header>
 
-    <div class="layout">
-
-      <div class="panel inputPanel">
-
-        <div class="group">
-          <div class="label">SR/CASE</div>
-          <input type="text" id="case" placeholder="Case: 8 digits | SR: 10 digits" maxlength="12" autocomplete="off">
+  <!-- Application Layout Matrix -->
+  <main class="layout">
+    
+    <!-- Left Panel: Input Control Deck -->
+    <section class="inputPanel">
+      <form id="docForm" onsubmit="event.preventDefault();">
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="case">Case / SR Number</label>
+            <input type="text" id="case" placeholder="8 or 10 digits (or N/A)">
+          </div>
+          
+          <div class="form-group">
+            <label for="min">MIN / Mobile Number</label>
+            <input type="text" id="min" placeholder="Paste single or bulk numbers...">
+          </div>
         </div>
 
-        <div class="grid">
-          <div class="group">
-            <div class="label">CONCERN TYPE</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="concernType">Concern Type</label>
             <select id="concernType">
-              <option value="" disabled selected hidden>Select type of concern</option>
+              <option value="" disabled selected>Select Category</option>
               <option value="Technical">Technical</option>
               <option value="Aftersales">Aftersales</option>
               <option value="Inquiry">Inquiry</option>
               <option value="Complaint">Complaint</option>
             </select>
           </div>
-
-          <div class="group">
-            <div class="label">VOC</div>
-            <input type="text" id="voc" list="vocOptions" placeholder="Type keywords (e.g. sim, billing)..." autocomplete="off" onfocus="this.select()">
+          
+          <div class="form-group">
+            <label for="voc">Voice of Customer (VOC)</label>
+            <input type="text" id="voc" list="vocOptions" placeholder="Type or select specific concern...">
             <datalist id="vocOptions"></datalist>
           </div>
         </div>
 
-        <div class="group">
-          <div class="label">SUBJ</div>
-          <input type="text" id="subj" placeholder="Type the email subject line here..." autocomplete="off">
+        <div class="form-group">
+          <label for="subj">Subject / Title Heading</label>
+          <input type="text" id="subj" placeholder="Brief subject breakdown line">
         </div>
 
-        <div class="grid">
-          <div class="group">
-            <div class="label">NAME</div>
-            <input type="text" id="name" placeholder="Client Name" autocomplete="name">
+        <div class="form-grid tri-grid">
+          <div class="form-group">
+            <label for="name">Customer Name</label>
+            <input type="text" id="name" placeholder="Full account name">
           </div>
-
-          <div class="group">
-            <div class="label">MIN (MOBILE NUMBER / BULK)</div>
-            <input type="text" id="min" placeholder="09XX, 63XX, or paste continuous bulk list here..." autocomplete="tel-national">
+          <div class="form-group">
+            <label for="company">Company / Enterprise</label>
+            <input type="text" id="company" placeholder="Corporate profile tag">
           </div>
-        </div>
-
-        <div class="group">
-          <div class="label">COMPANY NAME</div>
-          <input type="text" id="company" placeholder="Corporate account label" autocomplete="organization">
-        </div>
-
-        <div class="grid">
-          <div class="group">
-            <div class="label">EMAIL ADDRESS</div>
-            <input type="text" id="email" placeholder="client@domain.com" autocomplete="email">
-          </div>
-
-          <div class="group">
-            <div class="label">THREAD NUMBER</div>
-            <input type="text" id="thread" placeholder="CRM System Reference" autocomplete="off">
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="client@domain.com">
           </div>
         </div>
 
-        <div class="group">
-          <div class="label">DATE & TIME RECEIVED</div>
-          <input type="text" id="datetime" placeholder="YYYY-MM-DD HH:MM" autocomplete="off">
-        </div>
-
-        <div class="group">
-          <div class="label">ACTION TAKEN</div>
-          <textarea id="action" placeholder="Troubleshooting mitigation steps applied..."></textarea>
-        </div>
-
-        <div class="group">
-          <div class="label">WOCAS</div>
-          <textarea id="wocas" placeholder="Disposition text closures..."></textarea>
-        </div>
-
-        <div class="buttons" style="grid-template-columns: 1fr 1fr;">
-          <button type="button" onclick="copyDoc()">Copy</button>
-          <button type="button" onclick="resetForm(event)">Reset</button>
-        </div>
-
-        <div style="margin-top: 25px; padding: 15px; background: rgba(30, 41, 59, 0.4); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-            <h3 style="margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-              <i class="fas fa-history" style="color: #3b82f6;"></i> Shift Backup Logs (Max 50)
-            </h3>
-            <div style="display: flex; gap: 6px;">
-              <button type="button" onclick="downloadHistoryLog()" style="background: #10b981; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                <i class="fas fa-file-download"></i> Download All Logs
-              </button>
-              <button type="button" onclick="clearShiftHistory()" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
-                Clear Backups
-              </button>
-            </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="thread">CRM / Email Thread Reference</label>
+            <input type="text" id="thread" placeholder="Thread lookup reference key">
           </div>
-          <div id="historyContainer"></div>
+          <div class="form-group">
+            <label for="datetime">Event Date / Time Stamp</label>
+            <input type="text" id="datetime" placeholder="MM-DD-YYYY HH:MM">
+          </div>
         </div>
 
+        <div class="form-group">
+          <label for="action">Action Taken / Resolution Notes</label>
+          <textarea id="action" rows="4" placeholder="Document all containment activities and tool configurations..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="wocas">WOCAS Core Category / Categorization</label>
+          <textarea id="wocas" rows="2" placeholder="WOCAS mapping keywords classification notes..."></textarea>
+        </div>
+
+        <!-- Inline Control Buttons (Hidden on Responsive Mobile Layouts) -->
+        <div class="buttons">
+          <button type="button" class="btn-primary" onclick="copyDoc()">
+            <i class="fas fa-copy"></i> Copy Note
+          </button>
+          <button type="button" class="btn-secondary" onclick="resetForm(event)">
+            <i class="fas fa-trash-arrow-up"></i> Clear Inputs
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Center Panel: Real-Time Render Preview Frame -->
+    <section id="outputPanelFrame" class="outputPanel">
+      <div class="panel-header">
+        <h3><i class="fas fa-eye"></i> Standard Output Copy Preview</h3>
       </div>
-
-      <div class="panel outputPanel" id="outputPanelFrame">
-        <div class="outputHeader">Generated Output</div>
-        <pre id="output"></pre>
+      <pre id="output">Generating real-time output preview manifest structure...</pre>
+      
+      <!-- Shift History Log Window -->
+      <div class="history-section">
+        <div class="history-header">
+          <h4><i class="fas fa-history"></i> Current Shift Copied Manifest Logs</h4>
+          <div class="history-actions">
+            <button type="button" onclick="downloadHistoryLog()" title="Export Logs to TXT File">
+              <i class="fas fa-download"></i> Export
+            </button>
+            <button type="button" onclick="clearShiftHistory()" title="Wipe History Stack">
+              <i class="fas fa-dumpster"></i> Flush Stack
+            </button>
+          </div>
+        </div>
+        <div id="historyContainer" class="history-box">
+          <i style="color: #94a3b8; font-size: 13px;">No copied entries yet...</i>
+        </div>
       </div>
+    </section>
 
-      <div class="panel suggestionPanel" id="playbookPanel">
-        <div class="outputHeader" id="playbookHeader">Suggested Procedures</div>
-        <div id="suggestions">Select Concern & VOC</div>
+    <!-- Right Panel: Playbook & Dynamic Escalation Guidance Procedures -->
+    <section id="playbookPanel" class="suggestionPanel">
+      <!-- Internal Mobile Drawer Exit Header Row -->
+      <div class="drawer-internal-header">
+        <h3><i class="fas fa-book-open"></i> Playbook System</h3>
+        <button type="button" class="btn-drawer-close" onclick="toggleDrawer(event)">
+          <i class="fas fa-times"></i> Close
+        </button>
       </div>
+      
+      <div class="panel-header playbook-desktop-title">
+        <h3><i class="fas fa-book-open"></i> Dynamic Matrix Guidelines</h3>
+      </div>
+      <div id="suggestions" class="suggestions-content">
+        Select Concern & VOC
+      </div>
+    </section>
 
-    </div> <button class="drawer-toggle-btn" id="drawerToggle" onclick="toggleDrawer(event)">
-      <i class="fas fa-book-open"></i> <span>View Playbooks</span>
+  </main>
+
+  <!-- Mobile Floating Trigger Dock Panel elements -->
+  <button type="button" id="drawerToggle" class="drawer-toggle-btn" onclick="toggleDrawer(event)">
+    <i class="fas fa-book-open"></i> <span>View Playbooks</span>
+  </button>
+
+  <div class="floating-action-dock">
+    <button type="button" style="background: #10b981; color: white; border: none;" onclick="copyDoc()">
+      <i class="fas fa-copy"></i> Copy Note
     </button>
-
-  </div> <div class="floating-action-dock" id="mobileDock" style="grid-template-columns: 1fr 1fr;">
-    <button style="background: #2563eb; color: white; padding: 10px;" onclick="copyDoc()">Copy</button>
-    <button style="background: #ef4444; color: white; padding: 10px;" onclick="resetForm(event)">Clear</button>
+    <button type="button" style="background: var(--border-color); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1);" onclick="resetForm(event)">
+      <i class="fas fa-undo"></i> Reset All
+    </button>
   </div>
 
   <script src="script.js"></script>
