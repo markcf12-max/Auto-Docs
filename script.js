@@ -430,8 +430,18 @@ function updateVocOptions(keepExistingValue = false) {
 /* ==========================================================================
    INITIALIZATION
 ========================================================================== */
+/* ==========================================================================
+   INITIALIZATION
+========================================================================== */
+function initTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  const isDark = savedTheme === "dark";
+  document.body.classList.toggle("dark-mode", isDark);
+  updateThemeIcon(isDark);
+}
+
 function init() {
-  initTheme();
+  initTheme(); // Now safely defined right above!
   loadData();
   updateVocOptions(true); 
   updateOutput();
