@@ -4,6 +4,7 @@ function $(id) {
 
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
+const HISTORY_KEY = "auto_docs_history"; // New key for saved history logs
 
 /* ==========================================================================
    REAL-TIME REGULAR EXPRESSION VALIDATORS
@@ -14,7 +15,6 @@ function validateCaseField(el) {
   
   if (val.length === 0) return; 
   
-  // If agent explicitly types NA or N/A, mark it valid immediately
   if (val === "NA" || val === "N/A") {
     el.classList.add('val-green');
     return;
@@ -95,7 +95,7 @@ function showToast(msg) {
 }
 
 /* =========================
-   DATA STORAGE
+   DATA STORAGE & HISTORY LOGIC
 ========================= */
 function saveData() {
   const data = {};
@@ -113,30 +113,52 @@ function loadData() {
   });
 }
 
-/* =========================
-   DARK MODE SYSTEM 🌙
-========================= */
-function initTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  if (savedTheme === "dark") {
-    document.body.classList.add("dark-mode");
-    updateThemeIcon(true);
-  } else {
-    document.body.classList.remove("dark-mode");
-    updateThemeIcon(false);
+function pushToHistory(caseNumber, textContent) {
+  let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
+
+  // Prevent duplicate consecutive copies
+  if (history.length > 0 && history[0].text === textContent) return;
+
+  // Add item to beginning of array list
+  history.unshift({ id: displayId, time: timestamp, text: textContent });
+  
+  // Cap history list at 10 items to remain efficient
+  if (history.length > 10) history.pop();
+  
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistoryView();
+}
+
+function renderHistoryView() {
+  const container = $('historyContainer');
+  if (!container) return;
+
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  if (history.length === 0) {
+    container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet...</i>`;
+    return;
   }
+
+  container.innerHTML = history.map((item, index) => `
+    <div style="background: rgba(255,255,255,0.05); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1);">
+      <span style="font-size: 13px; font-weight: 500;">
+        <span style="color: #3b82f6;">[${item.time}]</span> Case/SR: <strong>${item.id}</strong>
+      </span>
+      <button type="button" onclick="loadHistoryItem(${index})" style="background: #1e293b; color: #60a5fa; border: 1px solid #3b82f6; padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+        Recopy
+      </button>
+    </div>
+  `).join("");
 }
 
-function toggleTheme() {
-  const isDark = document.body.classList.toggle("dark-mode");
-  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  updateThemeIcon(isDark);
-}
-
-function updateThemeIcon(isDark) {
-  const icon = document.querySelector("#themeToggle i");
-  if (!icon) return;
-  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+function loadHistoryItem(index) {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  if (!history[index]) return;
+  
+  navigator.clipboard.writeText(history[index].text);
+  showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
 
 /* =========================
@@ -342,13 +364,13 @@ function init() {
   updateVocOptions(true); 
   updateOutput();
   updateSuggestions();
+  renderHistoryView(); // Build previous session history cards if available
 
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
     el.addEventListener("input", () => {
-      // Allow letters in the case field so text like 'NA' can be typed, but keep stripping non-digits from 'min'
       if(el.id === "min") el.value = el.value.replace(/\D/g, '');
       
       if(el.id === "case") validateCaseField(el);
@@ -373,7 +395,8 @@ function init() {
 }
 
 function copyDoc() { 
-  navigator.clipboard.writeText($("output").textContent || ""); 
+  const outputText = $("output").textContent || "";
+  navigator.clipboard.writeText(outputText); 
   
   const previewFrame = $('outputPanelFrame');
   if(previewFrame) {
@@ -382,7 +405,10 @@ function copyDoc() {
     previewFrame.classList.add('panel-flash-active');
   }
 
-  showToast(`Manifest Logs Copied! (${$("output").textContent.length} chars)`);
+  showToast(`Manifest Logs Copied! (${outputText.length} chars)`);
+
+  // Pass current Case value and text payload to data history trackers
+  pushToHistory($("case")?.value, outputText);
 
   const copyBtn = document.querySelector("button[onclick='copyDoc()']");
   if (copyBtn) {
@@ -430,5 +456,5 @@ function resetForm(e) {
   showToast("Logs cleared!");
 }
 
-window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer;
+window.copyDoc = copyDoc; window.downloadTxt = downloadTxt; window.resetForm = resetForm; window.toggleTheme = toggleTheme; window.toggleDrawer = toggleDrawer; window.loadHistoryItem = loadHistoryItem;
 window.addEventListener("DOMContentLoaded", init);
