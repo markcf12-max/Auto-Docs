@@ -33,7 +33,6 @@ function validateCaseField(el) {
 }
 
 function validateMinField(el) {
-  // Completely stripped! No restrictions, no red highlights for any numbers.
   el.classList.remove('val-amber', 'val-crimson');
   if (el.value.trim().length > 0) {
     el.classList.add('val-green');
@@ -244,7 +243,7 @@ function initTheme() {
 }
 
 /* ==========================================================================
-   VOC PROCEDURES MAPPING CONFIG DATA (CONSOLIDATED AFTER SALES MATRIX)
+   VOC PROCEDURES MAPPING CONFIG DATA
    ========================================================================== */
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": [
@@ -257,7 +256,6 @@ const TECH_PROCEDURES = {
   "COVERAGE CONNECTIVITY": [{ text: "Check physical coverage index maps", link: "https://yourguide-link.com/coverage" }]
 };
 
-// Consolidated inquiry database workflows securely coupled straight into aftersales structural tracking mapping
 const AFTERSALES_PROCEDURES = {
   "Device Unlocking": [
     { text: "Verify IMEI lock status in database", link: "https://yourguide-link.com/unlock" },
@@ -268,6 +266,12 @@ const AFTERSALES_PROCEDURES = {
   "SIM REGISTRATION": [{ text: "Open official consumer registration validation console", link: "https://yourguide-link.com/sim-reg" }],
   "BALANCE:CLARIFICATION ON BILLED CHARGES": [{ text: "Pull ledger micro-transactions record sheet", link: "https://yourguide-link.com/ledger" }],
   "PUK/PIN": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
+};
+
+const COMPLAINT_PROCEDURES = {
+  "Positive": [{ text: "Log feedback profile matrix notes", link: "#" }],
+  "Neutral": [{ text: "Note general standard operation logs", link: "#" }],
+  "Negative": [{ text: "Flag context parameters directly for prioritization rules", link: "#" }]
 };
 
 const VOC_OPTIONS = {
@@ -316,11 +320,11 @@ const VOC_OPTIONS = {
     "Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", "Case Management – Billing Dispute",
     "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
   ],
-  "Inquiry": [], // Dynamic operational routing maps elements cleanly to Aftersales structural arrays
+  "Inquiry": [], 
   "Complaint": ["Positive", "Neutral", "Negative"]
 };
 
-// Auto-populate the inquiry legacy key container pointer array logic reference at execution initialization
+// Mirror the lists perfectly between Aftersales and Inquiry configurations
 VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
 
 function toggleTheme() {
@@ -408,7 +412,8 @@ function updateSuggestions() {
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review account status<br>• Process system updates via guidelines";
   } 
   else if (concern === "Complaint") {
-    html += ["Acknowledge issue", "Investigate details closely", "Escalate if needed"].map(i => `• ${i}`).join("<br>");
+    const procedures = COMPLAINT_PROCEDURES[voc] || [];
+    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Acknowledge issue<br>• Investigate details closely<br>• Escalate if needed";
   }
   $("suggestions").innerHTML = html;
 }
@@ -537,7 +542,6 @@ function clearShiftHistory() {
   showToast("Shift History Cleared!");
 }
 
-/* Global Application Route Register mappings */
 window.copyDoc = copyDoc; 
 window.resetForm = resetForm; 
 window.toggleTheme = toggleTheme; 
