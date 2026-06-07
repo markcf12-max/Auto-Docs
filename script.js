@@ -469,9 +469,6 @@ async function resetForm(event) {
     event.stopPropagation();
   }
   
-  const confirmClear = confirm("Are you sure you want to clear all interactive configuration inputs?");
-  if (!confirmClear) return;
-
   isResetting = true; // Block reactive data pipeline triggers during input clearing loop
 
   try {
