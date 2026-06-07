@@ -25,6 +25,15 @@
     <div class="header-left">
       <h1><i class="fas fa-file-invoice"></i> Auto Docs <span class="version-tag">v5.0</span></h1>
     </div>
+    
+    <!-- OPTIONS 2 & 3: Cloud connection badge and sync system dashboard -->
+    <div class="header-sync-engine">
+      <span id="syncStatus" class="sync-status-badge">● Checking Connection...</span>
+      <button type="button" id="manualSyncBtn" onclick="window.syncOfflineQueue()" title="Force Flush Dexie Queue to Supabase">
+        <i class="fas fa-cloud-arrow-up"></i> Sync Cloud
+      </button>
+    </div>
+
     <div class="header-actions">
       <button type="button" id="themeToggle" onclick="toggleTheme()" title="Toggle Visual Mode">
         <i class="fas fa-moon"></i>
