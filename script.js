@@ -28,6 +28,7 @@ const HISTORY_KEY = "auto_docs_history";
 const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
 let bannerTimeout = null; 
+let isResetting = false; // Flag to prevent event listeners from firing during a form reset
 
 /**
  * Validates the typed ID against the master database list.
@@ -155,6 +156,8 @@ function showToast(msg, isError = false) {
    DATA STORAGE & BACKUPS REGISTRY ENGINE (FIREWALL-PROOF INDEXEDDB ADAPTER)
    ========================================================================== */
 async function saveData() {
+  if (isResetting) return; // Halt auto-save routine if form reset is active
+
   const data = {};
   document.querySelectorAll("input, textarea, select").forEach(el => {
     if (el.id) data[el.id] = el.value;
@@ -171,7 +174,9 @@ async function saveData() {
   }
 
   const caseNum = $("case")?.value.trim() || "DRAFT";
-  const agentId = await verifyAndGetAgentId();
+  const agentId = localStorage.getItem("auto_docs_agent_id"); // Pull clean from storage to bypass prompts
+
+  if (!agentId) return;
 
   // Tier 3 Cloud Sync: Discards errors gracefully if the network is firewall blocked
   try {
@@ -459,43 +464,65 @@ async function clearShiftHistory() {
 }
 
 async function resetForm(event) {
-  // 1. Block any default form submission behaviors or event bubbling duplicates
   if (event) {
     event.preventDefault();
     event.stopPropagation();
   }
   
-  // 2. Strict confirmation wall (Guaranteed to only prompt ONCE)
   const confirmClear = confirm("Are you sure you want to clear all interactive configuration inputs?");
   if (!confirmClear) return;
 
+  isResetting = true; // Block reactive data pipeline triggers during input clearing loop
+
   try {
-    // 3. Clear all visual input and textarea values safely
+    // Clean up cache tables first
+    localStorage.removeItem(STORAGE_KEY);
+    await db.session_backup.delete('current_workspace_state');
+
+    // Wipe visual elements safely
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
-      // Remove validation color borders
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
     });
 
-    // 4. Reset the select dropdown back to default
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     
-    // 5. Empty the dependent VOC options selection list data
     updateVocOptions(false);
     
-    // 6. Securely wipe local fallback cache profiles from both layers
-    localStorage.removeItem(STORAGE_KEY);
-    await db.session_backup.delete('current_workspace_state');
+    // Explicit clean-render state bypasses processing engine anomalies
+    if ($("output")) {
+      $("output").textContent = 
+`CASE/SR VALUE: N/A
+CONCERN TYPE: 
+VOC: 
+
+SUBJ: 
+
+NAME: 
+MIN: 
+COMPANY: 
+EMAIL: 
+THREAD: 
+DATE/TIME: 
+
+ACTION:
+
+
+WOCAS:
+`;
+    }
     
-    // 7. Re-render empty preview states
-    updateOutput();
-    updateSuggestions();
+    if ($("suggestions")) {
+      $("suggestions").innerHTML = "Select Concern & VOC";
+    }
     
     showToast("Form fields reset successfully.");
   } catch(e) {
     console.error("Local database reset exception:", e);
     showToast("Error while clearing background data profiles.", true);
+  } finally {
+    isResetting = false; // Release reactive triggers back to active state
   }
 }
 
@@ -613,7 +640,7 @@ VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
    OUTPUT GENERATOR
 ========================================================================== */
 function updateOutput() {
-  if (!$("output")) return;
+  if (!$("output") || isResetting) return;
   
   const caseVal = $("case")?.value.trim() || "";
   let ticketHeaderTag = "CASE/SR VALUE";
@@ -654,7 +681,7 @@ ${$("wocas")?.value || ""}`;
    PROCEDURE HANDLING
 ========================================================================== */
 function updateSuggestions() {
-  if (!$("suggestions")) return;
+  if (!$("suggestions") || isResetting) return;
   const concern = $("concernType")?.value;
   const voc = $("voc")?.value;
   
@@ -734,6 +761,7 @@ async function init() {
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
     el.addEventListener("input", () => {
+      if (isResetting) return; // Disallow listener loops if reset operations are active
       if(el.id === "case") validateCaseField(el);
       if(el.id === "min") validateMinField(el);
 
@@ -748,6 +776,7 @@ async function init() {
   const concernSelect = $("concernType");
   if (concernSelect) {
     concernSelect.addEventListener("change", () => {
+      if (isResetting) return;
       updateVocOptions(false);
       updateSuggestions();
       saveData();
