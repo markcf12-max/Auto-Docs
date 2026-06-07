@@ -5,9 +5,10 @@ import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.4/+esm';
 
 // Create a local, firewall-immune transactional database inside the browser
 const db = new Dexie('AutoDocsLocalDB');
-db.version(1).stores({
+db.version(2).stores({
   session_backup: 'id',          // Keeps current form state safe from sudden PC reboots
-  shift_history: '++local_id, id' // Backs up copied logs locally
+  shift_history: '++local_id, id', // Backs up copied logs locally
+  sync_queue: 'case_number'       // Option 3: Track cases that failed to sync due to CORS/Firewall
 });
 
 function $(id) {
@@ -28,11 +29,79 @@ const HISTORY_KEY = "auto_docs_history";
 const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
 let bannerTimeout = null; 
-let isResetting = false; // Flag to prevent event listeners from firing during a form reset
+let isResetting = false;     // Flag to prevent event listeners from firing during a form reset
+let isCloudAvailable = true; // Runtime network flag to minimize console spam on CORS/Firewall drops
+let saveTimeout = null;      // Option 1: Handle debouncing timers globally
+
+/**
+ * Option 2: Updates a UI connection indicator if it exists on your page layout
+ * Simply add <span id="syncStatus"></span> somewhere in your HTML header or footer!
+ */
+function updateSyncStatusUI(status) {
+  const badge = $('syncStatus');
+  if (!badge) return;
+
+  badge.className = ""; // Wipe existing classes
+  
+  switch(status) {
+    case 'online':
+      badge.textContent = "● Cloud Connected";
+      badge.style.color = "#10b981"; // Emerald Green
+      break;
+    case 'offline':
+      badge.textContent = "● Local Offline Mode (Dexie Protected)";
+      badge.style.color = "#fbbf24"; // Amber Yellow
+      break;
+    case 'syncing':
+      badge.textContent = "⟳ Syncing Queue Data...";
+      badge.style.color = "#60a5fa"; // Sky Blue
+      break;
+  }
+}
+
+/**
+ * Option 3: Network Heartbeat & Manual Trigger Sync Queue Recovery Engine
+ * Grabs all failed rows cached in Dexie and flushes them to Supabase once CORS/network clears.
+ */
+async function syncOfflineQueue() {
+  const agentId = localStorage.getItem("auto_docs_agent_id");
+  if (!agentId) return;
+
+  try {
+    const queuedItems = await db.sync_queue.toArray();
+    if (queuedItems.length === 0) return;
+
+    updateSyncStatusUI('syncing');
+
+    for (const item of queuedItems) {
+      const { error } = await supabaseClient
+        .from('case_logs')
+        .upsert([
+          { 
+            agent_id: agentId, 
+            case_number: item.case_number, 
+            form_data: item.form_data 
+          }
+        ], { onConflict: 'agent_id, case_number' });
+
+      if (error) throw error; // Break loop if network/CORS firewall still blocks it
+      
+      // Successfully uploaded, drop from temporary offline sync queue
+      await db.sync_queue.delete(item.case_number);
+    }
+
+    isCloudAvailable = true;
+    updateSyncStatusUI('online');
+    showToast(`Successfully synced ${queuedItems.length} offline case logs to the cloud database!`);
+  } catch (e) {
+    console.warn("⚠️ Sync queue attempt failed. Infrastructure remaining in isolated Dexie state.");
+    updateSyncStatusUI('offline');
+  }
+}
 
 /**
  * Validates the typed ID against the master database list.
- * Safely falls back if network is entirely firewall blocked.
+ * Catch CORS preflight blocks safely and fall back to Dexie/Local immediately.
  */
 async function verifyAndGetAgentId() {
   let id = localStorage.getItem("auto_docs_agent_id");
@@ -58,16 +127,19 @@ async function verifyAndGetAgentId() {
       if (data && data.length > 0) {
         id = inputId;
         localStorage.setItem("auto_docs_agent_id", id);
+        updateSyncStatusUI('online');
         alert(`✅ Welcome authenticated agent: ${id}`);
       } else {
         alert("❌ Access Denied: That Employee ID is not registered in our system. Please check for typos.");
       }
     } catch (err) {
-      console.warn("⚠️ Firewall/Network blocked database validation. Applying local offline override flag.");
-      // If firewall blocks access, allow the agent in locally using their submitted ID
+      console.warn("⚠️ Network Firewall/CORS blocked cloud authentication. Switching to local offline mode.");
+      isCloudAvailable = false; 
+      updateSyncStatusUI('offline');
+      
       id = inputId;
       localStorage.setItem("auto_docs_agent_id", id);
-      alert(`⚠️ Offline Local Session Activated for Agent ID: ${id}`);
+      alert(`⚠️ Offline Local Session Activated via Dexie Layer for Agent ID: ${id}`);
     }
   }
   return id;
@@ -156,47 +228,66 @@ function showToast(msg, isError = false) {
    DATA STORAGE & BACKUPS REGISTRY ENGINE (FIREWALL-PROOF INDEXEDDB ADAPTER)
    ========================================================================== */
 async function saveData() {
-  if (isResetting) return; // Halt auto-save routine if form reset is active
+  if (isResetting) return; 
 
-  const data = {};
-  document.querySelectorAll("input, textarea, select").forEach(el => {
-    if (el.id) data[el.id] = el.value;
-  });
-  
-  // Tier 1 Backup: Traditional LocalStorage fallback
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Option 1: Clear pending timer loop setups execution stacks on every keystroke run
+  if (saveTimeout) clearTimeout(saveTimeout);
 
-  // Tier 2 Backup: Robust Database Fallback to user's local hard disk (Survives cache purges)
-  try {
-    await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
-  } catch (indexedDbErr) {
-    console.error("IndexedDB transactional write failure:", indexedDbErr);
-  }
+  // Option 1: Debounce storage triggers by 500ms to preserve workstation UI performance
+  saveTimeout = setTimeout(async () => {
+    const data = {};
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      if (el.id) data[el.id] = el.value;
+    });
+    
+    // Tier 1 Backup: Traditional LocalStorage fallback
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-  const caseNum = $("case")?.value.trim() || "DRAFT";
-  const agentId = localStorage.getItem("auto_docs_agent_id"); // Pull clean from storage to bypass prompts
+    // Tier 2 Backup: Robust Database Fallback via Dexie (Safe from firewall blocks)
+    try {
+      await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
+    } catch (indexedDbErr) {
+      console.error("IndexedDB transactional write failure:", indexedDbErr);
+    }
 
-  if (!agentId) return;
+    const caseNum = $("case")?.value.trim() || "DRAFT";
+    const agentId = localStorage.getItem("auto_docs_agent_id"); 
 
-  // Tier 3 Cloud Sync: Discards errors gracefully if the network is firewall blocked
-  try {
-    await supabaseClient
-      .from('case_logs')
-      .upsert([
-        { 
-          agent_id: agentId, 
-          case_number: caseNum, 
-          form_data: data 
-        }
-      ], { onConflict: 'agent_id, case_number' });
-  } catch (error) {
-    console.warn("Cloud connection drops detected. Workspace operational state maintained via IndexedDB.", error);
-  }
+    if (!agentId) return;
+
+    // Tier 3 Cloud Sync & Option 3: Sync Queue Interceptor Management Flow
+    if (!isCloudAvailable) {
+      // Save locally to offline sync queue when server/CORS is failing
+      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
+      updateSyncStatusUI('offline');
+      return;
+    }
+
+    try {
+      const { error } = await supabaseClient
+        .from('case_logs')
+        .upsert([
+          { 
+            agent_id: agentId, 
+            case_number: caseNum, 
+            form_data: data 
+          }
+        ], { onConflict: 'agent_id, case_number' });
+
+      if (error) throw error;
+      updateSyncStatusUI('online');
+    } catch (error) {
+      console.warn("Cloud connection drop or CORS block captured. Queuing data locally inside Dexie layout storage...");
+      isCloudAvailable = false; 
+      updateSyncStatusUI('offline');
+      // Append current state safely into the offline queue array database layer
+      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
+    }
+  }, 500);
 }
 
 async function loadData() {
   try {
-    // Attempt loading from hard disk database structure first
     const localDbState = await db.session_backup.get('current_workspace_state');
     const saved = localDbState ? localDbState.data : JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     
@@ -205,7 +296,6 @@ async function loadData() {
       if (el && id !== "voc") el.value = saved[id];
     });
   } catch(e) {
-    // Final fallback if local browser storage has exceptions
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     Object.keys(saved).forEach(id => {
       const el = $(id);
@@ -215,31 +305,35 @@ async function loadData() {
 }
 
 /**
- * Recovers crashed inputs from either cloud repositories or local IndexedDB profiles.
+ * Recovers crashed inputs smoothly from either cloud repositories or internal Dexie profiles.
  */
 async function checkAndRestoreCrashData() {
   const agentId = await verifyAndGetAgentId();
   let lastSavedCase = "";
   let savedFormState = null;
-  let source = "cloud";
+  let source = "local hard drive backup"; 
 
-  try {
-    const { data, error } = await supabaseClient
-      .from('case_logs')
-      .select('form_data, case_number')
-      .eq('agent_id', agentId)
-      .order('created_at', { ascending: false })
-      .limit(1);
+  if (isCloudAvailable) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('case_logs')
+        .select('form_data, case_number')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    if (!error && data && data.length > 0) {
-      lastSavedCase = data[0].case_number;
-      savedFormState = data[0].form_data;
+      if (!error && data && data.length > 0) {
+        lastSavedCase = data[0].case_number;
+        savedFormState = data[0].form_data;
+        source = "cloud";
+      }
+    } catch (e) {
+      console.warn("Cloud hydration blocked by CORS/firewall. Switching context to internal browser database...");
+      isCloudAvailable = false;
+      updateSyncStatusUI('offline');
     }
-  } catch (e) {
-    console.warn("Cloud hydration blocked by firewall. Inspecting internal browser database store...");
   }
 
-  // If cloud fails or is blocked by firewall, pull the local storage database instance state
   if (!savedFormState) {
     try {
       const backupState = await db.session_backup.get('current_workspace_state');
@@ -281,7 +375,6 @@ async function pushToHistory(caseNumber, textContent) {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
 
-  // Check the robust local storage matrix array
   let history = [];
   try {
     history = await db.shift_history.reverse().toArray();
@@ -293,10 +386,8 @@ async function pushToHistory(caseNumber, textContent) {
 
   const newLog = { id: displayId, time: timestamp, text: textContent };
   
-  // Update both systems synchronously 
   try {
     await db.shift_history.add(newLog);
-    // Limit store capacity rules
     const count = await db.shift_history.count();
     if (count > 50) {
       const oldest = await db.shift_history.orderBy('local_id').first();
@@ -340,7 +431,6 @@ async function renderHistoryView() {
 
   let history = [];
   try {
-    // Read directly from IndexedDB
     history = await db.shift_history.toArray();
   } catch(e) {
     history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
@@ -454,6 +544,7 @@ async function clearShiftHistory() {
   if (confirm("🚨 Warning:\n\nThis will completely wipe your local history data manifest stack for this entire shift. Proceed?")) {
     try {
       await db.shift_history.clear();
+      await db.sync_queue.clear(); // Flush queue clean during standard operational purges
     } catch(e) { console.error(e); }
     localStorage.setItem(HISTORY_KEY, "[]");
     localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
@@ -469,14 +560,12 @@ async function resetForm(event) {
     event.stopPropagation();
   }
   
-  isResetting = true; // Block reactive data pipeline triggers during input clearing loop
+  isResetting = true; 
 
   try {
-    // Clean up cache tables first
     localStorage.removeItem(STORAGE_KEY);
     await db.session_backup.delete('current_workspace_state');
 
-    // Wipe visual elements safely
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
@@ -487,7 +576,6 @@ async function resetForm(event) {
     
     updateVocOptions(false);
     
-    // Explicit clean-render state bypasses processing engine anomalies
     if ($("output")) {
       $("output").textContent = 
 `CASE/SR VALUE: N/A
@@ -519,7 +607,7 @@ WOCAS:
     console.error("Local database reset exception:", e);
     showToast("Error while clearing background data profiles.", true);
   } finally {
-    isResetting = false; // Release reactive triggers back to active state
+    isResetting = false; 
   }
 }
 
@@ -747,18 +835,23 @@ async function init() {
   await renderHistoryView();
   updateFloatingBanner();
 
-  // Run database gatekeeper verification step immediately on workspace startup
+  // Run gatekeeper step. Dexie fallback handles CORS issues cleanly now
   await verifyAndGetAgentId();
   
-  // Clear layout fields or hydrate backup logs safely from cloud database/IndexedDB
+  // Hydrate layout profiles securely
   await checkAndRestoreCrashData();
+
+  // Check queue health automatically at initialization setup phase
+  if (isCloudAvailable) {
+    await syncOfflineQueue();
+  }
 
   if($('case')) validateCaseField($('case'));
   if($('min')) validateMinField($('min'));
 
   document.querySelectorAll("input, textarea, select").forEach(el => {
     el.addEventListener("input", () => {
-      if (isResetting) return; // Disallow listener loops if reset operations are active
+      if (isResetting) return; 
       if(el.id === "case") validateCaseField(el);
       if(el.id === "min") validateMinField(el);
 
@@ -780,6 +873,22 @@ async function init() {
       updateOutput();
     });
   }
+
+  // Periodic recovery engine heartbeat pulse sequence (attempts queue sync every 60 seconds)
+  setInterval(async () => {
+    if (!isCloudAvailable) {
+      // Small verification handshake test to check if network has dropped restrictions
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/`, { method: 'OPTIONS', headers: { 'apikey': SUPABASE_ANON_KEY } });
+        if (response.ok) {
+          isCloudAvailable = true;
+          await syncOfflineQueue();
+        }
+      } catch (err) {
+        // Keep in offline status mode
+      }
+    }
+  }, 60000);
 }
 
 // Bind methods explicitly to window context to accommodate module isolation scoping
@@ -791,6 +900,7 @@ window.downloadHistoryLog = downloadHistoryLog;
 window.clearShiftHistory = clearShiftHistory;
 window.loadHistoryItem = loadHistoryItem;
 window.deleteHistoryItem = deleteHistoryItem;
+window.syncOfflineQueue = syncOfflineQueue; // Exposed explicitly to allow custom sync buttons
 
 // Boot up structural context module
 document.addEventListener("DOMContentLoaded", init);
