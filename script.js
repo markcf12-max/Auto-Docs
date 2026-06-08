@@ -391,32 +391,37 @@ async function terminateAgentSession() {
   }
 }
 
+/* ==========================================================================
+   FORM RESET MECHANISM (INSTANTLY WIPES WORKSPACE DATA WITHOUT POPUPS)
+   ========================================================================== */
 async function resetForm(event) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
   }
-  if (!confirm("Are you sure you want to clear your current active workspace form fields?")) return;
   
   isResetting = true; 
   const currentUser = firebaseAuth.currentUser;
 
   try {
+    // Instantly wipe all physical interface text fields
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
     });
 
+    // Reset dropdown matrices
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     updateVocOptions(false);
     
+    // Clear preview outputs
     if ($("output")) {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 
-    // Re-save form state back as blank object while safely leaving history array intact
+    // Instantly sync the empty layout state up to the cloud (leaves history intact)
     if (currentUser) {
       const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
       await setDoc(docRef, {
@@ -424,10 +429,10 @@ async function resetForm(event) {
       }, { merge: true });
     }
     
-    showToast("Form fields reset successfully.");
+    showToast("Active workspace cleared.");
   } catch(e) {
     console.error("Cloud database reset exception:", e);
-    showToast("Error clearing cloud form matrix properties.", true);
+    showToast("Error clearing cloud form properties.", true);
   } finally {
     isResetting = false; 
   }
