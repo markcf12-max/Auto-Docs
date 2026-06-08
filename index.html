@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auto Docs Workbench v5</title>
   
-  <!-- HARDENED: Local assets directly inside repository to bypass corporate tracking shields -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
   <script src="supabase.js"></script>
   
   <link rel="stylesheet" href="style.css">
@@ -26,7 +27,6 @@
       <h1><i class="fas fa-file-invoice"></i> Auto Docs <span class="version-tag">v5.0</span></h1>
     </div>
     
-    <!-- OPTIONS 2 & 3: Cloud connection badge and sync system dashboard -->
     <div class="header-sync-engine">
       <span id="syncStatus" class="sync-status-badge">● Checking Connection...</span>
       <button type="button" id="manualSyncBtn" onclick="window.syncOfflineQueue()" title="Force Flush Dexie Queue to Supabase">
@@ -184,6 +184,6 @@
     </button>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
