@@ -18,7 +18,7 @@ function $(id) {
    FIREBASE CONFIGURATION & MODULE INTEGRATION (SYNCHRONIZED V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
-import { getFirestore, doc, setDoc, collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -44,7 +44,7 @@ let bannerTimeout = null;
 let isResetting = false;     
 let isCloudAvailable = true; 
 let saveTimeout = null;      
-let currentAuthMode = "LOGIN"; // Tracks UI Mode state: "LOGIN" or "REGISTER"
+let currentAuthMode = "LOGIN"; 
 
 /* ==========================================================================
    UI STATUS AND THEME INDICATORS
@@ -72,7 +72,7 @@ function updateSyncStatusUI(status) {
 }
 
 /* ==========================================================================
-   FIREBASE AUTHENTICATION FLOWS
+   FIREBASE AUTHENTICATION FLOWS (WIPES MONITOR TEXT ON IDENTITY SHIFT)
    ========================================================================== */
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
@@ -121,13 +121,22 @@ async function handleAuthSubmission(e) {
 
 function listenToSessionState() {
   onAuthStateChanged(firebaseAuth, async (user) => {
+    
+    // Hard physical wipe of monitor inputs to block data leakage between agents
+    document.querySelectorAll("input, textarea").forEach(el => {
+      el.value = "";
+      el.classList.remove('val-green', 'val-amber', 'val-crimson');
+    });
+    const select = $("concernType");
+    if (select) select.selectedIndex = 0;
+    updateVocOptions(false);
+
     if (user) {
       localStorage.setItem("auto_docs_agent_id", user.uid);
       $('authModal').style.display = "none";
       updateSyncStatusUI('online');
       isCloudAvailable = true;
       
-      // Fire core data-hydration loops seamlessly
       await loadData();
       updateVocOptions(true);
       await renderHistoryView();
@@ -135,12 +144,18 @@ function listenToSessionState() {
       updateSuggestions();
       updateFloatingBanner();
       
+      // Pull down cross-station active workspace coordinates
       await checkAndRestoreCrashData();
       await syncOfflineQueue();
     } else {
       localStorage.removeItem("auto_docs_agent_id");
       $('authModal').style.display = "flex";
       updateSyncStatusUI('offline');
+      
+      if ($("output")) {
+        $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
+      }
+      if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
     }
   });
 }
@@ -155,7 +170,6 @@ async function terminateAgentSession() {
 
   if (saveTimeout) clearTimeout(saveTimeout);
 
-  // Take an immediate snapshot of the current workspace fields
   const data = {};
   document.querySelectorAll("input, textarea, select").forEach(el => {
     if (el.id) data[el.id] = el.value;
@@ -172,8 +186,8 @@ async function terminateAgentSession() {
     const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); 
 
     try {
-      // Force a synchronous write to Firestore to protect data BEFORE credentials drop
-      const docRef = doc(firestoreDb, "case_logs", `${agentId}_${caseNum}`);
+      // Direct Master Document Write: eliminates race conditions and document fragmenting
+      const docRef = doc(firestoreDb, "case_logs", agentId);
       await setDoc(docRef, {
         agent_id: agentId,
         agent_email: agentEmail,   
@@ -181,15 +195,13 @@ async function terminateAgentSession() {
         case_number: caseNum,
         form_data: data,
         updated_at: Date.now()
-      }, { merge: true });
-      
+      });
       console.log("🚀 Final cloud save confirmed successfully.");
     } catch (error) {
       console.error("💥 Emergency logout save failed:", error);
     }
   }
 
-  // Once data is confirmed safe in Singapore, drop credentials and clear local cache
   try {
     localStorage.removeItem(STORAGE_KEY);
     await db.session_backup.delete('current_workspace_state');
@@ -217,25 +229,24 @@ async function syncOfflineQueue() {
 
     updateSyncStatusUI('syncing');
 
-    for (const item of queuedItems) {
-      const docRef = doc(firestoreDb, "case_logs", `${agentId}_${item.case_number}`);
-      await setDoc(docRef, {
-        agent_id: agentId,
-        agent_email: agentEmail,
-        log_date: localDate,
-        case_number: item.case_number,
-        form_data: item.form_data,
-        updated_at: Date.now()
-      }, { merge: true });
+    // Sync last queued local entry directly to the agent's unique master doc
+    const latestItem = queuedItems[queuedItems.length - 1];
+    const docRef = doc(firestoreDb, "case_logs", agentId);
+    await setDoc(docRef, {
+      agent_id: agentId,
+      agent_email: agentEmail,
+      log_date: localDate,
+      case_number: latestItem.case_number,
+      form_data: latestItem.form_data,
+      updated_at: Date.now()
+    });
 
-      await db.sync_queue.delete(item.case_number);
-    }
-
+    await db.sync_queue.clear();
     isCloudAvailable = true;
     updateSyncStatusUI('online');
-    showToast(`Synced ${queuedItems.length} offline case logs to Firebase Firestore!`);
+    showToast(`Synced offline workspace parameters to Firebase Firestore!`);
   } catch (e) {
-    console.warn("⚠️ Sync queue attempt failed. Infrastructure remaining in isolated Dexie state.", e);
+    console.warn("⚠️ Sync queue processing suspended:", e);
     updateSyncStatusUI('offline');
     isCloudAvailable = false;
   }
@@ -264,7 +275,6 @@ async function saveData() {
     }
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
-    
     const currentUser = firebaseAuth.currentUser;
     if (!currentUser) return;
 
@@ -279,7 +289,8 @@ async function saveData() {
     }
 
     try {
-      const docRef = doc(firestoreDb, "case_logs", `${agentId}_${caseNum}`);
+      // Save data directly into a single indexed master record linked entirely to the Agent UID
+      const docRef = doc(firestoreDb, "case_logs", agentId);
       await setDoc(docRef, {
         agent_id: agentId,
         agent_email: agentEmail,   
@@ -287,11 +298,10 @@ async function saveData() {
         case_number: caseNum,
         form_data: data,
         updated_at: Date.now()
-      }, { merge: true });
-
+      });
       updateSyncStatusUI('online');
     } catch (error) {
-      console.warn("Firebase drop or rule validation block captured. Queuing data locally...", error);
+      console.warn("Firebase drop captured. Routing packet to local queue...", error);
       isCloudAvailable = false; 
       updateSyncStatusUI('offline');
       await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
@@ -318,7 +328,7 @@ async function loadData() {
 }
 
 /* ==========================================================================
-   CROSS-STATION SYNCHRONIZATION & WORKSPACE HYDRATION ENGINE
+   CROSS-STATION WORKSPACE HYDRATION ENGINE (INDEXLESS HIGH-SPEED LOOKUP)
    ========================================================================== */
 async function checkAndRestoreCrashData() {
   const currentUser = firebaseAuth.currentUser;
@@ -329,25 +339,20 @@ async function checkAndRestoreCrashData() {
   let savedFormState = null;
   let source = "local hard drive backup"; 
 
+  // Direct document key read: bypassing query engine index limitations entirely
   if (isCloudAvailable) {
     try {
-      const caseLogsRef = collection(firestoreDb, "case_logs");
-      const q = query(
-        caseLogsRef, 
-        where("agent_id", "==", agentId), 
-        orderBy("updated_at", "desc"), 
-        limit(1)
-      );
-      const querySnapshot = await getDocs(q);
+      const docRef = doc(firestoreDb, "case_logs", agentId);
+      const docSnap = await getDoc(docRef);
 
-      if (!querySnapshot.empty) {
-        const docData = querySnapshot.docs[0].data();
+      if (docSnap.exists()) {
+        const docData = docSnap.data();
         lastSavedCase = docData.case_number;
         savedFormState = docData.form_data;
         source = "Firebase Cloud";
       }
     } catch (e) {
-      console.warn("Cloud hydration query failed. Falling back to local index layer...", e);
+      console.warn("Direct document cloud hydration failed. Accessing local caches...", e);
       isCloudAvailable = false;
       updateSyncStatusUI('offline');
     }
@@ -368,13 +373,13 @@ async function checkAndRestoreCrashData() {
 
   if (!savedFormState) return;
 
-  // Cross-Station Check: Are the local screen input fields empty?
+  // Verify if monitor screen fields contain active text inputs
   const hasActiveInput = ($("case")?.value.trim() !== "") || 
                          ($("action")?.value.trim() !== "") || 
                          ($("subj")?.value.trim() !== "");
 
   if (!hasActiveInput) {
-    // Current layout is pristine—hydrate data automatically without prompts
+    // Screen is completely blank. Load the profile's active cloud snapshot instantly.
     Object.keys(savedFormState).forEach(id => {
       const el = $(id);
       if (el) el.value = savedFormState[id];
@@ -387,11 +392,11 @@ async function checkAndRestoreCrashData() {
     updateSuggestions();
     if($('case')) validateCaseField($('case'));
     if($('min')) validateMinField($('min'));
-    showToast(`Active workspace synced from ${source}!`);
+    showToast(`Active workspace loaded from ${source}!`);
   } 
   else {
-    // Target workstation already has competing user inputs typed out
-    const confirmRestore = confirm(`🔄 Auto Docs Cloud Sync:\n\nWe found an active session from another station for Case [${lastSavedCase}]. Would you like to load that case data here? This will overwrite your current screen text.`);
+    // Leftover text discovered—request explicit confirmation before overwriting workspace canvas
+    const confirmRestore = confirm(`🔄 Auto Docs Cloud Sync:\n\nWe found active sync data from your last station for Case [${lastSavedCase}]. Would you like to load that data here? This will overwrite your current screen text.`);
     
     if (confirmRestore) {
       Object.keys(savedFormState).forEach(id => {
@@ -707,25 +712,7 @@ async function resetForm(event) {
     updateVocOptions(false);
     
     if ($("output")) {
-      $("output").textContent = 
-`CASE/SR VALUE: N/A
-CONCERN TYPE: 
-VOC: 
-
-SUBJ: 
-
-NAME: 
-MIN: 
-COMPANY: 
-EMAIL: 
-THREAD: 
-DATE/TIME: 
-
-ACTION:
-
-
-WOCAS:
-`;
+      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
     
     if ($("suggestions")) {
@@ -939,7 +926,6 @@ function updateSuggestions() {
    INITIALIZATION ENGINE & EVENT MOUNT LOOPS
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
-  // Bind Authentication Form Event Streaming Watchers
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
@@ -981,6 +967,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-  // Initial Security Session Token Status Check Routine
   listenToSessionState();
 });
