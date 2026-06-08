@@ -3,7 +3,6 @@
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
@@ -14,10 +13,9 @@ const firebaseConfig = {
   appId: "1:443489031474:web:403654fc3253841219b32b"
 };
 
-// Initialize Firebase Core Engines
+// Initialize Firebase Core Firestore Database Engine
 const app = initializeApp(firebaseConfig);
 const firestoreDb = getFirestore(app);
-const firebaseAuth = getAuth(app);
 
 const THEME_KEY = "auto_docs_theme";
 let bannerTimeout = null; 
@@ -25,6 +23,9 @@ let isResetting = false;
 let saveTimeout = null;      
 let currentAuthMode = "LOGIN"; 
 let globalShiftHistory = []; // In-memory reference for the active cloud session layout
+
+// Session Management State variables for Numeric Database Routing
+let currentAgentId = null; 
 
 function $(id) {
   return document.getElementById(id);
@@ -54,7 +55,7 @@ function updateSyncStatusUI(status) {
 }
 
 /* ==========================================================================
-   FIREBASE AUTHENTICATION FLOWS
+   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW
    ========================================================================== */
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
@@ -62,7 +63,7 @@ function toggleAuthMode(e) {
   if (currentAuthMode === "LOGIN") {
     currentAuthMode = "REGISTER";
     $('authTitle').textContent = "Register Agent Profile";
-    $('authSubtitle').textContent = "Configure secure cloud database access keys";
+    $('authSubtitle').textContent = "Configure secure numeric credential tokens";
     $('authSubmitBtn').textContent = "Provision Account";
     $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
   } else {
@@ -133,46 +134,49 @@ async function handleAuthSubmission(e) {
   }
 }
 
-function listenToSessionState() {
-  onAuthStateChanged(firebaseAuth, async (user) => {
-    // Clear display inputs on layout transition
-    document.querySelectorAll("input, textarea").forEach(el => {
-      el.value = "";
-      el.classList.remove('val-green', 'val-amber', 'val-crimson');
-    });
-    const select = $("concernType");
-    if (select) select.selectedIndex = 0;
-    updateVocOptions(false);
-    globalShiftHistory = [];
+async function handleSessionLoginTransition() {
+  $('authModal').style.display = "none";
+  updateSyncStatusUI('online');
+  
+  updateOutput();
+  updateSuggestions();
+  
+  // Directly pull live workspace data from the cloud database using Custom ID Mapping
+  await pullLiveWorkspace();
+}
 
-    if (user) {
-      $('authModal').style.display = "none";
-      updateSyncStatusUI('online');
-      
-      updateOutput();
-      updateSuggestions();
-      
-      // Directly pull live workspace data from the cloud database
-      await pullLiveWorkspace();
-    } else {
-      $('authModal').style.display = "flex";
-      if ($("output")) {
-        $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
-      }
-      if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
-      await renderHistoryView();
-    }
+function listenToSessionState() {
+  // Read local caching mechanism to maintain station position stability on manual reload loops
+  const cachedId = localStorage.getItem("active_agent_session_id");
+  
+  document.querySelectorAll("input, textarea").forEach(el => {
+    el.value = "";
+    el.classList.remove('val-green', 'val-amber', 'val-crimson');
   });
+  const select = $("concernType");
+  if (select) select.selectedIndex = 0;
+  updateVocOptions(false);
+  globalShiftHistory = [];
+
+  if (cachedId) {
+    currentAgentId = cachedId;
+    handleSessionLoginTransition();
+  } else {
+    currentAgentId = null;
+    $('authModal').style.display = "flex";
+    if ($("output")) {
+      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
+    }
+    if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+    renderHistoryView();
+  }
 }
 
 /* ==========================================================================
    SOLE SOURCE OF TRUTH: CLOUD DATA ENGINE
    ========================================================================== */
 async function saveData(forceInstant = false) {
-  if (isResetting) return; 
-  const currentUser = firebaseAuth.currentUser;
-  if (!currentUser) return;
-
+  if (isResetting || !currentAgentId) return; 
   if (saveTimeout) clearTimeout(saveTimeout);
 
   updateSyncStatusUI('saving');
@@ -184,14 +188,11 @@ async function saveData(forceInstant = false) {
     });
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
-    const agentId = currentUser.uid;
-    const agentEmail = currentUser.email; 
 
     try {
-      const docRef = doc(firestoreDb, "case_logs", agentId);
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await setDoc(docRef, {
-        agent_id: agentId,
-        agent_email: agentEmail,          
+        agent_id: currentAgentId,
         case_number: caseNum,
         form_data: data,
         shift_manifest: globalShiftHistory,
@@ -212,13 +213,10 @@ async function saveData(forceInstant = false) {
 }
 
 async function pullLiveWorkspace() {
-  const currentUser = firebaseAuth.currentUser;
-  if (!currentUser) return;
-
-  const agentId = currentUser.uid;
+  if (!currentAgentId) return;
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", agentId);
+    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -287,8 +285,7 @@ function listenToOperationalBroadcasts() {
    CLOUD-BACKED SHIFT HISTORY LOGS MANIFEST SYSTEM
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
-  const currentUser = firebaseAuth.currentUser;
-  if (!currentUser) return;
+  if (!currentAgentId) return;
 
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
@@ -301,7 +298,7 @@ async function pushToHistory(caseNumber, textContent) {
   if (globalShiftHistory.length > 50) globalShiftHistory.pop(); 
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
     await updateDoc(docRef, {
       shift_manifest: globalShiftHistory
     });
@@ -315,13 +312,12 @@ async function pushToHistory(caseNumber, textContent) {
 
 async function deleteHistoryItem(index, e) {
   if (e) e.stopPropagation();
-  const currentUser = firebaseAuth.currentUser;
-  if (!currentUser) return;
+  if (!currentAgentId) return;
 
   globalShiftHistory.splice(index, 1);
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
     await updateDoc(docRef, {
       shift_manifest: globalShiftHistory
     });
@@ -411,14 +407,12 @@ async function downloadHistoryLog() {
 
 async function clearShiftHistory() {
   if (!confirm("🚨 Warning:\n\nThis will completely wipe your cross-station shift history manifest stack from the cloud. Proceed?")) return;
-  
-  const currentUser = firebaseAuth.currentUser;
-  if (!currentUser) return;
+  if (!currentAgentId) return;
 
   globalShiftHistory = [];
   
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
     await updateDoc(docRef, {
       shift_manifest: []
     });
@@ -434,18 +428,15 @@ async function clearShiftHistory() {
 /* ==========================================================================
    CLEAN LOGOUT AND INSTANT RESET OPERATIONS
    ========================================================================== */
-async function terminateAgentSession() {
+function terminateAgentSession() {
   if (!confirm("Log out of current workbench session? Your cloud workspace and history states will be preserved.")) {
     return;
   }
   if (saveTimeout) clearTimeout(saveTimeout);
   
-  try {
-    await signOut(firebaseAuth);
-    showToast("Session closed safely. Workspace locked.");
-  } catch (err) {
-    console.error("Firebase Signout processing error:", err);
-  }
+  localStorage.removeItem("active_agent_session_id");
+  listenToSessionState();
+  showToast("Session closed safely. Workspace locked.");
 }
 
 async function resetForm(event) {
@@ -455,7 +446,6 @@ async function resetForm(event) {
   }
   
   isResetting = true; 
-  const currentUser = firebaseAuth.currentUser;
 
   try {
     document.querySelectorAll("input, textarea").forEach(el => {
@@ -472,8 +462,8 @@ async function resetForm(event) {
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 
-    if (currentUser) {
-      const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    if (currentAgentId) {
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await setDoc(docRef, {
         form_data: {}
       }, { merge: true });
@@ -728,11 +718,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("resetBtn")?.addEventListener("click", resetForm);
   $("dockResetBtn")?.addEventListener("click", resetForm);
   
-  // FIXED: Explicit targets mapped for both action handlers
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
   $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
   
-  // FIXED: Pointing accurately to functional identifier
   $("themeToggle")?.addEventListener("click", toggleTheme);
 
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
