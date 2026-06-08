@@ -2,7 +2,7 @@
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -14,7 +14,7 @@ const firebaseConfig = {
   appId: "1:443489031474:web:403654fc3253841219b32b"
 };
 
-// Initialize Firebase Engines
+// Initialize Firebase Core Engines
 const app = initializeApp(firebaseConfig);
 const firestoreDb = getFirestore(app);
 const firebaseAuth = getAuth(app);
@@ -24,7 +24,7 @@ let bannerTimeout = null;
 let isResetting = false;     
 let saveTimeout = null;      
 let currentAuthMode = "LOGIN"; 
-let globalShiftHistory = []; // Local cache copy of cloud history array for quick UI renders
+let globalShiftHistory = []; // In-memory reference for the active cloud session layout
 
 function $(id) {
   return document.getElementById(id);
@@ -103,7 +103,7 @@ async function handleAuthSubmission(e) {
 
 function listenToSessionState() {
   onAuthStateChanged(firebaseAuth, async (user) => {
-    // Clear display inputs on workspace transition
+    // Clear display inputs on layout transition
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
@@ -120,7 +120,7 @@ function listenToSessionState() {
       updateOutput();
       updateSuggestions();
       
-      // Pull live active workspace fields + previous manifest arrays down from the cloud
+      // Directly pull live workspace data from the cloud database
       await pullLiveWorkspace();
     } else {
       $('authModal').style.display = "flex";
@@ -134,7 +134,7 @@ function listenToSessionState() {
 }
 
 /* ==========================================================================
-   SOLE SOURCE OF TRUTH: CLOUD DATA SYNC ENGINE
+   SOLE SOURCE OF TRUTH: CLOUD DATA ENGINE
    ========================================================================== */
 async function saveData(forceInstant = false) {
   if (isResetting) return; 
@@ -162,7 +162,7 @@ async function saveData(forceInstant = false) {
         agent_email: agentEmail,          
         case_number: caseNum,
         form_data: data,
-        shift_manifest: globalShiftHistory, // Preserve array changes on live updates
+        shift_manifest: globalShiftHistory,
         updated_at: Date.now()
       }, { merge: true });
       updateSyncStatusUI('online');
@@ -194,7 +194,6 @@ async function pullLiveWorkspace() {
       const savedFormState = docData.form_data;
       const lastSavedCase = docData.case_number || "Active Session Workspace";
       
-      // Hydrate shift manifest array from database entry row directly
       globalShiftHistory = docData.shift_manifest || [];
 
       if (savedFormState) {
@@ -224,6 +223,35 @@ async function pullLiveWorkspace() {
 }
 
 /* ==========================================================================
+   REAL-TIME OPERATIONAL BROADCAST BANNER ENGINE (OPTION 4)
+   ========================================================================== */
+function listenToOperationalBroadcasts() {
+  const banner = $('adminBroadcastBanner');
+  const textContainer = $('broadcastMessageText');
+  
+  if (!banner || !textContainer) return;
+
+  const broadcastRef = doc(firestoreDb, "system_management", "broadcast_alerts");
+
+  onSnapshot(broadcastRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      if (data.active === true && data.message && data.message.trim() !== "") {
+        textContainer.textContent = `SYSTEM ALERT: ${data.message.toUpperCase()}`;
+        banner.style.display = "flex"; 
+      } else {
+        banner.style.display = "none";  
+      }
+    } else {
+      banner.style.display = "none";
+    }
+  }, (error) => {
+    console.warn("Broadcast listener network drop or document parameters missing:", error);
+  });
+}
+
+/* ==========================================================================
    CLOUD-BACKED SHIFT HISTORY LOGS MANIFEST SYSTEM
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
@@ -233,16 +261,13 @@ async function pushToHistory(caseNumber, textContent) {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
 
-  // Check for duplicates to prevent clean workspace multi-copies
   if (globalShiftHistory.length > 0 && globalShiftHistory[0].text === textContent) return;
 
   const newLog = { id: displayId, time: timestamp, text: textContent };
   
-  // Shift to front of cache tracking model array stack
   globalShiftHistory.unshift(newLog);
-  if (globalShiftHistory.length > 50) globalShiftHistory.pop(); // Cap length at 50 logs
+  if (globalShiftHistory.length > 50) globalShiftHistory.pop(); 
 
-  // Synchronize array straight to cloud collection
   try {
     const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
     await updateDoc(docRef, {
@@ -349,7 +374,7 @@ async function downloadHistoryLog() {
   a.click();
   URL.revokeObjectURL(url);
   
-  showToast("Shift history manifest manifest download completed!");
+  showToast("Shift history manifest download completed!");
 }
 
 async function clearShiftHistory() {
@@ -375,7 +400,7 @@ async function clearShiftHistory() {
 }
 
 /* ==========================================================================
-   CLEAN LOGOUT AND FORM RESET OPERATIONS
+   CLEAN LOGOUT AND INSTANT RESET OPERATIONS
    ========================================================================== */
 async function terminateAgentSession() {
   if (!confirm("Log out of current workbench session? Your cloud workspace and history states will be preserved.")) {
@@ -391,9 +416,6 @@ async function terminateAgentSession() {
   }
 }
 
-/* ==========================================================================
-   FORM RESET MECHANISM (INSTANTLY WIPES WORKSPACE DATA WITHOUT POPUPS)
-   ========================================================================== */
 async function resetForm(event) {
   if (event) {
     event.preventDefault();
@@ -404,24 +426,20 @@ async function resetForm(event) {
   const currentUser = firebaseAuth.currentUser;
 
   try {
-    // Instantly wipe all physical interface text fields
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
     });
 
-    // Reset dropdown matrices
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     updateVocOptions(false);
     
-    // Clear preview outputs
     if ($("output")) {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 
-    // Instantly sync the empty layout state up to the cloud (leaves history intact)
     if (currentUser) {
       const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
       await setDoc(docRef, {
@@ -439,7 +457,7 @@ async function resetForm(event) {
 }
 
 /* ==========================================================================
-   REAL-TIME VALIDATORS & DECORATION WRAPPERS
+   REAL-TIME VALIDATORS & REGEX WRAPPERS
    ========================================================================= */
 function validateCaseField(el) {
   const val = el.value.trim().toUpperCase();
@@ -489,7 +507,7 @@ function toggleDrawer(e) {
 
 document.addEventListener('click', (e) => {
   const drawer = $('playbookPanel');
-  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target)) {
+  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
     drawer.classList.remove('drawer-open');
     const toggleBtn = $('drawerToggle');
     if (toggleBtn) {
@@ -526,8 +544,6 @@ function copyDoc() {
   navigator.clipboard.writeText(outputText).then(() => {
     showToast("Notes copied to system clipboard!");
     const caseNum = $("case")?.value || "N/A";
-    
-    // Automatically trigger push routine inside cloud tracking profile wrapper
     pushToHistory(caseNum, outputText);
   }).catch(err => {
     showToast("Clipboard routine blocked.", true);
@@ -679,10 +695,19 @@ document.addEventListener("DOMContentLoaded", () => {
   $("dockCopyBtn")?.addEventListener("click", copyDoc);
   $("resetBtn")?.addEventListener("click", resetForm);
   $("dockResetBtn")?.addEventListener("click", resetForm);
+  
+  // FIXED: Explicit targets mapped for both action handlers
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
+  $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
+  
+  // FIXED: Pointing accurately to functional identifier
   $("themeToggle")?.addEventListener("click", toggleTheme);
+
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
+
+  // Initialize the real-time operational dashboard broadcast stream
+  listenToOperationalBroadcasts();
 
   listenToSessionState();
 });
