@@ -2,7 +2,7 @@
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 
 const firebaseConfig = {
@@ -14,7 +14,7 @@ const firebaseConfig = {
   appId: "1:443489031474:web:403654fc3253841219b32b"
 };
 
-// Initialize Firebase Core Engines
+// Initialize Firebase Engines
 const app = initializeApp(firebaseConfig);
 const firestoreDb = getFirestore(app);
 const firebaseAuth = getAuth(app);
@@ -24,6 +24,7 @@ let bannerTimeout = null;
 let isResetting = false;     
 let saveTimeout = null;      
 let currentAuthMode = "LOGIN"; 
+let globalShiftHistory = []; // Local cache copy of cloud history array for quick UI renders
 
 function $(id) {
   return document.getElementById(id);
@@ -102,7 +103,7 @@ async function handleAuthSubmission(e) {
 
 function listenToSessionState() {
   onAuthStateChanged(firebaseAuth, async (user) => {
-    // Clear display inputs on layout transition
+    // Clear display inputs on workspace transition
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
@@ -110,6 +111,7 @@ function listenToSessionState() {
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     updateVocOptions(false);
+    globalShiftHistory = [];
 
     if (user) {
       $('authModal').style.display = "none";
@@ -117,9 +119,8 @@ function listenToSessionState() {
       
       updateOutput();
       updateSuggestions();
-      updateFloatingBanner();
       
-      // Directly pull live workspace data from the cloud database
+      // Pull live active workspace fields + previous manifest arrays down from the cloud
       await pullLiveWorkspace();
     } else {
       $('authModal').style.display = "flex";
@@ -127,14 +128,15 @@ function listenToSessionState() {
         $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
       }
       if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+      await renderHistoryView();
     }
   });
 }
 
 /* ==========================================================================
-   SOLE SOURCE OF TRUTH: CLOUD DATA ENGINE
+   SOLE SOURCE OF TRUTH: CLOUD DATA SYNC ENGINE
    ========================================================================== */
-async function saveData() {
+async function saveData(forceInstant = false) {
   if (isResetting) return; 
   const currentUser = firebaseAuth.currentUser;
   if (!currentUser) return;
@@ -143,7 +145,7 @@ async function saveData() {
 
   updateSyncStatusUI('saving');
 
-  saveTimeout = setTimeout(async () => {
+  const executeSave = async () => {
     const data = {};
     document.querySelectorAll("input, textarea, select").forEach(el => {
       if (el.id) data[el.id] = el.value;
@@ -160,14 +162,21 @@ async function saveData() {
         agent_email: agentEmail,          
         case_number: caseNum,
         form_data: data,
+        shift_manifest: globalShiftHistory, // Preserve array changes on live updates
         updated_at: Date.now()
-      });
+      }, { merge: true });
       updateSyncStatusUI('online');
     } catch (error) {
       console.error("Firebase synchronization cloud drop:", error);
       updateSyncStatusUI('error');
     }
-  }, 400); // 400ms debounce to prevent hitting Firebase rate limits while typing
+  };
+
+  if (forceInstant) {
+    await executeSave();
+  } else {
+    saveTimeout = setTimeout(executeSave, 400);
+  }
 }
 
 async function pullLiveWorkspace() {
@@ -184,6 +193,9 @@ async function pullLiveWorkspace() {
       const docData = docSnap.data();
       const savedFormState = docData.form_data;
       const lastSavedCase = docData.case_number || "Active Session Workspace";
+      
+      // Hydrate shift manifest array from database entry row directly
+      globalShiftHistory = docData.shift_manifest || [];
 
       if (savedFormState) {
         Object.keys(savedFormState).forEach(id => {
@@ -202,6 +214,9 @@ async function pullLiveWorkspace() {
         showToast(`Workspace synced live from cloud: [${lastSavedCase}]`);
       }
     }
+    
+    await renderHistoryView();
+    updateFloatingBanner();
   } catch (e) {
     console.error("Critical Cloud Fetch Failure:", e);
     updateSyncStatusUI('error');
@@ -209,10 +224,161 @@ async function pullLiveWorkspace() {
 }
 
 /* ==========================================================================
-   CLEAN LOGOUT FLOW
+   CLOUD-BACKED SHIFT HISTORY LOGS MANIFEST SYSTEM
+   ========================================================================== */
+async function pushToHistory(caseNumber, textContent) {
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
+
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
+
+  // Check for duplicates to prevent clean workspace multi-copies
+  if (globalShiftHistory.length > 0 && globalShiftHistory[0].text === textContent) return;
+
+  const newLog = { id: displayId, time: timestamp, text: textContent };
+  
+  // Shift to front of cache tracking model array stack
+  globalShiftHistory.unshift(newLog);
+  if (globalShiftHistory.length > 50) globalShiftHistory.pop(); // Cap length at 50 logs
+
+  // Synchronize array straight to cloud collection
+  try {
+    const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    await updateDoc(docRef, {
+      shift_manifest: globalShiftHistory
+    });
+  } catch (err) {
+    console.error("Error committing shift log token to cloud storage profiles:", err);
+  }
+
+  await renderHistoryView();
+  updateFloatingBanner();
+}
+
+async function deleteHistoryItem(index, e) {
+  if (e) e.stopPropagation();
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
+
+  globalShiftHistory.splice(index, 1);
+
+  try {
+    const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    await updateDoc(docRef, {
+      shift_manifest: globalShiftHistory
+    });
+    showToast("Selected log deleted from your cloud history container.");
+  } catch(err) {
+    console.error(err);
+  }
+
+  await renderHistoryView();
+  updateFloatingBanner();
+}
+
+async function renderHistoryView() {
+  const container = $('historyContainer');
+  if (!container) return;
+
+  if (globalShiftHistory.length === 0) {
+    container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet for this shift workbench run...</i>`;
+    return;
+  }
+
+  container.innerHTML = globalShiftHistory.map((item, index) => `
+    <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
+      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
+        <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
+      </span>
+      <div style="display: flex; gap: 4px;">
+        <button type="button" id="recopy-${index}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+          Recopy
+        </button>
+        <button type="button" id="delete-hist-${index}" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+  `).join("");
+
+  globalShiftHistory.forEach((item, index) => {
+    $(`recopy-${index}`)?.addEventListener('click', () => loadHistoryItem(index));
+    $(`delete-hist-${index}`)?.addEventListener('click', (e) => deleteHistoryItem(index, e));
+  });
+}
+
+function loadHistoryItem(index) {
+  if (!globalShiftHistory[index]) return;
+  navigator.clipboard.writeText(globalShiftHistory[index].text);
+  showToast(`Recopied Case ID: ${globalShiftHistory[index].id} from History Stack!`);
+}
+
+function updateFloatingBanner() {
+  const banner = $('floatingShiftBanner');
+  if (!banner) return;
+  const historyCount = globalShiftHistory.length;
+  
+  banner.style.background = "#fbbf24"; 
+  banner.style.color = "#1e293b";
+  banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> LIVE OPERATIONS CHANNEL | ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: (${historyCount})`;
+}
+
+async function downloadHistoryLog() {
+  if (globalShiftHistory.length === 0) {
+    showToast("No history data to download yet!", true);
+    return;
+  }
+
+  let fileContent = `==================================================\n`;
+  fileContent += `         SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
+  fileContent += `==================================================\n\n`;
+
+  globalShiftHistory.forEach((item, idx) => {
+    fileContent += `--- ENTRY #${idx + 1} | TIMESTAMP: [${item.time}] | REFERENCE ID: ${item.id} ---\n`;
+    fileContent += `${item.text}\n`;
+    fileContent += `\n==================================================\n\n`;
+  });
+
+  const blob = new Blob([fileContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url; 
+  a.download = `ShiftHistory-Logs-${dateStr}.txt`; 
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast("Shift history manifest manifest download completed!");
+}
+
+async function clearShiftHistory() {
+  if (!confirm("🚨 Warning:\n\nThis will completely wipe your cross-station shift history manifest stack from the cloud. Proceed?")) return;
+  
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
+
+  globalShiftHistory = [];
+  
+  try {
+    const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
+    await updateDoc(docRef, {
+      shift_manifest: []
+    });
+    showToast("Shift summary manifest history flushed completely.");
+  } catch (e) {
+    console.error(e);
+  }
+
+  await renderHistoryView();
+  updateFloatingBanner();
+}
+
+/* ==========================================================================
+   CLEAN LOGOUT AND FORM RESET OPERATIONS
    ========================================================================== */
 async function terminateAgentSession() {
-  if (!confirm("Log out of current workbench session? Your current cross-station cloud progress will be preserved.")) {
+  if (!confirm("Log out of current workbench session? Your cloud workspace and history states will be preserved.")) {
     return;
   }
   if (saveTimeout) clearTimeout(saveTimeout);
@@ -225,21 +391,17 @@ async function terminateAgentSession() {
   }
 }
 
-/* ==========================================================================
-   FORM RESET MECHANISM (CLEARS CURRENT FIRESTORE OBJECT STATE)
-   ========================================================================== */
 async function resetForm(event) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
   }
-  if (!confirm("Are you sure you want to clear your current active workspace form?")) return;
+  if (!confirm("Are you sure you want to clear your current active workspace form fields?")) return;
   
   isResetting = true; 
   const currentUser = firebaseAuth.currentUser;
 
   try {
-    // Clear visual interfaces
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
@@ -254,29 +416,25 @@ async function resetForm(event) {
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 
-    // Write empty record back up to firebase so state clears globally across screens
+    // Re-save form state back as blank object while safely leaving history array intact
     if (currentUser) {
       const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
       await setDoc(docRef, {
-        agent_id: currentUser.uid,
-        agent_email: currentUser.email,
-        case_number: "DRAFT",
-        form_data: {},
-        updated_at: Date.now()
-      });
+        form_data: {}
+      }, { merge: true });
     }
     
-    showToast("Cloud workspace wiped.");
+    showToast("Form fields reset successfully.");
   } catch(e) {
     console.error("Cloud database reset exception:", e);
-    showToast("Error clearing background cloud records.", true);
+    showToast("Error clearing cloud form matrix properties.", true);
   } finally {
     isResetting = false; 
   }
 }
 
 /* ==========================================================================
-   REAL-TIME REGULAR EXPRESSION VALIDATORS
+   REAL-TIME VALIDATORS & DECORATION WRAPPERS
    ========================================================================= */
 function validateCaseField(el) {
   const val = el.value.trim().toUpperCase();
@@ -353,14 +511,6 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); }, 3000);
 }
 
-function updateFloatingBanner() {
-  const banner = $('floatingShiftBanner');
-  if (!banner) return;
-  banner.style.background = "#fbbf24"; 
-  banner.style.color = "#1e293b";
-  banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> WORKBENCH IS SYNCED LIVE WITH CENTRAL OPERATIONS DATABASE`;
-}
-
 function copyDoc() {
   const outputText = $("output")?.textContent;
   if (!outputText || outputText.includes("Generating real-time output preview")) {
@@ -370,14 +520,15 @@ function copyDoc() {
 
   navigator.clipboard.writeText(outputText).then(() => {
     showToast("Notes copied to system clipboard!");
+    const caseNum = $("case")?.value || "N/A";
+    
+    // Automatically trigger push routine inside cloud tracking profile wrapper
+    pushToHistory(caseNum, outputText);
   }).catch(err => {
     showToast("Clipboard routine blocked.", true);
   });
 }
 
-/* ==========================================================================
-   THEME MANAGER
-   ========================================================================== */
 function toggleTheme() {
   const isDark = document.body.classList.toggle("dark-mode");
   localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
@@ -505,8 +656,9 @@ document.addEventListener("DOMContentLoaded", () => {
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return;
-    el.addEventListener("input", () => { updateOutput(); saveData(); });
-    el.addEventListener("change", () => { updateOutput(); saveData(); });
+    el.addEventListener("input", () => { updateOutput(); saveData(false); });
+    el.addEventListener("change", () => { updateOutput(); saveData(true); });
+    el.addEventListener("blur", () => { saveData(true); });
   });
 
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
@@ -524,6 +676,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("dockResetBtn")?.addEventListener("click", resetForm);
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
   $("themeToggle")?.addEventListener("click", toggleTheme);
+  $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
+  $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
   listenToSessionState();
 });
