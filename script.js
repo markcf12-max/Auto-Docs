@@ -15,19 +15,19 @@ function $(id) {
 }
 
 /* ==========================================================================
-   FIREBASE CONFIGURATION & MODULE INTEGRATION (REPLACES SUPABASE)
+   FIREBASE CONFIGURATION & MODULE INTEGRATION (LIVE CREDENTIALS)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, setDoc, collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
+  authDomain: "auto-docs-4ad35.firebaseapp.com",
+  projectId: "auto-docs-4ad35",
+  storageBucket: "auto-docs-4ad35.firebasestorage.app",
+  messagingSenderId: "443489031474",
+  appId: "1:443489031474:web:403654fc3253841219b32b"
 };
 
 // Initialize Firebase Core Engines
@@ -72,9 +72,8 @@ function updateSyncStatusUI(status) {
 }
 
 /* ==========================================================================
-   FIREBASE AUTHENTICATION FLOWS (REPLACES PROMPT LOOPS)
+   FIREBASE AUTHENTICATION FLOWS
    ========================================================================== */
-
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
   
@@ -858,7 +857,7 @@ function updateSuggestions() {
    INITIALIZATION ENGINE & EVENT MOUNT LOOPS
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
-  // Bind Modern Authentication Click Stream Layout Observers
+  // Bind Authentication Form Event Streaming Watchers
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
@@ -900,6 +899,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-  // Mount Firebase Auth Session Tracker Watcher
+  // Initial Security Session Token Status Check Routine
   listenToSessionState();
 });
