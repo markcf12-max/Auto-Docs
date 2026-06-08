@@ -7,7 +7,6 @@
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
   <script src="supabase.js"></script>
   
   <link rel="stylesheet" href="style.css">
@@ -29,13 +28,13 @@
     
     <div class="header-sync-engine">
       <span id="syncStatus" class="sync-status-badge">● Checking Connection...</span>
-      <button type="button" id="manualSyncBtn" onclick="window.syncOfflineQueue()" title="Force Flush Dexie Queue to Supabase">
+      <button type="button" id="manualSyncBtn" title="Force Flush Dexie Queue to Supabase">
         <i class="fas fa-cloud-arrow-up"></i> Sync Cloud
       </button>
     </div>
 
     <div class="header-actions">
-      <button type="button" id="themeToggle" onclick="toggleTheme()" title="Toggle Visual Mode">
+      <button type="button" id="themeToggle" title="Toggle Visual Mode">
         <i class="fas fa-moon"></i>
       </button>
     </div>
@@ -72,8 +71,9 @@
           
           <div class="form-group">
             <label for="voc">Voice of Customer (VOC)</label>
-            <input type="text" id="voc" list="vocOptions" placeholder="Type or select specific concern...">
-            <datalist id="vocOptions"></datalist>
+            <select id="voc">
+              <option value="">Select VOC Option</option>
+            </select>
           </div>
         </div>
 
@@ -119,10 +119,10 @@
         </div>
 
         <div class="buttons">
-          <button type="button" class="btn-primary" onclick="copyDoc()">
+          <button type="button" id="copyBtn" class="btn-primary">
             <i class="fas fa-copy"></i> Copy Note
           </button>
-          <button type="button" class="btn-secondary" onclick="resetForm(event)">
+          <button type="button" id="resetBtn" class="btn-secondary">
             <i class="fas fa-trash-arrow-up"></i> Clear Inputs
           </button>
         </div>
@@ -139,10 +139,10 @@
         <div class="history-header">
           <h4><i class="fas fa-history"></i> Current Shift Copied Manifest Logs</h4>
           <div class="history-actions">
-            <button type="button" onclick="downloadHistoryLog()" title="Export Logs to TXT File">
+            <button type="button" id="downloadHistoryBtn" title="Export Logs to TXT File">
               <i class="fas fa-download"></i> Export
             </button>
-            <button type="button" onclick="clearShiftHistory()" title="Wipe History Stack">
+            <button type="button" id="clearHistoryBtn" title="Wipe History Stack">
               <i class="fas fa-dumpster"></i> Flush Stack
             </button>
           </div>
@@ -156,7 +156,7 @@
     <section id="playbookPanel" class="suggestionPanel">
       <div class="drawer-internal-header">
         <h3><i class="fas fa-book-open"></i> Playbook System</h3>
-        <button type="button" class="btn-drawer-close" onclick="toggleDrawer(event)">
+        <button type="button" id="drawerCloseBtn" class="btn-drawer-close">
           <i class="fas fa-times"></i> Close
         </button>
       </div>
@@ -171,19 +171,19 @@
 
   </main>
 
-  <button type="button" id="drawerToggle" class="drawer-toggle-btn" onclick="toggleDrawer(event)">
+  <button type="button" id="drawerToggle" class="drawer-toggle-btn">
     <i class="fas fa-book-open"></i> <span>View Playbooks</span>
   </button>
 
   <div class="floating-action-dock">
-    <button type="button" style="background: #10b981; color: white; border: none;" onclick="copyDoc()">
+    <button type="button" id="dockCopyBtn" style="background: #10b981; color: white; border: none;">
       <i class="fas fa-copy"></i> Copy Note
     </button>
-    <button type="button" style="background: var(--border-color); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1);" onclick="resetForm(event)">
+    <button type="button" id="dockResetBtn" style="background: var(--border-color); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1);">
       <i class="fas fa-undo"></i> Reset All
     </button>
   </div>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
