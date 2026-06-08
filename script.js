@@ -35,7 +35,6 @@ let saveTimeout = null;      // Option 1: Handle debouncing timers globally
 
 /**
  * Option 2: Updates a UI connection indicator if it exists on your page layout
- * Simply add <span id="syncStatus"></span> somewhere in your HTML header or footer!
  */
 function updateSyncStatusUI(status) {
   const badge = $('syncStatus');
@@ -61,7 +60,6 @@ function updateSyncStatusUI(status) {
 
 /**
  * Option 3: Network Heartbeat & Manual Trigger Sync Queue Recovery Engine
- * Grabs all failed rows cached in Dexie and flushes them to Supabase once CORS/network clears.
  */
 async function syncOfflineQueue() {
   const agentId = localStorage.getItem("auto_docs_agent_id");
@@ -84,9 +82,7 @@ async function syncOfflineQueue() {
           }
         ], { onConflict: 'agent_id, case_number' });
 
-      if (error) throw error; // Break loop if network/CORS firewall still blocks it
-      
-      // Successfully uploaded, drop from temporary offline sync queue
+      if (error) throw error; 
       await db.sync_queue.delete(item.case_number);
     }
 
@@ -101,7 +97,6 @@ async function syncOfflineQueue() {
 
 /**
  * Validates the typed ID against the master database list.
- * Catch CORS preflight blocks safely and fall back to Dexie/Local immediately.
  */
 async function verifyAndGetAgentId() {
   let id = localStorage.getItem("auto_docs_agent_id");
@@ -196,15 +191,6 @@ function toggleDrawer(e) {
   }
 }
 
-document.addEventListener('click', (e) => {
-  const drawer = $('playbookPanel');
-  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle').contains(e.target)) {
-    drawer.classList.remove('drawer-open');
-    $('drawerToggle').querySelector('span').textContent = "View Playbooks";
-    $('drawerToggle').querySelector('i').className = "fas fa-book-open";
-  }
-});
-
 function showToast(msg, isError = false) {
   const toast = $('toast');
   if(!toast) return;
@@ -230,20 +216,16 @@ function showToast(msg, isError = false) {
 async function saveData() {
   if (isResetting) return; 
 
-  // Option 1: Clear pending timer loop setups execution stacks on every keystroke run
   if (saveTimeout) clearTimeout(saveTimeout);
 
-  // Option 1: Debounce storage triggers by 500ms to preserve workstation UI performance
   saveTimeout = setTimeout(async () => {
     const data = {};
     document.querySelectorAll("input, textarea, select").forEach(el => {
       if (el.id) data[el.id] = el.value;
     });
     
-    // Tier 1 Backup: Traditional LocalStorage fallback
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-    // Tier 2 Backup: Robust Database Fallback via Dexie (Safe from firewall blocks)
     try {
       await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
     } catch (indexedDbErr) {
@@ -255,9 +237,7 @@ async function saveData() {
 
     if (!agentId) return;
 
-    // Tier 3 Cloud Sync & Option 3: Sync Queue Interceptor Management Flow
     if (!isCloudAvailable) {
-      // Save locally to offline sync queue when server/CORS is failing
       await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
       updateSyncStatusUI('offline');
       return;
@@ -277,10 +257,9 @@ async function saveData() {
       if (error) throw error;
       updateSyncStatusUI('online');
     } catch (error) {
-      console.warn("Cloud connection drop or CORS block captured. Queuing data locally inside Dexie layout storage...");
+      console.warn("Cloud connection drop or CORS block captured. Queuing data locally...");
       isCloudAvailable = false; 
       updateSyncStatusUI('offline');
-      // Append current state safely into the offline queue array database layer
       await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
     }
   }, 500);
@@ -447,15 +426,21 @@ async function renderHistoryView() {
         <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
       </span>
       <div style="display: flex; gap: 4px;">
-        <button type="button" onclick="window.loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+        <button type="button" id="recopy-${index}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
           Recopy
         </button>
-        <button type="button" onclick="window.deleteHistoryItem(${index}, event)" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+        <button type="button" id="delete-hist-${index}" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
           <i class="fas fa-trash-alt"></i>
         </button>
       </div>
     </div>
   `).join("");
+
+  // Attach history button event listeners cleanly without using inline event properties
+  history.forEach((item, index) => {
+    $(`recopy-${index}`)?.addEventListener('click', () => loadHistoryItem(index));
+    $(`delete-hist-${index}`)?.addEventListener('click', (e) => deleteHistoryItem(index, e));
+  });
 }
 
 async function loadHistoryItem(index) {
@@ -544,7 +529,7 @@ async function clearShiftHistory() {
   if (confirm("🚨 Warning:\n\nThis will completely wipe your local history data manifest stack for this entire shift. Proceed?")) {
     try {
       await db.shift_history.clear();
-      await db.sync_queue.clear(); // Flush queue clean during standard operational purges
+      await db.sync_queue.clear(); 
     } catch(e) { console.error(e); }
     localStorage.setItem(HISTORY_KEY, "[]");
     localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
@@ -703,6 +688,31 @@ const VOC_OPTIONS = {
 VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
 VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
 
+/**
+ * Updates the secondary VOC dropdown values list dynamically when the main category shifts
+ */
+function updateVocOptions(preserveValue = false) {
+  const mainCategory = $("concernType")?.value;
+  const vocSelect = $("voc");
+  if (!vocSelect) return;
+
+  const currentVocValue = vocSelect.value;
+  vocSelect.innerHTML = '<option value="">Select VOC Option</option>';
+
+  if (mainCategory && VOC_OPTIONS[mainCategory]) {
+    VOC_OPTIONS[mainCategory].forEach(option => {
+      const optEl = document.createElement("option");
+      optEl.value = option;
+      optEl.textContent = option;
+      vocSelect.appendChild(optEl);
+    });
+  }
+
+  if (preserveValue && currentVocValue) {
+    vocSelect.value = currentVocValue;
+  }
+}
+
 /* ==========================================================================
    OUTPUT GENERATOR
 ========================================================================== */
@@ -772,7 +782,6 @@ function updateSuggestions() {
     html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
   } 
   else if (concern === "Aftersales" || concern === "Inquiry" || concern === "Complaint") {
-    // Check fallback items to match our clean condensed titles perfectly
     let lookupKey = voc;
     if (voc.includes("SIM")) lookupKey = "SIM Related Concerns / SIM Registration";
     if (voc.includes("Plan")) lookupKey = "Plan Changes & Tier Modifications";
@@ -786,3 +795,64 @@ function updateSuggestions() {
 
   $("suggestions").innerHTML = html;
 }
+
+/* ==========================================================================
+   INITIALIZATION ENGINE & CORE EVENT LOOPS
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", async () => {
+  // Theme state setup hooks
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    updateThemeIcon(true);
+  }
+
+  // Hook input nodes directly up to data tracking loop drivers
+  const trackingFields = ["case", "concernType", "voc", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
+  trackingFields.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    
+    // Bind output updates and automated backend caching triggers
+    el.addEventListener("input", () => {
+      updateOutput();
+      saveData();
+    });
+    el.addEventListener("change", () => {
+      updateOutput();
+      saveData();
+    });
+  });
+
+  // Dedicated validation logic tracking listeners
+  $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
+  $("min")?.addEventListener("input", (e) => validateMinField(e.target));
+
+  // Category switch configuration listeners
+  $("concernType")?.addEventListener("change", () => {
+    updateVocOptions(false);
+    updateSuggestions();
+  });
+  $("voc")?.addEventListener("change", () => {
+    updateSuggestions();
+  });
+
+  // Structural actions interactive control tracking mappings
+  $("copyBtn")?.addEventListener("click", copyDoc);
+  $("resetBtn")?.addEventListener("click", resetForm);
+  $("themeToggle")?.addEventListener("click", toggleTheme);
+  $("drawerToggle")?.addEventListener("click", toggleDrawer);
+  $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
+  $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
+
+  // Synchronize history dashboard renders and offline databases profiles
+  await loadData();
+  updateVocOptions(true);
+  await renderHistoryView();
+  updateOutput();
+  updateSuggestions();
+  updateFloatingBanner();
+  
+  await checkAndRestoreCrashData();
+  await syncOfflineQueue();
+});
