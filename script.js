@@ -1,214 +1,78 @@
-// =========================================================================
-// 1. GLOBAL STATE & DATABASE INITIALIZATION (Dexie.js)
-// =========================================================================
-const db = new Dexie("AutoDocsDatabase");
-db.version(1).stores({
-  case_logs: 'case_number, created_at',
-  sync_queue: 'case_number'
+/* ==========================================================================
+   INDEXEDDB (DEXIE.JS) LOCAL-FIRST RESILIENCE LAYER
+   ========================================================================== */
+import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.4/+esm';
+
+// Create a local, firewall-immune transactional database inside the browser
+const db = new Dexie('AutoDocsLocalDB');
+db.version(2).stores({
+  session_backup: 'id',          // Keeps current form state safe from sudden PC reboots
+  shift_history: '++local_id, id', // Backs up copied logs locally
+  sync_queue: 'case_number'       // Option 3: Track cases that failed to sync due to CORS/Firewall
 });
 
-let isCloudAvailable = false;
-let supabaseClient = null;
-let lastSavedCase = "N/A";
-let savedFormState = null;
-let source = "local_dexie";
-
-// Initialize connection safely wrapped in an environment shield
-try {
-  if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
-    const SUPABASE_URL = "https://xgawbrwzdpqcbpwnrybe.supabase.co";
-    // Using your active public anon token key parsed from infrastructure headers
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnYXdicnd6ZHBxY2Jwd25yeWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU4NDY0OTIsImV4cCI6MjAzMTQyMjQ5Mn0.86_6Vf_v0N0Y9D7VbB6v6-9X2M_Y3_v7_v7_v7_v7_v"; 
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } else {
-    console.warn("🛡️ Supabase SDK not detected or blocked globally. Defaulting straight to Dexie standalone mode.");
-  }
-} catch (initError) {
-  console.error("Initialization Shield caught error:", initError);
+function $(id) {
+  return document.getElementById(id);
 }
 
-// =========================================================================
-// 2. MASTER PLAYBOOK SUGGESTION MATRIX DATA
-// =========================================================================
-const playbookMatrix = {
-  "Technical": {
-    "Network Intermittent": {
-      subject: "Technical - Network Intermittent Connectivity Issues",
-      wocas: "Technical | Network | Intermittent",
-      playbook: `<h4><i class="fas fa-signal"></i> Network Intermittent Isolation Steps</h4>
-                 <ul>
-                   <li>Verify coverage map for ongoing outages/degradations in the sector.</li>
-                   <li>Check SIM card status and age (recommend replacement if older than 2 years).</li>
-                   <li>Perform a network settings reset on the device framework interface.</li>
-                   <li>Advise client to lock device network mode to LTE/4G exclusively for stability testing.</li>
-                 </ul>`
-    },
-    "No Signal / No Service": {
-      subject: "Technical - Total Loss of Signal Service Profiling",
-      wocas: "Technical | Network | No Signal",
-      playbook: `<h4><i class="fas fa-times-circle"></i> No Signal Isolation Protocol</h4>
-                 <ul>
-                   <li>Verify account provisioning state to ensure line isn't redirected or suspended.</li>
-                   <li>Cross-check physical SIM card in an alternative working handset.</li>
-                   <li>Manually search for network operators inside cellular configuration settings.</li>
-                   <li>File network escalation ticket if multiple users experience issues at the same coordinates.</li>
-                 </ul>`
-    },
-    "Data Slow Performance": {
-      subject: "Technical - Mobile Data Throttling & Slow Speeds",
-      wocas: "Technical | Data | Slow Performance",
-      playbook: `<h4><i class="fas fa-gauge-simple-low"></i> Data Throughput Resolution Guideline</h4>
-                 <ul>
-                   <li>Check high-speed data allocation balance inside core metering buckets.</li>
-                   <li>Validate device APN configuration setups (ensure correct deployment profile).</li>
-                   <li>Run standard Speedtest metric profile tracking download/upload/ping arrays.</li>
-                   <li>Clear browser system cache buffers or test inside private incognito frames.</li>
-                 </ul>`
-    },
-    "Device Configuration": {
-      subject: "Technical - Hardware/OS Device Feature Setup Configuration",
-      wocas: "Technical | Hardware | Configuration",
-      playbook: `<h4><i class="fas fa-gears"></i> Device OS Configuration Baseline</h4>
-                 <ul>
-                   <li>Guide customer through software version verification updates.</li>
-                   <li>Assist with eSIM profile download registration setups.</li>
-                   <li>Troubleshoot VoLTE / Wi-Fi Calling activation toggles.</li>
-                   <li>Provide factory data reset sequence instructions if OS files appear corrupted.</li>
-                 </ul>`
-    }
-  },
-  "Aftersales": {
-    "Plan Upgrade / Downgrade": {
-      subject: "Aftersales - Modification of Subscription Tier Plan Package",
-      wocas: "Aftersales | Account Management | Plan Modification",
-      playbook: `<h4><i class="fas fa-chart-line"></i> Subscription Tier Alteration Playbook</h4>
-                 <ul>
-                   <li>Review eligibility matrix constraints (Lock-in periods, outstanding balances).</li>
-                   <li>Explain pro-rated billing calculation cycles clearly to set expectations.</li>
-                   <li>Process the migration request inside CRM provisioning workflows.</li>
-                   <li>Send digital confirmation addendum contract framework to customer email.</li>
-                 </ul>`
-    },
-    "Value Added Services": {
-      subject: "Aftersales - Add-on Subscription / VAS Feature Request Management",
-      wocas: "Aftersales | Services | VAS Management",
-      playbook: `<h4><i class="fas fa-puzzle-piece"></i> VAS Management Guidelines</h4>
-                 <ul>
-                   <li>Identify active third-party premium billing entries on account records.</li>
-                   <li>Opt-in or opt-out tokens matching customer explicit command logs.</li>
-                   <li>Detail trial period conditions, recurring auto-renewal charges, and termination fees.</li>
-                 </ul>`
-    },
-    "SIM Replacement": {
-      subject: "Aftersales - SIM Card Replacement Swap Processing Request",
-      wocas: "Aftersales | Hardware | SIM Swap",
-      playbook: `<h4><i class="fas fa-id-card"></i> SIM Replacement Workflow Matrix</h4>
-                 <ul>
-                   <li>Validate customer identity documents matching master registration logs.</li>
-                   <li>Verify reason for card swap (Lost, Stolen, Damaged, Upgrading to 5G).</li>
-                   <li>Map out and execute serial number assignment within mapping profiles.</li>
-                   <li>Instruct user to cycle device power once service disappears on old card profile.</li>
-                 </ul>`
-    }
-  },
-  "Inquiry": {
-    "Billing Ledger Breakdown": {
-      subject: "Inquiry - Statement Breakdown Request Explanation",
-      wocas: "Inquiry | Billing | Statement Review",
-      playbook: `<h4><i class="fas fa-calculator"></i> Billing Ledger Parsing System</h4>
-                 <ul>
-                   <li>Parse invoice line items (Fixed subscription recurring vs usage charges).</li>
-                   <li>Identify payment posting delays or adjustments made during prior periods.</li>
-                   <li>Explain tax allocations or automated transaction processing fees.</li>
-                 </ul>`
-    },
-    "Promo Eligibility": {
-      subject: "Inquiry - Promotional Campaign Offer Qualification Check",
-      wocas: "Inquiry | Marketing | Promo Eligibility",
-      playbook: `<h4><i class="fas fa-gift"></i> Promo Qualification Verification Steps</h4>
-                 <ul>
-                   <li>Cross-reference current tenure metrics against campaign requirements.</li>
-                   <li>Verify geographic/regional availability limitations of the offer.</li>
-                   <li>Document offer codes applied inside account annotations for future auditing.</li>
-                 </ul>`
-    },
-    "Coverage Verification": {
-      subject: "Inquiry - Network Coverage Map Footprint Assessment",
-      wocas: "Inquiry | Network | Coverage Check",
-      playbook: `<h4><i class="fas fa-map-location-dot"></i> Coverage Footprint Assessment Mapping</h4>
-                 <ul>
-                   <li>Locate address nodes within geographic information systems (GIS).</li>
-                   <li>Identify nearby base transceiver station cell towers and sector technology types (5G/LTE).</li>
-                   <li>Set accurate indoor/outdoor signal reception expectations based on local terrain topology.</li>
-                 </ul>`
-    }
-  },
-  "Complaint": {
-    "Bill Shock Discrepancy": {
-      subject: "Complaint - Disputed Charges & Bill Variance Analysis",
-      wocas: "Complaint | Billing | Disputed Charges",
-      playbook: `<h4><i class="fas fa-hand-holding-dollar"></i> Bill Shock Investigation Protocol</h4>
-                 <ul>
-                   <li>Isolate sudden variations compared against historical invoice run histories.</li>
-                   <li>Audit mobile data background leaks, roaming triggers, or premium service content.</li>
-                   <li>Initiate standard financial dispute escalation case files if tracking reveals system rating errors.</li>
-                 </ul>`
-    },
-    "Agent Dissatisfaction": {
-      subject: "Complaint - Customer Experience Service Standard Grievance",
-      wocas: "Complaint | Customer Experience | Service Standard",
-      playbook: `<h4><i class="fas fa-user-shield"></i> Escalated Interaction De-escalation Guideline</h4>
-                 <ul>
-                   <li>Actively listen to customer experience feedback logs without interjecting defenses.</li>
-                   <li>Acknowledge structural delays or friction encountered during past call routing legs.</li>
-                   <li>Log quality assurance auditing review tracking flags referencing past session recordings.</li>
-                 </ul>`
-    },
-    "Delayed Resolution Escalation": {
-      subject: "Complaint - Open Ticket Fulfillment SLA Breach Escalation",
-      wocas: "Complaint | Service Delivery | SLA Breach",
-      playbook: `<h4><i class="fas fa-hourglass-alert"></i> SLA Breach Remediation Workflow</h4>
-                 <ul>
-                   <li>Retrieve historical parent ticket reference logs to locate systemic assignment bottlenecks.</li>
-                   <li>Calculate running duration parameters against agreed Service Level Agreements.</li>
-                   <li>Tag department heads using expediting codes to force prioritization.</li>
-                 </ul>`
-    }
-  }
-};
+/* ==========================================================================
+   SUPABASE CLOUD DATABASE CONFIGURATION (AUTHENTICATED)
+   ========================================================================== */
+const SUPABASE_URL = "https://xgawbrwzdpqcbpwnrybe.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnYXdicnd6ZHBxY2Jwd25yeWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Mzc0MzAsImV4cCI6MjA5NjIxMzQzMH0.l1bXiP7LDzIyIn3IzPKDKIFHCHp2KbHnjTbWOKyardI";
 
-// =========================================================================
-// 3. HARDENED CLOUD SYNCHRONIZATION ENGINE
-// =========================================================================
-async function syncOfflineQueue() {
-  const agentId = localStorage.getItem("auto_docs_agent_id") || "52500960"; 
-  if (!agentId || !supabaseClient) {
-    updateSyncStatusUI('offline');
-    return;
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const STORAGE_KEY = "auto_docs_v5";
+const THEME_KEY = "auto_docs_theme";
+const HISTORY_KEY = "auto_docs_history"; 
+const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
+
+let bannerTimeout = null; 
+let isResetting = false;     // Flag to prevent event listeners from firing during a form reset
+let isCloudAvailable = true; // Runtime network flag to minimize console spam on CORS/Firewall drops
+let saveTimeout = null;      // Option 1: Handle debouncing timers globally
+
+/**
+ * Option 2: Updates a UI connection indicator if it exists on your page layout
+ * Simply add <span id="syncStatus"></span> somewhere in your HTML header or footer!
+ */
+function updateSyncStatusUI(status) {
+  const badge = $('syncStatus');
+  if (!badge) return;
+
+  badge.className = ""; // Wipe existing classes
+  
+  switch(status) {
+    case 'online':
+      badge.textContent = "● Cloud Connected";
+      badge.style.color = "#10b981"; // Emerald Green
+      break;
+    case 'offline':
+      badge.textContent = "● Local Offline Mode (Dexie Protected)";
+      badge.style.color = "#fbbf24"; // Amber Yellow
+      break;
+    case 'syncing':
+      badge.textContent = "⟳ Syncing Queue Data...";
+      badge.style.color = "#60a5fa"; // Sky Blue
+      break;
   }
+}
+
+/**
+ * Option 3: Network Heartbeat & Manual Trigger Sync Queue Recovery Engine
+ * Grabs all failed rows cached in Dexie and flushes them to Supabase once CORS/network clears.
+ */
+async function syncOfflineQueue() {
+  const agentId = localStorage.getItem("auto_docs_agent_id");
+  if (!agentId) return;
 
   try {
     const queuedItems = await db.sync_queue.toArray();
-    if (queuedItems.length === 0) {
-      updateSyncStatusUI('online'); 
-      return;
-    }
-
-    // HARDENED SHIELD: Quick silent ping check before looping to prevent console spamming
-    try {
-      const ping = await fetch('https://xgawbrwzdpqcbpwnrybe.supabase.co/rest/v1/', { method: 'HEAD' });
-      if (!ping.ok && ping.status !== 401) { 
-        throw new Error("Proxy block detected");
-      }
-    } catch (netErr) {
-      console.log("🛡️ Sync Shield: Cloud database unreachable via corporate proxy. Keeping data isolated in local Dexie state.");
-      updateSyncStatusUI('offline');
-      return; 
-    }
+    if (queuedItems.length === 0) return;
 
     updateSyncStatusUI('syncing');
 
-    // Safe queue flush loop
     for (const item of queuedItems) {
       const { error } = await supabaseClient
         .from('case_logs')
@@ -220,329 +84,705 @@ async function syncOfflineQueue() {
           }
         ], { onConflict: 'agent_id, case_number' });
 
-      if (error) throw error;
+      if (error) throw error; // Break loop if network/CORS firewall still blocks it
       
+      // Successfully uploaded, drop from temporary offline sync queue
       await db.sync_queue.delete(item.case_number);
     }
 
     isCloudAvailable = true;
     updateSyncStatusUI('online');
     showToast(`Successfully synced ${queuedItems.length} offline case logs to the cloud database!`);
-    
   } catch (e) {
     console.warn("⚠️ Sync queue attempt failed. Infrastructure remaining in isolated Dexie state.");
     updateSyncStatusUI('offline');
   }
 }
-window.syncOfflineQueue = syncOfflineQueue;
 
-function updateSyncStatusUI(status) {
-  const badge = document.getElementById("syncStatus");
-  if (!badge) return;
+/**
+ * Validates the typed ID against the master database list.
+ * Catch CORS preflight blocks safely and fall back to Dexie/Local immediately.
+ */
+async function verifyAndGetAgentId() {
+  let id = localStorage.getItem("auto_docs_agent_id");
+  
+  while (!id) {
+    let inputId = prompt("🔒 Access Protected.\nPlease enter your official Employee ID to configure session tracking:");
+    
+    if (!inputId || !inputId.trim()) {
+      alert("Employee ID is strictly required to use this workbench.");
+      continue;
+    }
+    
+    inputId = inputId.trim();
 
-  if (status === 'online') {
-    badge.textContent = "● Cloud Connected";
-    badge.style.color = "#10b981";
-  } else if (status === 'syncing') {
-    badge.textContent = "🔄 Syncing Data...";
-    badge.style.color = "#3b82f6";
+    try {
+      const { data, error } = await supabaseClient
+        .from('employees')
+        .select('employee_id')
+        .eq('employee_id', inputId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        id = inputId;
+        localStorage.setItem("auto_docs_agent_id", id);
+        updateSyncStatusUI('online');
+        alert(`✅ Welcome authenticated agent: ${id}`);
+      } else {
+        alert("❌ Access Denied: That Employee ID is not registered in our system. Please check for typos.");
+      }
+    } catch (err) {
+      console.warn("⚠️ Network Firewall/CORS blocked cloud authentication. Switching to local offline mode.");
+      isCloudAvailable = false; 
+      updateSyncStatusUI('offline');
+      
+      id = inputId;
+      localStorage.setItem("auto_docs_agent_id", id);
+      alert(`⚠️ Offline Local Session Activated via Dexie Layer for Agent ID: ${id}`);
+    }
+  }
+  return id;
+}
+
+/* ==========================================================================
+   REAL-TIME REGULAR EXPRESSION VALIDATORS
+   ========================================================================= */
+function validateCaseField(el) {
+  const val = el.value.trim().toUpperCase();
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
+  
+  if (val.length === 0) return; 
+  
+  if (val === "NA" || val === "N/A") {
+    el.classList.add('val-green');
+    return;
+  }
+  
+  if (val.length === 8 || val.length === 10) {
+    el.classList.add('val-green');
+  } else if (val.length > 10) {
+    el.classList.add('val-crimson');
   } else {
-    badge.textContent = "● Local Isolated Mode (Protected)";
-    badge.style.color = "#f59e0b";
+    el.classList.add('val-amber');
   }
 }
 
-// =========================================================================
-// 4. DYNAMIC MATRIX ROUTING & INPUT DRIVERS
-// =========================================================================
-function handleConcernTypeChange() {
-  const categorySelection = document.getElementById("concernType").value;
-  const vocDatalist = document.getElementById("vocOptions");
-  const vocInputField = document.getElementById("voc");
+function validateMinField(el) {
+  el.classList.remove('val-amber', 'val-crimson');
+  if (el.value.trim().length > 0) {
+    el.classList.add('val-green');
+  } else {
+    el.classList.remove('val-green');
+  }
+}
 
-  if (!vocDatalist || !vocInputField) return;
+function toggleDrawer(e) {
+  if(e) e.stopPropagation();
+  const drawer = $('playbookPanel');
+  if(!drawer) return;
+  
+  drawer.classList.toggle('drawer-open');
+  
+  const btnText = $('drawerToggle').querySelector('span');
+  const btnIcon = $('drawerToggle').querySelector('i');
+  
+  if(drawer.classList.contains('drawer-open')) {
+    btnText.textContent = "Close Playbooks";
+    btnIcon.className = "fas fa-times";
+  } else {
+    btnText.textContent = "View Playbooks";
+    btnIcon.className = "fas fa-book-open";
+  }
+}
 
-  vocDatalist.innerHTML = "";
-  vocInputField.value = "";
+document.addEventListener('click', (e) => {
+  const drawer = $('playbookPanel');
+  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle').contains(e.target)) {
+    drawer.classList.remove('drawer-open');
+    $('drawerToggle').querySelector('span').textContent = "View Playbooks";
+    $('drawerToggle').querySelector('i').className = "fas fa-book-open";
+  }
+});
 
-  if (playbookMatrix[categorySelection]) {
-    Object.keys(playbookMatrix[categorySelection]).forEach((vocKey) => {
-      const optionElement = document.createElement("option");
-      optionElement.value = vocKey;
-      vocDatalist.appendChild(optionElement);
+function showToast(msg, isError = false) {
+  const toast = $('toast');
+  if(!toast) return;
+  
+  if(isError) {
+    toast.style.background = "#ef4444";
+    toast.style.color = "#ffffff";
+    toast.style.borderLeft = "5px solid #b91c1c";
+  } else {
+    toast.style.background = "#10b981";
+    toast.style.color = "#ffffff";
+    toast.style.borderLeft = "5px solid #047857";
+  }
+  
+  $('toastMessage').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+/* ==========================================================================
+   DATA STORAGE & BACKUPS REGISTRY ENGINE (FIREWALL-PROOF INDEXEDDB ADAPTER)
+   ========================================================================== */
+async function saveData() {
+  if (isResetting) return; 
+
+  // Option 1: Clear pending timer loop setups execution stacks on every keystroke run
+  if (saveTimeout) clearTimeout(saveTimeout);
+
+  // Option 1: Debounce storage triggers by 500ms to preserve workstation UI performance
+  saveTimeout = setTimeout(async () => {
+    const data = {};
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      if (el.id) data[el.id] = el.value;
     });
-  }
-  updatePreviewAndPlaybook();
-}
-window.handleConcernTypeChange = handleConcernTypeChange;
+    
+    // Tier 1 Backup: Traditional LocalStorage fallback
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-function updatePreviewAndPlaybook() {
-  const category = document.getElementById("concernType").value;
-  const voc = document.getElementById("voc").value;
-  const outputFrame = document.getElementById("output");
-  const playbookDisplay = document.getElementById("suggestions");
+    // Tier 2 Backup: Robust Database Fallback via Dexie (Safe from firewall blocks)
+    try {
+      await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
+    } catch (indexedDbErr) {
+      console.error("IndexedDB transactional write failure:", indexedDbErr);
+    }
 
-  const caseNum = document.getElementById("case").value || "[Case Number]";
-  const minNum = document.getElementById("min").value || "[Mobile Number]";
-  const subjectLine = document.getElementById("subj");
-  const wocasLine = document.getElementById("wocas");
-  const notesText = document.getElementById("action").value || "";
+    const caseNum = $("case")?.value.trim() || "DRAFT";
+    const agentId = localStorage.getItem("auto_docs_agent_id"); 
 
-  // Automate entry paths if targeted node exists inside mapping schema matrices
-  if (category && voc && playbookMatrix[category] && playbookMatrix[category][voc]) {
-    const targetNode = playbookMatrix[category][voc];
-    if (subjectLine) subjectLine.value = targetNode.subject;
-    if (wocasLine) wocasLine.value = targetNode.wocas;
-    if (playbookDisplay) playbookDisplay.innerHTML = targetNode.playbook;
-  } else {
-    if (playbookDisplay) playbookDisplay.innerHTML = "Select Concern & VOC to display matrix guidelines.";
-  }
+    if (!agentId) return;
 
-  // Generate live textual format layout structure string
-  const assembledManifest = `==================================================
-AUTO DOCS GENERATED NOTE MANIFEST STRUCTURE
-==================================================
-CASE / SR NUMBER : ${caseNum}
-MIN / MOBILE NO  : ${minNum}
-CATEGORY GROUP   : ${category || "N/A"}
-SPECIFIC CONCERN : ${voc || "N/A"}
-SUBJECT HEADING  : ${subjectLine?.value || "N/A"}
---------------------------------------------------
-DOCUMENTATION ACTION / CONTAINMENT NOTES:
-${notesText}
---------------------------------------------------
-WOCAS CORE VALUE : ${wocasLine?.value || "N/A"}
-==================================================`;
-
-  if (outputFrame) outputFrame.textContent = assembledManifest;
-}
-window.updatePreviewAndPlaybook = updatePreviewAndPlaybook;
-
-// =========================================================================
-// 5. LOCAL HISTORICAL WORKSPACE RENDER
-// =========================================================================
-async function renderHistoryView() {
-  const container = document.getElementById("historyContainer");
-  if (!container) return;
-
-  try {
-    const localLogs = await db.case_logs
-      .orderBy("created_at")
-      .reverse()
-      .limit(50) 
-      .toArray();
-
-    if (!localLogs || localLogs.length === 0) {
-      container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet...</i>`;
+    // Tier 3 Cloud Sync & Option 3: Sync Queue Interceptor Management Flow
+    if (!isCloudAvailable) {
+      // Save locally to offline sync queue when server/CORS is failing
+      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
+      updateSyncStatusUI('offline');
       return;
     }
 
-    let htmlContent = "";
-    localLogs.forEach((log) => {
-      const caseNum = log.case_number || "N/A";
-      const timestamp = log.created_at ? new Date(log.created_at).toLocaleTimeString() : "";
-      const concern = log.form_data?.concernType || "General";
-      
-      htmlContent += `
-        <div class="history-item" style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 12px;">
-          <span><strong>${caseNum}</strong> (${concern})</span>
-          <span style="color: var(--text-muted);">${timestamp}</span>
-        </div>
-      `;
+    try {
+      const { error } = await supabaseClient
+        .from('case_logs')
+        .upsert([
+          { 
+            agent_id: agentId, 
+            case_number: caseNum, 
+            form_data: data 
+          }
+        ], { onConflict: 'agent_id, case_number' });
+
+      if (error) throw error;
+      updateSyncStatusUI('online');
+    } catch (error) {
+      console.warn("Cloud connection drop or CORS block captured. Queuing data locally inside Dexie layout storage...");
+      isCloudAvailable = false; 
+      updateSyncStatusUI('offline');
+      // Append current state safely into the offline queue array database layer
+      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
+    }
+  }, 500);
+}
+
+async function loadData() {
+  try {
+    const localDbState = await db.session_backup.get('current_workspace_state');
+    const saved = localDbState ? localDbState.data : JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    
+    Object.keys(saved).forEach(id => {
+      const el = $(id);
+      if (el && id !== "voc") el.value = saved[id];
     });
-
-    container.innerHTML = htmlContent;
-
-  } catch (error) {
-    console.error("Dexie UI Render Shield blocked an exception:", error);
-    container.innerHTML = `<i style="color: #ef4444; font-size: 12px;">Failed to render local cache.</i>`;
+  } catch(e) {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    Object.keys(saved).forEach(id => {
+      const el = $(id);
+      if (el && id !== "voc") el.value = saved[id];
+    });
   }
 }
 
-// =========================================================================
-// 6. CORE WORKBENCH ACTIONS & UTILITIES
-// =========================================================================
-async function copyDoc() {
-  const caseNum = document.getElementById("case")?.value.trim() || "N/A";
-  const minNum = document.getElementById("min")?.value.trim() || "N/A";
-  const concernType = document.getElementById("concernType")?.value || "General";
-  const vocText = document.getElementById("voc")?.value || "";
-  const notes = document.getElementById("action")?.value || "";
+/**
+ * Recovers crashed inputs smoothly from either cloud repositories or internal Dexie profiles.
+ */
+async function checkAndRestoreCrashData() {
+  const agentId = await verifyAndGetAgentId();
+  let lastSavedCase = "";
+  let savedFormState = null;
+  let source = "local hard drive backup"; 
 
-  if (caseNum === "" || caseNum === "N/A") {
-    showToast("Please provide a case number before copying!", "#ef4444");
+  if (isCloudAvailable) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('case_logs')
+        .select('form_data, case_number')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        lastSavedCase = data[0].case_number;
+        savedFormState = data[0].form_data;
+        source = "cloud";
+      }
+    } catch (e) {
+      console.warn("Cloud hydration blocked by CORS/firewall. Switching context to internal browser database...");
+      isCloudAvailable = false;
+      updateSyncStatusUI('offline');
+    }
+  }
+
+  if (!savedFormState) {
+    try {
+      const backupState = await db.session_backup.get('current_workspace_state');
+      if (backupState && backupState.data) {
+        savedFormState = backupState.data;
+        lastSavedCase = savedFormState['case'] || "Unsaved Workspace Data";
+        source = "local hard drive backup";
+      }
+    } catch(err) {
+      console.error("Local database cluster recovery state unreadable:", err);
+    }
+  }
+
+  if (!savedFormState) return;
+
+  const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
+  if (hasActiveInput) return;
+
+  const confirmRestore = confirm(`🔄 Auto Docs Session Recovery Engine:\n\nWe detected an interrupted session (${source}) for Case [${lastSavedCase}]. Would you like to restore your progress?`);
+  
+  if (confirmRestore) {
+    Object.keys(savedFormState).forEach(id => {
+      const el = $(id);
+      if (el && id !== "voc") el.value = savedFormState[id];
+    });
+
+    if ($("concernType")?.value) updateVocOptions(true);
+    if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+
+    updateOutput();
+    updateSuggestions();
+    if($('case')) validateCaseField($('case'));
+    if($('min')) validateMinField($('min'));
+    showToast(`Progress successfully recovered from ${source}!`);
+  }
+}
+
+async function pushToHistory(caseNumber, textContent) {
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
+
+  let history = [];
+  try {
+    history = await db.shift_history.reverse().toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
+
+  if (history.length > 0 && history[0].text === textContent) return;
+
+  const newLog = { id: displayId, time: timestamp, text: textContent };
+  
+  try {
+    await db.shift_history.add(newLog);
+    const count = await db.shift_history.count();
+    if (count > 50) {
+      const oldest = await db.shift_history.orderBy('local_id').first();
+      if(oldest) await db.shift_history.delete(oldest.local_id);
+    }
+  } catch(e) { console.error(e); }
+
+  let lsHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  lsHistory.unshift(newLog);
+  if (lsHistory.length > 50) lsHistory.pop();
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(lsHistory));
+  
+  localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
+  
+  await renderHistoryView();
+  updateFloatingBanner();
+}
+
+async function deleteHistoryItem(index, e) {
+  if(e) e.stopPropagation();
+  
+  try {
+    const items = await db.shift_history.toArray();
+    if(items[index]) {
+      await db.shift_history.delete(items[index].local_id);
+    }
+  } catch(err) { console.error(err); }
+  
+  let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  history.splice(index, 1);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  
+  await renderHistoryView();
+  updateFloatingBanner();
+  showToast("Selected log deleted from shift summary.");
+}
+
+async function renderHistoryView() {
+  const container = $('historyContainer');
+  if (!container) return;
+
+  let history = [];
+  try {
+    history = await db.shift_history.toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
+
+  if (history.length === 0) {
+    container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet...</i>`;
     return;
   }
 
-  const formData = { minNum, concernType, vocText, notes };
-  const timestamp = Date.now();
+  container.innerHTML = history.map((item, index) => `
+    <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
+      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
+        <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
+      </span>
+      <div style="display: flex; gap: 4px;">
+        <button type="button" onclick="window.loadHistoryItem(${index})" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+          Recopy
+        </button>
+        <button type="button" onclick="window.deleteHistoryItem(${index}, event)" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
 
+async function loadHistoryItem(index) {
+  let history = [];
   try {
-    await db.case_logs.put({ case_number: caseNum, created_at: timestamp, form_data: formData });
-    await db.sync_queue.put({ case_number: caseNum, form_data: formData });
-
-    // Grab up to date manifest compiled text out of preview block window layout element
-    const compiledClipboardText = document.getElementById("output").textContent;
-    await navigator.clipboard.writeText(compiledClipboardText);
-    
-    showToast("Note compiled and copied to clipboard!");
-    renderHistoryView();
-    
-    // Background execution safely isolated by our ping tracking engine filters
-    syncOfflineQueue();
-
-  } catch (err) {
-    console.error("Storage save failed:", err);
-    showToast("Local write execution failed.", "#ef4444");
+    history = await db.shift_history.toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
   }
+  if (!history[index]) return;
+  
+  navigator.clipboard.writeText(history[index].text);
+  showToast(`Recopied Case ID: ${history[index].id} from History!`);
 }
-window.copyDoc = copyDoc;
 
-function resetForm(event) {
-  if (event) event.preventDefault();
-  document.getElementById("docForm")?.reset();
-  updatePreviewAndPlaybook();
-  showToast("Inputs cleared.");
-}
-window.resetForm = resetForm;
+async function updateFloatingBanner() {
+  const banner = $('floatingShiftBanner');
+  if (!banner) return;
 
-function toggleTheme() {
-  const currentTheme = document.body.getAttribute("data-theme");
-  if (currentTheme === "dark") {
-    document.body.removeAttribute("data-theme");
-    localStorage.setItem("theme", "light");
+  const isDownloaded = localStorage.getItem(DOWNLOADED_STATE_KEY) === "true";
+  
+  let historyCount = 0;
+  try {
+    historyCount = await db.shift_history.count();
+  } catch(e) {
+    historyCount = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]").length;
+  }
+  
+  if (isDownloaded && historyCount > 0) {
+    banner.style.background = "#10b981"; 
+    banner.style.color = "#ffffff";
+    banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${historyCount})`;
+    
+    if(bannerTimeout) clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(() => {
+      localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
+      updateFloatingBanner();
+    }, 10000);
+
   } else {
-    document.body.setAttribute("data-theme", "dark");
-    localStorage.setItem("theme", "dark");
+    banner.style.background = "#fbbf24"; 
+    banner.style.color = "#1e293b";
+    banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT`;
   }
 }
-window.toggleTheme = toggleTheme;
 
-function toggleDrawer(event) {
-  if (event) event.preventDefault();
-  const panel = document.getElementById("playbookPanel");
-  if (panel) panel.classList.toggle("open");
-}
-window.toggleDrawer = toggleDrawer;
+async function downloadHistoryLog() {
+  let history = [];
+  try {
+    history = await db.shift_history.toArray();
+  } catch(e) {
+    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+  }
 
-function showToast(message, bgColor = "#10b981") {
-  const toast = document.getElementById("toast");
-  const msgSpan = document.getElementById("toastMessage");
-  if (!toast || !msgSpan) return;
+  if (history.length === 0) {
+    showToast("No history data to download yet!", true);
+    return;
+  }
 
-  msgSpan.textContent = message;
-  toast.style.backgroundColor = bgColor;
-  toast.classList.add("show");
+  let fileContent = `==================================================\n`;
+  fileContent += `         SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
+  fileContent += `==================================================\n\n`;
 
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3000);
+  history.forEach((item, idx) => {
+    fileContent += `--- ENTRY #${idx + 1} | TIMESTAMP: [${item.time}] | REFERENCE ID: ${item.id} ---\n`;
+    fileContent += `${item.text}\n`;
+    fileContent += `\n==================================================\n\n`;
+  });
+
+  const blob = new Blob([fileContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url; 
+  a.download = `ShiftHistory-Logs-${dateStr}.txt`; 
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  localStorage.setItem(DOWNLOADED_STATE_KEY, "true");
+  
+  updateFloatingBanner();
+  showToast("Shift history download complete!");
 }
 
 async function clearShiftHistory() {
-  if (confirm("Are you sure you want to flush all local records from this layout workspace?")) {
-    await db.case_logs.clear();
-    await db.sync_queue.clear();
-    renderHistoryView();
-    showToast("Local operational cache cleared successfully.", "#f59e0b");
+  if (confirm("🚨 Warning:\n\nThis will completely wipe your local history data manifest stack for this entire shift. Proceed?")) {
+    try {
+      await db.shift_history.clear();
+      await db.sync_queue.clear(); // Flush queue clean during standard operational purges
+    } catch(e) { console.error(e); }
+    localStorage.setItem(HISTORY_KEY, "[]");
+    localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
+    await renderHistoryView();
+    updateFloatingBanner();
+    showToast("Shift summary history logs entirely flushed.");
   }
 }
-window.clearShiftHistory = clearShiftHistory;
 
-async function downloadHistoryLog() {
-  try {
-    const rawLogs = await db.case_logs.orderBy("created_at").reverse().toArray();
-    if (rawLogs.length === 0) {
-      showToast("No records available to export.", "#f59e0b");
-      return;
-    }
-    
-    let textDump = "AUTO-DOCS WORKSPACE EXPORT SHIFT LOGS\n====================================\n\n";
-    rawLogs.forEach(l => {
-      textDump += `TIMESTAMP: ${new Date(l.created_at).toLocaleString()}\nCASE NO  : ${l.case_number}\nDATA     : MIN: ${l.form_data.minNum} | Type: ${l.form_data.concernType}\nNOTES    : ${l.form_data.notes}\n------------------------------------\n`;
-    });
-    
-    const blob = new Blob([textDump], { type: "text/plain;charset=utf-8" });
-    const tempUrl = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.href = tempUrl;
-    downloadAnchor.download = `Shift_Manifest_Logs_${Date.now()}.txt`;
-    downloadAnchor.click();
-    URL.revokeObjectURL(tempUrl);
-    showToast("Manifest log file generated and downloaded.");
-  } catch (err) {
-    showToast("Failed to compile text file.", "#ef4444");
+async function resetForm(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
   }
-}
-window.downloadHistoryLog = downloadHistoryLog;
-
-// =========================================================================
-// 7. LIFE CYCLE INITIALIZATION ENGINE
-// =========================================================================
-async function init() {
-  // 1. Theme Configuration setup
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "dark") {
-    document.body.setAttribute("data-theme", "dark");
-  }
-
-  // 2. Map structural input listeners to fuel live typing updates
-  const trackingSelectors = ["case", "min", "voc", "action", "subj", "wocas"];
-  trackingSelectors.forEach(id => {
-    document.getElementById(id)?.addEventListener("input", updatePreviewAndPlaybook);
-  });
-  document.getElementById("concernType")?.addEventListener("change", handleConcernTypeChange);
-
-  // 3. Set default run timestamp inside UI forms
-  const timeInput = document.getElementById("datetime");
-  if (timeInput) {
-    const now = new Date();
-    timeInput.value = `${now.getMonth()+1}-${now.getDate()}-${now.getFullYear()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
-  }
-
-  // =========================================================================
-  // HARDENED STARTUP HYDRATION SHIELD
-  // =========================================================================
-  try {
-    // Look up local cache index directly on startup. Prevents data dropping out on PC restart.
-    const lastLocalEntry = await db.case_logs.orderBy("created_at").reverse().first();
-
-    if (lastLocalEntry) {
-      lastSavedCase = lastLocalEntry.case_number;
-      savedFormState = lastLocalEntry.form_data;
-      source = "local_dexie";
-      
-      // Map inputs backward from safe offline journal state records
-      if (document.getElementById("case") && lastSavedCase !== "N/A") {
-        document.getElementById("case").value = lastSavedCase;
-        if (savedFormState?.minNum) document.getElementById("min").value = savedFormState.minNum;
-        if (savedFormState?.concernType) document.getElementById("concernType").value = savedFormState.concernType;
-        
-        // Re-hydrate the child select option items based on category parameters
-        handleConcernTypeChange();
-        
-        if (savedFormState?.vocText) document.getElementById("voc").value = savedFormState.vocText;
-        if (savedFormState?.notes) document.getElementById("action").value = savedFormState.notes;
-      }
-      console.log(`🎯 Workspace successfully loaded from local cache. Last case: ${lastSavedCase}`);
-    }
-  } catch (localErr) {
-    console.error("CRITICAL: Local Dexie hydration failed:", localErr);
-  }
-
-  // Enforce zero network reliance markers initially
-  isCloudAvailable = false;
-  updateSyncStatusUI('offline');
-
-  // Trigger workspace history layout render
-  await renderHistoryView();
   
-  // Update form values with initial baseline
-  updatePreviewAndPlaybook();
+  isResetting = true; 
 
-  // Run a quiet check to see if database cloud channels can absorb queues
-  await syncOfflineQueue();
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    await db.session_backup.delete('current_workspace_state');
+
+    document.querySelectorAll("input, textarea").forEach(el => {
+      el.value = "";
+      el.classList.remove('val-green', 'val-amber', 'val-crimson');
+    });
+
+    const select = $("concernType");
+    if (select) select.selectedIndex = 0;
+    
+    updateVocOptions(false);
+    
+    if ($("output")) {
+      $("output").textContent = 
+`CASE/SR VALUE: N/A
+CONCERN TYPE: 
+VOC: 
+
+SUBJ: 
+
+NAME: 
+MIN: 
+COMPANY: 
+EMAIL: 
+THREAD: 
+DATE/TIME: 
+
+ACTION:
+
+
+WOCAS:
+`;
+    }
+    
+    if ($("suggestions")) {
+      $("suggestions").innerHTML = "Select Concern & VOC";
+    }
+    
+    showToast("Form fields reset successfully.");
+  } catch(e) {
+    console.error("Local database reset exception:", e);
+    showToast("Error while clearing background data profiles.", true);
+  } finally {
+    isResetting = false; 
+  }
 }
 
-// Fire system initialization on application bootstrap
-document.addEventListener("DOMContentLoaded", init);
+function copyDoc() {
+  const outputText = $("output")?.textContent;
+  if (!outputText || outputText.includes("Generating real-time output preview")) {
+    showToast("No active documentation content found to copy!", true);
+    return;
+  }
+
+  navigator.clipboard.writeText(outputText).then(() => {
+    showToast("Documentation notes successfully copied to system clipboard!");
+    const caseNum = $("case")?.value || "N/A";
+    pushToHistory(caseNum, outputText);
+  }).catch(err => {
+    showToast("Clipboard injection routine blocked.", true);
+  });
+}
+
+/* ==========================================================================
+   DARK MODE SYSTEM 🌙
+   ========================================================================== */
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+}
+
+/* ==========================================================================
+   VOC PROCEDURES MAPPING CONFIG DATA (CATEGORIZED & CONDENSED)
+   ========================================================================== */
+const TECH_PROCEDURES = {
+  "VOICE CONNECTIVITY": [
+    { text: "Check voice service status", link: "https://yourguide-link.com/voice" },
+    { text: "Validate network profile", link: "https://yourguide-link.com/network" }
+  ],
+  "SMS CONNECTIVITY": [{ text: "Check SMS provisioning", link: "https://yourguide-link.com/sms" }],
+  "DATA CONNECTIVITY": [{ text: "Check data session profiles", link: "https://yourguide-link.com/data" }],
+  "ROAMING CONNECTIVITY": [{ text: "Verify roaming routing flags", link: "https://yourguide-link.com/roaming" }],
+  "COVERAGE CONNECTIVITY": [{ text: "Check physical coverage index maps", link: "https://yourguide-link.com/coverage" }]
+};
+
+const AFTERSALES_PROCEDURES = {
+  "Device Unlocking / Handset Issues": [
+    { text: "Verify IMEI lock status in database", link: "https://yourguide-link.com/unlock" },
+    { text: "Check tenure eligibility metrics", link: "#" }
+  ],
+  "Plan Changes & Tier Modifications": [{ text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" }],
+  "SIM Related Concerns / SIM Registration": [
+    { text: "Open official consumer registration validation console", link: "https://yourguide-link.com/sim-reg" },
+    { text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }
+  ],
+  "Billing Ledger, Clarifications & Adjustments": [{ text: "Pull ledger micro-transactions record sheet", link: "https://yourguide-link.com/ledger" }],
+  "PUK/PIN Management": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
+};
+
+const VOC_OPTIONS = {
+  "Technical": [
+    "VOICE CONNECTIVITY", 
+    "SMS CONNECTIVITY", 
+    "DATA CONNECTIVITY", 
+    "ROAMING CONNECTIVITY", 
+    "COVERAGE CONNECTIVITY"
+  ],
+  "Aftersales": [
+    "Activations & Deactivations (Single/Bulk Features/VAS)",
+    "SIM Related Concerns / SIM Registration",
+    "Plan Changes & Tier Modifications",
+    "Ownership & Authorized Representative Changes",
+    "Billing Ledger, Clarifications & Adjustments",
+    "Disputes (MSF, Call, Data, SMS, VAS, Device Amortization)",
+    "Device Unlocking / Handset Issues",
+    "Temporary / Permanent Disconnections & Reconnections",
+    "Mobile Number Portability (MNP) Transactions",
+    "Reloading & Balance Allocations",
+    "Application Status & Requirements",
+    "PUK/PIN Management",
+    "Credit Limit & Account Adjustments",
+    "Network Enhancements & 3G Sunset Processes",
+    "General Inquiries & Customer Feedback",
+    "GENERIC"
+  ],
+  "Inquiry": [], 
+  "Complaint": []
+};
+
+VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
+VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
+
+/* ==========================================================================
+   OUTPUT GENERATOR
+========================================================================== */
+function updateOutput() {
+  if (!$("output") || isResetting) return;
+  
+  const caseVal = $("case")?.value.trim() || "";
+  let ticketHeaderTag = "CASE/SR VALUE";
+  let displayValue = caseVal;
+
+  if (caseVal.length === 0) {
+    displayValue = "N/A";
+  } else if (caseVal.toUpperCase() === "NA" || caseVal.toUpperCase() === "N/A") {
+    displayValue = caseVal.toUpperCase();
+  } else if (caseVal.length === 8) {
+    ticketHeaderTag = "CASE NUMBER";
+  } else if (caseVal.length === 10) {
+    ticketHeaderTag = "SR NUMBER";
+  }
+
+  $("output").textContent = 
+`${ticketHeaderTag}: ${displayValue}
+CONCERN TYPE: ${$("concernType")?.value || ""}
+VOC: ${$("voc")?.value || ""}
+
+SUBJ: ${$("subj")?.value || ""}
+
+NAME: ${$("name")?.value || ""}
+MIN: ${$("min")?.value || ""}
+COMPANY: ${$("company")?.value || ""}
+EMAIL: ${$("email")?.value || ""}
+THREAD: ${$("thread")?.value || ""}
+DATE/TIME: ${$("datetime")?.value || ""}
+
+ACTION:
+${$("action")?.value || ""}
+
+WOCAS:
+${$("wocas")?.value || ""}`;
+}
+
+/* ==========================================================================
+   PROCEDURE HANDLING
+========================================================================== */
+function updateSuggestions() {
+  if (!$("suggestions") || isResetting) return;
+  const concern = $("concernType")?.value;
+  const voc = $("voc")?.value;
+  
+  const matrixNotice = `<div style="background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 14px; border-radius: 4px; font-weight: bold; color: #f87171;">⚠️ Please check our Aftersales Empowerment Matrix</div>`;
+
+  if (!concern) {
+    $("suggestions").innerHTML = "Select Concern & VOC";
+    return;
+  }
+
+  let html = matrixNotice;
+
+  if (!voc) {
+    html += `<i style="color: #94a3b8;">Select a VOC Option to load specific guidelines...</i>`;
+    $("suggestions").innerHTML = html;
+    return;
+  }
+
+  if (concern === "Technical") {
+    const procedures = TECH_PROCEDURES[voc] || [];
+    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
+  } 
+  else if (concern === "Aftersales" || concern === "Inquiry" || concern === "Complaint") {
+    // Check fallback items to match our clean condensed titles perfectly
+    let lookupKey = voc;
+    if (voc.includes("SIM")) lookupKey = "SIM Related Concerns / SIM Registration";
+    if (voc.includes("Plan")) lookupKey = "Plan Changes & Tier Modifications";
+    if (voc.includes("Billing") || voc.includes("Dispute")) lookupKey = "Billing Ledger, Clarifications & Adjustments";
+    if (voc.includes("Unlocking")) lookupKey = "Device Unlocking / Handset Issues";
+    if (voc.includes("PUK")) lookupKey = "PUK/PIN Management";
+
+    const procedures = AFTERSALES_PROCEDURES[lookupKey] || [];
+    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review internal playbook document structures for this tracking item.";
+  }
+
+  $("suggestions").innerHTML = html;
+}
