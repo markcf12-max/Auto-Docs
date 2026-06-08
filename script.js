@@ -15,11 +15,11 @@ function $(id) {
 }
 
 /* ==========================================================================
-   FIREBASE CONFIGURATION & MODULE INTEGRATION (LIVE CREDENTIALS)
+   FIREBASE CONFIGURATION & MODULE INTEGRATION (SYNCHRONIZED V12.14.0)
    ========================================================================== */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, setDoc, collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
+import { getFirestore, doc, setDoc, collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
@@ -108,8 +108,8 @@ async function handleAuthSubmission(e) {
   } catch (error) {
     console.error("Auth validation error:", error.code);
     let readableError = error.message;
-    if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
-      readableError = "Invalid Email or Password configuration.";
+    if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found" || error.code === "auth/invalid-email") {
+      readableError = "Invalid Email or Password formatting configuration.";
     } else if (error.code === "auth/email-already-in-use") {
       readableError = "This profile identity is already registered to a workspace.";
     } else if (error.code === "auth/weak-password") {
@@ -159,8 +159,12 @@ async function terminateAgentSession() {
    NETWORK HEARTBEAT & BACKUP RECOVERY CLOUD SYNC
    ========================================================================== */
 async function syncOfflineQueue() {
-  const agentId = localStorage.getItem("auto_docs_agent_id");
-  if (!agentId || !isCloudAvailable) return;
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser || !isCloudAvailable) return;
+
+  const agentId = currentUser.uid;
+  const agentEmail = currentUser.email;
+  const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
   try {
     const queuedItems = await db.sync_queue.toArray();
@@ -172,6 +176,8 @@ async function syncOfflineQueue() {
       const docRef = doc(firestoreDb, "case_logs", `${agentId}_${item.case_number}`);
       await setDoc(docRef, {
         agent_id: agentId,
+        agent_email: agentEmail,
+        log_date: localDate,
         case_number: item.case_number,
         form_data: item.form_data,
         updated_at: Date.now()
@@ -213,9 +219,14 @@ async function saveData() {
     }
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
-    const agentId = localStorage.getItem("auto_docs_agent_id"); 
+    
+    // Safety verification check on current authentication session
+    const currentUser = firebaseAuth.currentUser;
+    if (!currentUser) return;
 
-    if (!agentId) return;
+    const agentId = currentUser.uid;
+    const agentEmail = currentUser.email; 
+    const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); 
 
     if (!isCloudAvailable) {
       await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
@@ -227,6 +238,8 @@ async function saveData() {
       const docRef = doc(firestoreDb, "case_logs", `${agentId}_${caseNum}`);
       await setDoc(docRef, {
         agent_id: agentId,
+        agent_email: agentEmail,   
+        log_date: localDate,       
         case_number: caseNum,
         form_data: data,
         updated_at: Date.now()
@@ -234,7 +247,7 @@ async function saveData() {
 
       updateSyncStatusUI('online');
     } catch (error) {
-      console.warn("Firebase drop or CORS block captured. Queuing data locally...");
+      console.warn("Firebase drop or rule validation block captured. Queuing data locally...", error);
       isCloudAvailable = false; 
       updateSyncStatusUI('offline');
       await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
@@ -261,9 +274,10 @@ async function loadData() {
 }
 
 async function checkAndRestoreCrashData() {
-  const agentId = localStorage.getItem("auto_docs_agent_id");
-  if (!agentId) return;
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
 
+  const agentId = currentUser.uid;
   let lastSavedCase = "";
   let savedFormState = null;
   let source = "local hard drive backup"; 
@@ -286,7 +300,7 @@ async function checkAndRestoreCrashData() {
         source = "Firebase Cloud";
       }
     } catch (e) {
-      console.warn("Cloud hydration blocked. Switching context to internal browser database...", e);
+      console.warn("Cloud hydration query failed. Falling back to local index layer...", e);
       isCloudAvailable = false;
       updateSyncStatusUI('offline');
     }
