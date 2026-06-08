@@ -3,12 +3,11 @@
    ========================================================================== */
 import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.4/+esm';
 
-// Create a local, firewall-immune transactional database inside the browser
 const db = new Dexie('AutoDocsLocalDB');
 db.version(2).stores({
-  session_backup: 'id',          // Keeps current form state safe from sudden PC reboots
-  shift_history: '++local_id, id', // Backs up copied logs locally
-  sync_queue: 'case_number'       // Option 3: Track cases that failed to sync due to CORS/Firewall
+  session_backup: 'id',          
+  shift_history: '++local_id, id', 
+  sync_queue: 'case_number'       
 });
 
 function $(id) {
@@ -16,12 +15,25 @@ function $(id) {
 }
 
 /* ==========================================================================
-   SUPABASE CLOUD DATABASE CONFIGURATION (AUTHENTICATED)
+   FIREBASE CONFIGURATION & MODULE INTEGRATION (REPLACES SUPABASE)
    ========================================================================== */
-const SUPABASE_URL = "https://xgawbrwzdpqcbpwnrybe.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnYXdicnd6ZHBxY2Jwd25yeWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Mzc0MzAsImV4cCI6MjA5NjIxMzQzMH0.l1bXiP7LDzIyIn3IzPKDKIFHCHp2KbHnjTbWOKyardI";
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, setDoc, collection, query, where, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const firebaseConfig = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase Core Engines
+const app = initializeApp(firebaseConfig);
+const firestoreDb = getFirestore(app);
+const firebaseAuth = getAuth(app);
 
 const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
@@ -29,41 +41,127 @@ const HISTORY_KEY = "auto_docs_history";
 const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
 
 let bannerTimeout = null; 
-let isResetting = false;     // Flag to prevent event listeners from firing during a form reset
-let isCloudAvailable = true; // Runtime network flag to minimize console spam on CORS/Firewall drops
-let saveTimeout = null;      // Option 1: Handle debouncing timers globally
+let isResetting = false;     
+let isCloudAvailable = true; 
+let saveTimeout = null;      
+let currentAuthMode = "LOGIN"; // Tracks UI Mode state: "LOGIN" or "REGISTER"
 
-/**
- * Updates a UI connection indicator if it exists on your page layout
- */
+/* ==========================================================================
+   UI STATUS AND THEME INDICATORS
+   ========================================================================== */
 function updateSyncStatusUI(status) {
   const badge = $('syncStatus');
   if (!badge) return;
 
-  badge.className = ""; // Wipe existing classes
+  badge.className = ""; 
   
   switch(status) {
     case 'online':
-      badge.textContent = "● Cloud Connected";
-      badge.style.color = "#10b981"; // Emerald Green
+      badge.textContent = "● Cloud Connected (Firebase)";
+      badge.style.color = "#10b981"; 
       break;
     case 'offline':
       badge.textContent = "● Local Offline Mode (Dexie Protected)";
-      badge.style.color = "#fbbf24"; // Amber Yellow
+      badge.style.color = "#fbbf24"; 
       break;
     case 'syncing':
       badge.textContent = "⟳ Syncing Queue Data...";
-      badge.style.color = "#60a5fa"; // Sky Blue
+      badge.style.color = "#60a5fa"; 
       break;
   }
 }
 
-/**
- * Network Heartbeat & Manual Trigger Sync Queue Recovery Engine
- */
+/* ==========================================================================
+   FIREBASE AUTHENTICATION FLOWS (REPLACES PROMPT LOOPS)
+   ========================================================================== */
+
+function toggleAuthMode(e) {
+  if (e) e.preventDefault();
+  
+  if (currentAuthMode === "LOGIN") {
+    currentAuthMode = "REGISTER";
+    $('authTitle').textContent = "Register Agent Profile";
+    $('authSubtitle').textContent = "Configure secure localized database access keys";
+    $('authSubmitBtn').textContent = "Provision Account";
+    $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
+  } else {
+    currentAuthMode = "LOGIN";
+    $('authTitle').textContent = "Agent Workbench Sign In";
+    $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
+    $('authSubmitBtn').textContent = "Authorize Session";
+    $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
+  }
+}
+
+async function handleAuthSubmission(e) {
+  e.preventDefault();
+  const email = $('authEmail').value.trim();
+  const password = $('authPassword').value;
+
+  try {
+    if (currentAuthMode === "LOGIN") {
+      await signInWithEmailAndPassword(firebaseAuth, email, password);
+      showToast("Identity verified. Session clear!");
+    } else {
+      await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      showToast("Account provisioned and authenticated successfully!");
+    }
+  } catch (error) {
+    console.error("Auth validation error:", error.code);
+    let readableError = error.message;
+    if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+      readableError = "Invalid Email or Password configuration.";
+    } else if (error.code === "auth/email-already-in-use") {
+      readableError = "This profile identity is already registered to a workspace.";
+    } else if (error.code === "auth/weak-password") {
+      readableError = "Security parameters failed. Password must be 6+ characters.";
+    }
+    alert(`❌ Authorization Failure:\n${readableError}`);
+  }
+}
+
+function listenToSessionState() {
+  onAuthStateChanged(firebaseAuth, async (user) => {
+    if (user) {
+      localStorage.setItem("auto_docs_agent_id", user.uid);
+      $('authModal').style.display = "none";
+      updateSyncStatusUI('online');
+      isCloudAvailable = true;
+      
+      // Fire core data-hydration loops seamlessly
+      await loadData();
+      updateVocOptions(true);
+      await renderHistoryView();
+      updateOutput();
+      updateSuggestions();
+      updateFloatingBanner();
+      
+      await checkAndRestoreCrashData();
+      await syncOfflineQueue();
+    } else {
+      localStorage.removeItem("auto_docs_agent_id");
+      $('authModal').style.display = "flex";
+      updateSyncStatusUI('offline');
+    }
+  });
+}
+
+async function terminateAgentSession() {
+  if (confirm("Log out of current workbench session? Any unsynced data will remain local in Dexie.")) {
+    try {
+      await signOut(firebaseAuth);
+    } catch (err) {
+      console.error("Firebase Signout processing error:", err);
+    }
+  }
+}
+
+/* ==========================================================================
+   NETWORK HEARTBEAT & BACKUP RECOVERY CLOUD SYNC
+   ========================================================================== */
 async function syncOfflineQueue() {
   const agentId = localStorage.getItem("auto_docs_agent_id");
-  if (!agentId) return;
+  if (!agentId || !isCloudAvailable) return;
 
   try {
     const queuedItems = await db.sync_queue.toArray();
@@ -72,72 +170,164 @@ async function syncOfflineQueue() {
     updateSyncStatusUI('syncing');
 
     for (const item of queuedItems) {
-      const { error } = await supabaseClient
-        .from('case_logs')
-        .upsert([
-          { 
-            agent_id: agentId, 
-            case_number: item.case_number, 
-            form_data: item.form_data 
-          }
-        ], { onConflict: 'agent_id, case_number' });
+      const docRef = doc(firestoreDb, "case_logs", `${agentId}_${item.case_number}`);
+      await setDoc(docRef, {
+        agent_id: agentId,
+        case_number: item.case_number,
+        form_data: item.form_data,
+        updated_at: Date.now()
+      }, { merge: true });
 
-      if (error) throw error; 
       await db.sync_queue.delete(item.case_number);
     }
 
     isCloudAvailable = true;
     updateSyncStatusUI('online');
-    showToast(`Successfully synced ${queuedItems.length} offline case logs to the cloud database!`);
+    showToast(`Synced ${queuedItems.length} offline case logs to Firebase Firestore!`);
   } catch (e) {
-    console.warn("⚠️ Sync queue attempt failed. Infrastructure remaining in isolated Dexie state.");
+    console.warn("⚠️ Sync queue attempt failed. Infrastructure remaining in isolated Dexie state.", e);
     updateSyncStatusUI('offline');
+    isCloudAvailable = false;
   }
 }
 
-/**
- * Validates the typed ID against the master database list.
- */
-async function verifyAndGetAgentId() {
-  let id = localStorage.getItem("auto_docs_agent_id");
-  
-  while (!id) {
-    let inputId = prompt("🔒 Access Protected.\nPlease enter your official Employee ID to configure session tracking:");
+/* ==========================================================================
+   DATA STORAGE & BACKUPS REGISTRY ENGINE (DEXIE + FIRESTORE HYBRID)
+   ========================================================================== */
+async function saveData() {
+  if (isResetting) return; 
+
+  if (saveTimeout) clearTimeout(saveTimeout);
+
+  saveTimeout = setTimeout(async () => {
+    const data = {};
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      if (el.id) data[el.id] = el.value;
+    });
     
-    if (!inputId || !inputId.trim()) {
-      alert("Employee ID is strictly required to use this workbench.");
-      continue;
-    }
-    
-    inputId = inputId.trim();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
     try {
-      const { data, error } = await supabaseClient
-        .from('employees')
-        .select('employee_id')
-        .eq('employee_id', inputId);
+      await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
+    } catch (indexedDbErr) {
+      console.error("IndexedDB transactional write failure:", indexedDbErr);
+    }
 
-      if (error) throw error;
+    const caseNum = $("case")?.value.trim() || "DRAFT";
+    const agentId = localStorage.getItem("auto_docs_agent_id"); 
 
-      if (data && data.length > 0) {
-        id = inputId;
-        localStorage.setItem("auto_docs_agent_id", id);
-        updateSyncStatusUI('online');
-        alert(`✅ Welcome authenticated agent: ${id}`);
-      } else {
-        alert("❌ Access Denied: That Employee ID is not registered in our system. Please check for typos.");
-      }
-    } catch (err) {
-      console.warn("⚠️ Network Firewall/CORS blocked cloud authentication. Switching to local offline mode.");
+    if (!agentId) return;
+
+    if (!isCloudAvailable) {
+      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
+      updateSyncStatusUI('offline');
+      return;
+    }
+
+    try {
+      const docRef = doc(firestoreDb, "case_logs", `${agentId}_${caseNum}`);
+      await setDoc(docRef, {
+        agent_id: agentId,
+        case_number: caseNum,
+        form_data: data,
+        updated_at: Date.now()
+      }, { merge: true });
+
+      updateSyncStatusUI('online');
+    } catch (error) {
+      console.warn("Firebase drop or CORS block captured. Queuing data locally...");
       isCloudAvailable = false; 
       updateSyncStatusUI('offline');
-      
-      id = inputId;
-      localStorage.setItem("auto_docs_agent_id", id);
-      alert(`⚠️ Offline Local Session Activated via Dexie Layer for Agent ID: ${id}`);
+      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
+    }
+  }, 500);
+}
+
+async function loadData() {
+  try {
+    const localDbState = await db.session_backup.get('current_workspace_state');
+    const saved = localDbState ? localDbState.data : JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    
+    Object.keys(saved).forEach(id => {
+      const el = $(id);
+      if (el) el.value = saved[id];
+    });
+  } catch(e) {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    Object.keys(saved).forEach(id => {
+      const el = $(id);
+      if (el) el.value = saved[id];
+    });
+  }
+}
+
+async function checkAndRestoreCrashData() {
+  const agentId = localStorage.getItem("auto_docs_agent_id");
+  if (!agentId) return;
+
+  let lastSavedCase = "";
+  let savedFormState = null;
+  let source = "local hard drive backup"; 
+
+  if (isCloudAvailable) {
+    try {
+      const caseLogsRef = collection(firestoreDb, "case_logs");
+      const q = query(
+        caseLogsRef, 
+        where("agent_id", "==", agentId), 
+        orderBy("updated_at", "desc"), 
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const docData = querySnapshot.docs[0].data();
+        lastSavedCase = docData.case_number;
+        savedFormState = docData.form_data;
+        source = "Firebase Cloud";
+      }
+    } catch (e) {
+      console.warn("Cloud hydration blocked. Switching context to internal browser database...", e);
+      isCloudAvailable = false;
+      updateSyncStatusUI('offline');
     }
   }
-  return id;
+
+  if (!savedFormState) {
+    try {
+      const backupState = await db.session_backup.get('current_workspace_state');
+      if (backupState && backupState.data) {
+        savedFormState = backupState.data;
+        lastSavedCase = savedFormState['case'] || "Unsaved Workspace Data";
+        source = "local hard drive backup";
+      }
+    } catch(err) {
+      console.error("Local database cluster recovery state unreadable:", err);
+    }
+  }
+
+  if (!savedFormState) return;
+
+  const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
+  if (hasActiveInput) return;
+
+  const confirmRestore = confirm(`🔄 Auto Docs Session Recovery Engine:\n\nWe detected an interrupted session (${source}) for Case [${lastSavedCase}]. Would you like to restore your progress?`);
+  
+  if (confirmRestore) {
+    Object.keys(savedFormState).forEach(id => {
+      const el = $(id);
+      if (el) el.value = savedFormState[id];
+    });
+
+    if ($("concernType")?.value) updateVocOptions(true);
+    if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+
+    updateOutput();
+    updateSuggestions();
+    if($('case')) validateCaseField($('case'));
+    if($('min')) validateMinField($('min'));
+    showToast(`Progress successfully recovered from ${source}!`);
+  }
 }
 
 /* ==========================================================================
@@ -191,7 +381,6 @@ function toggleDrawer(e) {
   }
 }
 
-// Global click wrapper safely handling backdrop closings for module environments
 document.addEventListener('click', (e) => {
   const drawer = $('playbookPanel');
   if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
@@ -224,145 +413,8 @@ function showToast(msg, isError = false) {
 }
 
 /* ==========================================================================
-   DATA STORAGE & BACKUPS REGISTRY ENGINE (FIREWALL-PROOF INDEXEDDB ADAPTER)
+   SHIFT MANAGEMENT HISTORY STACKS
    ========================================================================== */
-async function saveData() {
-  if (isResetting) return; 
-
-  if (saveTimeout) clearTimeout(saveTimeout);
-
-  saveTimeout = setTimeout(async () => {
-    const data = {};
-    document.querySelectorAll("input, textarea, select").forEach(el => {
-      if (el.id) data[el.id] = el.value;
-    });
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-
-    try {
-      await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
-    } catch (indexedDbErr) {
-      console.error("IndexedDB transactional write failure:", indexedDbErr);
-    }
-
-    const caseNum = $("case")?.value.trim() || "DRAFT";
-    const agentId = localStorage.getItem("auto_docs_agent_id"); 
-
-    if (!agentId) return;
-
-    if (!isCloudAvailable) {
-      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
-      updateSyncStatusUI('offline');
-      return;
-    }
-
-    try {
-      const { error } = await supabaseClient
-        .from('case_logs')
-        .upsert([
-          { 
-            agent_id: agentId, 
-            case_number: caseNum, 
-            form_data: data 
-          }
-        ], { onConflict: 'agent_id, case_number' });
-
-      if (error) throw error;
-      updateSyncStatusUI('online');
-    } catch (error) {
-      console.warn("Cloud connection drop or CORS block captured. Queuing data locally...");
-      isCloudAvailable = false; 
-      updateSyncStatusUI('offline');
-      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
-    }
-  }, 500);
-}
-
-async function loadData() {
-  try {
-    const localDbState = await db.session_backup.get('current_workspace_state');
-    const saved = localDbState ? localDbState.data : JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    
-    Object.keys(saved).forEach(id => {
-      const el = $(id);
-      if (el) el.value = saved[id];
-    });
-  } catch(e) {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    Object.keys(saved).forEach(id => {
-      const el = $(id);
-      if (el) el.value = saved[id];
-    });
-  }
-}
-
-/**
- * Recovers crashed inputs smoothly from either cloud repositories or internal Dexie profiles.
- */
-async function checkAndRestoreCrashData() {
-  const agentId = await verifyAndGetAgentId();
-  let lastSavedCase = "";
-  let savedFormState = null;
-  let source = "local hard drive backup"; 
-
-  if (isCloudAvailable) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('case_logs')
-        .select('form_data, case_number')
-        .eq('agent_id', agentId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (!error && data && data.length > 0) {
-        lastSavedCase = data[0].case_number;
-        savedFormState = data[0].form_data;
-        source = "cloud";
-      }
-    } catch (e) {
-      console.warn("Cloud hydration blocked by CORS/firewall. Switching context to internal browser database...");
-      isCloudAvailable = false;
-      updateSyncStatusUI('offline');
-    }
-  }
-
-  if (!savedFormState) {
-    try {
-      const backupState = await db.session_backup.get('current_workspace_state');
-      if (backupState && backupState.data) {
-        savedFormState = backupState.data;
-        lastSavedCase = savedFormState['case'] || "Unsaved Workspace Data";
-        source = "local hard drive backup";
-      }
-    } catch(err) {
-      console.error("Local database cluster recovery state unreadable:", err);
-    }
-  }
-
-  if (!savedFormState) return;
-
-  const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
-  if (hasActiveInput) return;
-
-  const confirmRestore = confirm(`🔄 Auto Docs Session Recovery Engine:\n\nWe detected an interrupted session (${source}) for Case [${lastSavedCase}]. Would you like to restore your progress?`);
-  
-  if (confirmRestore) {
-    Object.keys(savedFormState).forEach(id => {
-      const el = $(id);
-      if (el) el.value = savedFormState[id];
-    });
-
-    if ($("concernType")?.value) updateVocOptions(true);
-    if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
-
-    updateOutput();
-    updateSuggestions();
-    if($('case')) validateCaseField($('case'));
-    if($('min')) validateMinField($('min'));
-    showToast(`Progress successfully recovered from ${source}!`);
-  }
-}
-
 async function pushToHistory(caseNumber, textContent) {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
@@ -640,7 +692,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   VOC PROCEDURES MAPPING CONFIG DATA (CATEGORIZED & CONDENSED)
+   VOC PROCEDURES MAPPING CONFIG DATA
    ========================================================================== */
 const TECH_PROCEDURES = {
   "VOICE CONNECTIVITY": [
@@ -700,9 +752,6 @@ const VOC_OPTIONS = {
 VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
 VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
 
-/**
- * Updates the secondary VOC dropdown values list dynamically when the main category shifts
- */
 function updateVocOptions(preserveValue = false) {
   const mainCategory = $("concernType")?.value;
   const vocSelect = $("voc");
@@ -726,8 +775,8 @@ function updateVocOptions(preserveValue = false) {
 }
 
 /* ==========================================================================
-   OUTPUT GENERATOR
-========================================================================== */
+   OUTPUT GENERATOR & SUGGESTIONS MATRIX
+   ========================================================================== */
 function updateOutput() {
   if (!$("output") || isResetting) return;
   
@@ -766,9 +815,6 @@ WOCAS:
 ${$("wocas")?.value || ""}`;
 }
 
-/* ==========================================================================
-   PROCEDURE HANDLING
-========================================================================== */
 function updateSuggestions() {
   if (!$("suggestions") || isResetting) return;
   const concern = $("concernType")?.value;
@@ -809,36 +855,32 @@ function updateSuggestions() {
 }
 
 /* ==========================================================================
-   INITIALIZATION ENGINE & CORE EVENT LOOPS
+   INITIALIZATION ENGINE & EVENT MOUNT LOOPS
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
+  // Bind Modern Authentication Click Stream Layout Observers
+  $('authForm')?.addEventListener('submit', handleAuthSubmission);
+  $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
+  $('logoutBtn')?.addEventListener('click', terminateAgentSession);
+
   const savedTheme = localStorage.getItem(THEME_KEY);
   if (savedTheme === "dark") {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   }
 
-  // Track field keystroke metrics live
   const trackingFields = ["case", "concernType", "voc", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return;
     
-    el.addEventListener("input", () => {
-      updateOutput();
-      saveData();
-    });
-    el.addEventListener("change", () => {
-      updateOutput();
-      saveData();
-    });
+    el.addEventListener("input", () => { updateOutput(); saveData(); });
+    el.addEventListener("change", () => { updateOutput(); saveData(); });
   });
 
-  // Regular expression input validation listeners
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-  // Dropdown dependency matrix update rules
   $("concernType")?.addEventListener("change", () => {
     updateVocOptions(false);
     updateSuggestions();
@@ -847,35 +889,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateSuggestions();
   });
 
-  /* ==========================================================================
-     CORE SEAMLESS EVENT BINDINGS (BUILT-IN REDUNDANCY CHECKS)
-     ========================================================================== */
-  // 1. Copy Actions (Primary and Floating Dock Buttons)
   $("copyBtn")?.addEventListener("click", copyDoc);
   $("dockCopyBtn")?.addEventListener("click", copyDoc);
-
-  // 2. Clear/Reset Actions (Primary and Floating Dock Buttons)
   $("resetBtn")?.addEventListener("click", resetForm);
   $("dockResetBtn")?.addEventListener("click", resetForm);
-
-  // 3. Playbook Drawer Actions (Toggle Button and Internal Panel Close Button)
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
   $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
-
-  // 4. Global Action Controls (Theme, Synchronizations, Exports)
   $("themeToggle")?.addEventListener("click", toggleTheme);
   $("manualSyncBtn")?.addEventListener("click", syncOfflineQueue);
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-  // Hydrate visual components smoothly
-  await loadData();
-  updateVocOptions(true);
-  await renderHistoryView();
-  updateOutput();
-  updateSuggestions();
-  updateFloatingBanner();
-  
-  await checkAndRestoreCrashData();
-  await syncOfflineQueue();
+  // Mount Firebase Auth Session Tracker Watcher
+  listenToSessionState();
 });
