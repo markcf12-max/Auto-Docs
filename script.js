@@ -76,28 +76,60 @@ function toggleAuthMode(e) {
 
 async function handleAuthSubmission(e) {
   e.preventDefault();
-  const email = $('authEmail').value.trim();
-  const password = $('authPassword').value;
+  const agentId = $('authEmail').value.trim();
+  const password = $('authPassword').value.trim();
+
+  if (!/^\d+$/.test(agentId)) {
+    alert("❌ Format Error:\nAgent ID must contain numeric values only!");
+    return;
+  }
 
   try {
+    const agentRef = doc(firestoreDb, "agent_profiles", agentId);
+    const agentSnap = await getDoc(agentRef);
+
     if (currentAuthMode === "LOGIN") {
-      await signInWithEmailAndPassword(firebaseAuth, email, password);
-      showToast("Identity verified. Session clear!");
+      if (agentSnap.exists() && agentSnap.data().password === password) {
+        currentAgentId = agentId;
+        localStorage.setItem("active_agent_session_id", agentId);
+        
+        handleSessionLoginTransition();
+        showToast("Identity verified. Session clear!");
+      } else {
+        alert("❌ Authorization Failure:\nInvalid Agent ID or Security Gateway Password.");
+      }
     } else {
-      await createUserWithEmailAndPassword(firebaseAuth, email, password);
-      showToast("Account provisioned and authenticated successfully!");
+      // 1. Verify if the agent already exists in the roster collection
+      if (agentSnap.exists()) {
+        alert("❌ Profile Error:\nThis numeric Agent ID is already registered to a workspace.");
+        return;
+      }
+      
+      // 2. Commit the new profile document to Firestore
+      await setDoc(agentRef, {
+        agent_id: agentId,
+        password: password,
+        created_at: Date.now()
+      });
+      
+      // 3. Fire the success notification badge immediately at the top of the viewport
+      showToast("Registration successful! Account provisioned.");
+      
+      // 4. Transform the UI smoothly back into the Log In modal layout state
+      currentAuthMode = "LOGIN";
+      $('authTitle').textContent = "Agent Workbench Sign In";
+      $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
+      $('authSubmitBtn').textContent = "Authorize Session";
+      $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
+      
+      // 5. Pre-fill the newly registered ID so they don't have to retype it
+      $('authEmail').value = agentId;
+      $('authPassword').value = "";
+      $('authPassword').focus(); // Automatically snap cursor to password field for speed
     }
   } catch (error) {
-    console.error("Auth validation error:", error.code);
-    let readableError = error.message;
-    if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found" || error.code === "auth/invalid-email") {
-      readableError = "Invalid Email or Password formatting configuration.";
-    } else if (error.code === "auth/email-already-in-use") {
-      readableError = "This profile identity is already registered to a workspace.";
-    } else if (error.code === "auth/weak-password") {
-      readableError = "Security parameters failed. Password must be 6+ characters.";
-    }
-    alert(`❌ Authorization Failure:\n${readableError}`);
+    console.error("Auth validation error:", error);
+    alert("❌ Security Exception: Database verification pipeline rejected interaction.");
   }
 }
 
