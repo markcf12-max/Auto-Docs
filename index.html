@@ -26,9 +26,18 @@
       </div>
 
       <form id="authForm" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- UPDATED FOR PURE NUMERIC AGENT PROFILES -->
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <label style="color: #cbd5e1; font-size: 12px; font-weight: 600; text-transform: uppercase;">Corporate Email Address</label>
-          <input type="email" id="authEmail" required style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; color: #ffffff; font-size: 14px; outline: none;" placeholder="agent@company.com">
+          <label style="color: #cbd5e1; font-size: 12px; font-weight: 600; text-transform: uppercase;">Agent ID Number</label>
+          <input 
+            type="text" 
+            id="authEmail" 
+            inputmode="numeric" 
+            pattern="[0-9]*" 
+            required 
+            style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; color: #ffffff; font-size: 14px; outline: none;" 
+            placeholder="e.g. 52500960"
+          >
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px;">
