@@ -34,7 +34,7 @@ let isCloudAvailable = true; // Runtime network flag to minimize console spam on
 let saveTimeout = null;      // Option 1: Handle debouncing timers globally
 
 /**
- * Option 2: Updates a UI connection indicator if it exists on your page layout
+ * Updates a UI connection indicator if it exists on your page layout
  */
 function updateSyncStatusUI(status) {
   const badge = $('syncStatus');
@@ -59,7 +59,7 @@ function updateSyncStatusUI(status) {
 }
 
 /**
- * Option 3: Network Heartbeat & Manual Trigger Sync Queue Recovery Engine
+ * Network Heartbeat & Manual Trigger Sync Queue Recovery Engine
  */
 async function syncOfflineQueue() {
   const agentId = localStorage.getItem("auto_docs_agent_id");
@@ -179,17 +179,30 @@ function toggleDrawer(e) {
   
   drawer.classList.toggle('drawer-open');
   
-  const btnText = $('drawerToggle').querySelector('span');
-  const btnIcon = $('drawerToggle').querySelector('i');
+  const btnText = $('drawerToggle')?.querySelector('span');
+  const btnIcon = $('drawerToggle')?.querySelector('i');
   
   if(drawer.classList.contains('drawer-open')) {
-    btnText.textContent = "Close Playbooks";
-    btnIcon.className = "fas fa-times";
+    if (btnText) btnText.textContent = "Close Playbooks";
+    if (btnIcon) btnIcon.className = "fas fa-times";
   } else {
-    btnText.textContent = "View Playbooks";
-    btnIcon.className = "fas fa-book-open";
+    if (btnText) btnText.textContent = "View Playbooks";
+    if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
+
+// Global click wrapper safely handling backdrop closings for module environments
+document.addEventListener('click', (e) => {
+  const drawer = $('playbookPanel');
+  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
+    drawer.classList.remove('drawer-open');
+    const toggleBtn = $('drawerToggle');
+    if (toggleBtn) {
+      if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
+      if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
+    }
+  }
+});
 
 function showToast(msg, isError = false) {
   const toast = $('toast');
@@ -272,13 +285,13 @@ async function loadData() {
     
     Object.keys(saved).forEach(id => {
       const el = $(id);
-      if (el && id !== "voc") el.value = saved[id];
+      if (el) el.value = saved[id];
     });
   } catch(e) {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     Object.keys(saved).forEach(id => {
       const el = $(id);
-      if (el && id !== "voc") el.value = saved[id];
+      if (el) el.value = saved[id];
     });
   }
 }
@@ -336,7 +349,7 @@ async function checkAndRestoreCrashData() {
   if (confirmRestore) {
     Object.keys(savedFormState).forEach(id => {
       const el = $(id);
-      if (el && id !== "voc") el.value = savedFormState[id];
+      if (el) el.value = savedFormState[id];
     });
 
     if ($("concernType")?.value) updateVocOptions(true);
@@ -436,7 +449,6 @@ async function renderHistoryView() {
     </div>
   `).join("");
 
-  // Attach history button event listeners cleanly without using inline event properties
   history.forEach((item, index) => {
     $(`recopy-${index}`)?.addEventListener('click', () => loadHistoryItem(index));
     $(`delete-hist-${index}`)?.addEventListener('click', (e) => deleteHistoryItem(index, e));
@@ -800,20 +812,18 @@ function updateSuggestions() {
    INITIALIZATION ENGINE & CORE EVENT LOOPS
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
-  // Theme state setup hooks
   const savedTheme = localStorage.getItem(THEME_KEY);
   if (savedTheme === "dark") {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   }
 
-  // Hook input nodes directly up to data tracking loop drivers
+  // Track field keystroke metrics live
   const trackingFields = ["case", "concernType", "voc", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return;
     
-    // Bind output updates and automated backend caching triggers
     el.addEventListener("input", () => {
       updateOutput();
       saveData();
@@ -824,11 +834,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Dedicated validation logic tracking listeners
+  // Regular expression input validation listeners
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-  // Category switch configuration listeners
+  // Dropdown dependency matrix update rules
   $("concernType")?.addEventListener("change", () => {
     updateVocOptions(false);
     updateSuggestions();
@@ -837,15 +847,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateSuggestions();
   });
 
-  // Structural actions interactive control tracking mappings
+  /* ==========================================================================
+     CORE SEAMLESS EVENT BINDINGS (BUILT-IN REDUNDANCY CHECKS)
+     ========================================================================== */
+  // 1. Copy Actions (Primary and Floating Dock Buttons)
   $("copyBtn")?.addEventListener("click", copyDoc);
+  $("dockCopyBtn")?.addEventListener("click", copyDoc);
+
+  // 2. Clear/Reset Actions (Primary and Floating Dock Buttons)
   $("resetBtn")?.addEventListener("click", resetForm);
-  $("themeToggle")?.addEventListener("click", toggleTheme);
+  $("dockResetBtn")?.addEventListener("click", resetForm);
+
+  // 3. Playbook Drawer Actions (Toggle Button and Internal Panel Close Button)
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
+  $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
+
+  // 4. Global Action Controls (Theme, Synchronizations, Exports)
+  $("themeToggle")?.addEventListener("click", toggleTheme);
+  $("manualSyncBtn")?.addEventListener("click", syncOfflineQueue);
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-  // Synchronize history dashboard renders and offline databases profiles
+  // Hydrate visual components smoothly
   await loadData();
   updateVocOptions(true);
   await renderHistoryView();
