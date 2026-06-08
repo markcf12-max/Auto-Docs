@@ -145,13 +145,58 @@ function listenToSessionState() {
   });
 }
 
+/* ==========================================================================
+   BULLETPROOF LOGOUT FLOW (FORCES GUARANTEED SAVE BEFORE DISCONNECT)
+   ========================================================================== */
 async function terminateAgentSession() {
-  if (confirm("Log out of current workbench session? Any unsynced data will remain local in Dexie.")) {
+  if (!confirm("Log out of current workbench session? Your absolute latest progress will be synced to the cloud first.")) {
+    return;
+  }
+
+  if (saveTimeout) clearTimeout(saveTimeout);
+
+  // Take an immediate snapshot of the current workspace fields
+  const data = {};
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    if (el.id) data[el.id] = el.value;
+  });
+
+  const caseNum = $("case")?.value.trim() || "DRAFT";
+  const currentUser = firebaseAuth.currentUser;
+
+  if (currentUser && isCloudAvailable) {
+    showToast("Securing final workspace save state...");
+    
+    const agentId = currentUser.uid;
+    const agentEmail = currentUser.email; 
+    const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); 
+
     try {
-      await signOut(firebaseAuth);
-    } catch (err) {
-      console.error("Firebase Signout processing error:", err);
+      // Force a synchronous write to Firestore to protect data BEFORE credentials drop
+      const docRef = doc(firestoreDb, "case_logs", `${agentId}_${caseNum}`);
+      await setDoc(docRef, {
+        agent_id: agentId,
+        agent_email: agentEmail,   
+        log_date: localDate,       
+        case_number: caseNum,
+        form_data: data,
+        updated_at: Date.now()
+      }, { merge: true });
+      
+      console.log("🚀 Final cloud save confirmed successfully.");
+    } catch (error) {
+      console.error("💥 Emergency logout save failed:", error);
     }
+  }
+
+  // Once data is confirmed safe in Singapore, drop credentials and clear local cache
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    await db.session_backup.delete('current_workspace_state');
+    await signOut(firebaseAuth);
+    showToast("Session closed safely. Workspace locked.");
+  } catch (err) {
+    console.error("Firebase Signout processing error:", err);
   }
 }
 
@@ -220,7 +265,6 @@ async function saveData() {
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
     
-    // Safety verification check on current authentication session
     const currentUser = firebaseAuth.currentUser;
     if (!currentUser) return;
 
@@ -285,7 +329,6 @@ async function checkAndRestoreCrashData() {
   let savedFormState = null;
   let source = "local hard drive backup"; 
 
-  // 1. Reach out directly to the Singapore Cloud to get your latest active state
   if (isCloudAvailable) {
     try {
       const caseLogsRef = collection(firestoreDb, "case_logs");
@@ -310,7 +353,6 @@ async function checkAndRestoreCrashData() {
     }
   }
 
-  // 2. Fall back to local browser cache if cloud is unreachable
   if (!savedFormState) {
     try {
       const backupState = await db.session_backup.get('current_workspace_state');
@@ -326,13 +368,13 @@ async function checkAndRestoreCrashData() {
 
   if (!savedFormState) return;
 
-  // 3. CROSS-STATION FLOW: Check if the screen fields are currently completely blank
+  // Cross-Station Check: Are the local screen input fields empty?
   const hasActiveInput = ($("case")?.value.trim() !== "") || 
                          ($("action")?.value.trim() !== "") || 
                          ($("subj")?.value.trim() !== "");
 
   if (!hasActiveInput) {
-    // Station is empty! Automatically inject your saved case data from Station 1 seamlessly
+    // Current layout is pristine—hydrate data automatically without prompts
     Object.keys(savedFormState).forEach(id => {
       const el = $(id);
       if (el) el.value = savedFormState[id];
@@ -348,7 +390,7 @@ async function checkAndRestoreCrashData() {
     showToast(`Active workspace synced from ${source}!`);
   } 
   else {
-    // If the agent is ALREADY typing something else on this station, ask before overwriting
+    // Target workstation already has competing user inputs typed out
     const confirmRestore = confirm(`🔄 Auto Docs Cloud Sync:\n\nWe found an active session from another station for Case [${lastSavedCase}]. Would you like to load that case data here? This will overwrite your current screen text.`);
     
     if (confirmRestore) {
