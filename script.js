@@ -1,21 +1,5 @@
 /* ==========================================================================
-   INDEXEDDB (DEXIE.JS) LOCAL-FIRST RESILIENCE LAYER
-   ========================================================================== */
-import Dexie from 'https://cdn.jsdelivr.net/npm/dexie@4.0.4/+esm';
-
-const db = new Dexie('AutoDocsLocalDB');
-db.version(2).stores({
-  session_backup: 'id',          
-  shift_history: '++local_id, id', 
-  sync_queue: 'case_number'       
-});
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-/* ==========================================================================
-   FIREBASE CONFIGURATION & MODULE INTEGRATION (SYNCHRONIZED V12.14.0)
+   FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
@@ -35,38 +19,35 @@ const app = initializeApp(firebaseConfig);
 const firestoreDb = getFirestore(app);
 const firebaseAuth = getAuth(app);
 
-const STORAGE_KEY = "auto_docs_v5";
 const THEME_KEY = "auto_docs_theme";
-const HISTORY_KEY = "auto_docs_history"; 
-const DOWNLOADED_STATE_KEY = "auto_docs_downloaded_status";
-
 let bannerTimeout = null; 
 let isResetting = false;     
-let isCloudAvailable = true; 
 let saveTimeout = null;      
 let currentAuthMode = "LOGIN"; 
 
+function $(id) {
+  return document.getElementById(id);
+}
+
 /* ==========================================================================
-   UI STATUS AND THEME INDICATORS
+   UI STATUS INDICATORS
    ========================================================================== */
 function updateSyncStatusUI(status) {
   const badge = $('syncStatus');
   if (!badge) return;
 
-  badge.className = ""; 
-  
   switch(status) {
     case 'online':
-      badge.textContent = "● Cloud Connected (Firebase)";
+      badge.textContent = "● Cloud Connected (Firebase Realtime)";
       badge.style.color = "#10b981"; 
       break;
-    case 'offline':
-      badge.textContent = "● Local Offline Mode (Dexie Protected)";
-      badge.style.color = "#fbbf24"; 
-      break;
-    case 'syncing':
-      badge.textContent = "⟳ Syncing Queue Data...";
+    case 'saving':
+      badge.textContent = "⟳ Syncing Workspace...";
       badge.style.color = "#60a5fa"; 
+      break;
+    case 'error':
+      badge.textContent = "❌ Sync Interrupted";
+      badge.style.color = "#ef4444"; 
       break;
   }
 }
@@ -80,7 +61,7 @@ function toggleAuthMode(e) {
   if (currentAuthMode === "LOGIN") {
     currentAuthMode = "REGISTER";
     $('authTitle').textContent = "Register Agent Profile";
-    $('authSubtitle').textContent = "Configure secure localized database access keys";
+    $('authSubtitle').textContent = "Configure secure cloud database access keys";
     $('authSubmitBtn').textContent = "Provision Account";
     $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
   } else {
@@ -121,8 +102,7 @@ async function handleAuthSubmission(e) {
 
 function listenToSessionState() {
   onAuthStateChanged(firebaseAuth, async (user) => {
-    
-    // Clear old visual text items entirely on any authentication shift
+    // Clear display inputs on layout transition
     document.querySelectorAll("input, textarea").forEach(el => {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
@@ -132,25 +112,17 @@ function listenToSessionState() {
     updateVocOptions(false);
 
     if (user) {
-      localStorage.setItem("auto_docs_agent_id", user.uid);
       $('authModal').style.display = "none";
       updateSyncStatusUI('online');
-      isCloudAvailable = true;
       
-      // Load foundational layout arrays
-      await renderHistoryView();
       updateOutput();
       updateSuggestions();
       updateFloatingBanner();
       
-      // MAIN TRANSITION ENGINE FIX: Go straight to the cloud document first
-      await checkAndRestoreCrashData();
-      await syncOfflineQueue();
+      // Directly pull live workspace data from the cloud database
+      await pullLiveWorkspace();
     } else {
-      localStorage.removeItem("auto_docs_agent_id");
       $('authModal').style.display = "flex";
-      updateSyncStatusUI('offline');
-      
       if ($("output")) {
         $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
       }
@@ -160,49 +132,92 @@ function listenToSessionState() {
 }
 
 /* ==========================================================================
-   BULLETPROOF LOGOUT FLOW (FORCES GUARANTEED SAVE BEFORE DISCONNECT)
+   SOLE SOURCE OF TRUTH: CLOUD DATA ENGINE
    ========================================================================== */
-async function terminateAgentSession() {
-  if (!confirm("Log out of current workbench session? Your absolute latest progress will be synced to the cloud first.")) {
-    return;
-  }
+async function saveData() {
+  if (isResetting) return; 
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
 
   if (saveTimeout) clearTimeout(saveTimeout);
 
-  const data = {};
-  document.querySelectorAll("input, textarea, select").forEach(el => {
-    if (el.id) data[el.id] = el.value;
-  });
+  updateSyncStatusUI('saving');
 
-  const caseNum = $("case")?.value.trim() || "DRAFT";
-  const currentUser = firebaseAuth.currentUser;
+  saveTimeout = setTimeout(async () => {
+    const data = {};
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      if (el.id) data[el.id] = el.value;
+    });
 
-  if (currentUser && isCloudAvailable) {
-    showToast("Securing final workspace save state...");
-    
+    const caseNum = $("case")?.value.trim() || "DRAFT";
     const agentId = currentUser.uid;
     const agentEmail = currentUser.email; 
-    const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); 
 
     try {
       const docRef = doc(firestoreDb, "case_logs", agentId);
       await setDoc(docRef, {
         agent_id: agentId,
-        agent_email: agentEmail,   
-        log_date: localDate,       
+        agent_email: agentEmail,          
         case_number: caseNum,
         form_data: data,
         updated_at: Date.now()
       });
-      console.log("🚀 Final cloud save confirmed successfully.");
+      updateSyncStatusUI('online');
     } catch (error) {
-      console.error("💥 Emergency logout save failed:", error);
+      console.error("Firebase synchronization cloud drop:", error);
+      updateSyncStatusUI('error');
     }
-  }
+  }, 400); // 400ms debounce to prevent hitting Firebase rate limits while typing
+}
+
+async function pullLiveWorkspace() {
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser) return;
+
+  const agentId = currentUser.uid;
 
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    await db.session_backup.delete('current_workspace_state');
+    const docRef = doc(firestoreDb, "case_logs", agentId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const docData = docSnap.data();
+      const savedFormState = docData.form_data;
+      const lastSavedCase = docData.case_number || "Active Session Workspace";
+
+      if (savedFormState) {
+        Object.keys(savedFormState).forEach(id => {
+          const el = $(id);
+          if (el) el.value = savedFormState[id];
+        });
+
+        if ($("concernType")?.value) updateVocOptions(true);
+        if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+
+        updateOutput();
+        updateSuggestions();
+        if($('case')) validateCaseField($('case'));
+        if($('min')) validateMinField($('min'));
+        
+        showToast(`Workspace synced live from cloud: [${lastSavedCase}]`);
+      }
+    }
+  } catch (e) {
+    console.error("Critical Cloud Fetch Failure:", e);
+    updateSyncStatusUI('error');
+  }
+}
+
+/* ==========================================================================
+   CLEAN LOGOUT FLOW
+   ========================================================================== */
+async function terminateAgentSession() {
+  if (!confirm("Log out of current workbench session? Your current cross-station cloud progress will be preserved.")) {
+    return;
+  }
+  if (saveTimeout) clearTimeout(saveTimeout);
+  
+  try {
     await signOut(firebaseAuth);
     showToast("Session closed safely. Workspace locked.");
   } catch (err) {
@@ -211,167 +226,52 @@ async function terminateAgentSession() {
 }
 
 /* ==========================================================================
-   NETWORK HEARTBEAT & BACKUP RECOVERY CLOUD SYNC
+   FORM RESET MECHANISM (CLEARS CURRENT FIRESTORE OBJECT STATE)
    ========================================================================== */
-async function syncOfflineQueue() {
+async function resetForm(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!confirm("Are you sure you want to clear your current active workspace form?")) return;
+  
+  isResetting = true; 
   const currentUser = firebaseAuth.currentUser;
-  if (!currentUser || !isCloudAvailable) return;
-
-  const agentId = currentUser.uid;
-  const agentEmail = currentUser.email;
-  const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
   try {
-    const queuedItems = await db.sync_queue.toArray();
-    if (queuedItems.length === 0) return;
-
-    updateSyncStatusUI('syncing');
-
-    const latestItem = queuedItems[queuedItems.length - 1];
-    const docRef = doc(firestoreDb, "case_logs", agentId);
-    await setDoc(docRef, {
-      agent_id: agentId,
-      agent_email: agentEmail,
-      log_date: localDate,
-      case_number: latestItem.case_number,
-      form_data: latestItem.form_data,
-      updated_at: Date.now()
+    // Clear visual interfaces
+    document.querySelectorAll("input, textarea").forEach(el => {
+      el.value = "";
+      el.classList.remove('val-green', 'val-amber', 'val-crimson');
     });
 
-    await db.sync_queue.clear();
-    isCloudAvailable = true;
-    updateSyncStatusUI('online');
-    showToast(`Synced offline workspace parameters to Firebase Firestore!`);
-  } catch (e) {
-    console.warn("⚠️ Sync queue processing suspended:", e);
-    updateSyncStatusUI('offline');
-    isCloudAvailable = false;
-  }
-}
-
-/* ==========================================================================
-   DATA STORAGE & BACKUPS REGISTRY ENGINE (DEXIE + FIRESTORE HYBRID)
-   ========================================================================== */
-async function saveData() {
-  if (isResetting) return; 
-
-  if (saveTimeout) clearTimeout(saveTimeout);
-
-  saveTimeout = setTimeout(async () => {
-    const data = {};
-    document.querySelectorAll("input, textarea, select").forEach(el => {
-      if (el.id) data[el.id] = el.value;
-    });
+    const select = $("concernType");
+    if (select) select.selectedIndex = 0;
+    updateVocOptions(false);
     
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-
-    try {
-      await db.session_backup.put({ id: 'current_workspace_state', data: data, updatedAt: Date.now() });
-    } catch (indexedDbErr) {
-      console.error("IndexedDB write failure:", indexedDbErr);
+    if ($("output")) {
+      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
+    if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
 
-    const caseNum = $("case")?.value.trim() || "DRAFT";
-    const currentUser = firebaseAuth.currentUser;
-    if (!currentUser) return;
-
-    const agentId = currentUser.uid;
-    const agentEmail = currentUser.email; 
-    const localDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }); 
-
-    if (!isCloudAvailable) {
-      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
-      updateSyncStatusUI('offline');
-      return;
-    }
-
-    try {
-      const docRef = doc(firestoreDb, "case_logs", agentId);
+    // Write empty record back up to firebase so state clears globally across screens
+    if (currentUser) {
+      const docRef = doc(firestoreDb, "case_logs", currentUser.uid);
       await setDoc(docRef, {
-        agent_id: agentId,
-        agent_email: agentEmail,   
-        log_date: localDate,       
-        case_number: caseNum,
-        form_data: data,
+        agent_id: currentUser.uid,
+        agent_email: currentUser.email,
+        case_number: "DRAFT",
+        form_data: {},
         updated_at: Date.now()
       });
-      updateSyncStatusUI('online');
-    } catch (error) {
-      console.warn("Firebase save dropped. Queuing locally...", error);
-      isCloudAvailable = false; 
-      updateSyncStatusUI('offline');
-      await db.sync_queue.put({ case_number: caseNum, form_data: data, timestamp: Date.now() });
     }
-  }, 500);
-}
-
-// Only invoked if cloud lookup fails completely (Offline Safety Protocol)
-async function loadLocalFallbackData() {
-  try {
-    const localDbState = await db.session_backup.get('current_workspace_state');
-    const saved = localDbState ? localDbState.data : JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     
-    Object.keys(saved).forEach(id => {
-      const el = $(id);
-      if (el) el.value = saved[id];
-    });
-    if ($("concernType")?.value) updateVocOptions(true);
-    updateOutput();
-    updateSuggestions();
+    showToast("Cloud workspace wiped.");
   } catch(e) {
-    console.error("Fallback translation map failed:", e);
-  }
-}
-
-/* ==========================================================================
-   CROSS-STATION WORKSPACE HYDRATION ENGINE (FORCE CLOUD-FIRST LOOKUP)
-   ========================================================================== */
-async function checkAndRestoreCrashData() {
-  const currentUser = firebaseAuth.currentUser;
-  if (!currentUser) return;
-
-  const agentId = currentUser.uid;
-  let lastSavedCase = "";
-  let savedFormState = null;
-  let source = "local hard drive backup"; 
-
-  if (isCloudAvailable) {
-    try {
-      // Pull fresh data directly from the active cloud profile row
-      const docRef = doc(firestoreDb, "case_logs", agentId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const docData = docSnap.data();
-        lastSavedCase = docData.case_number;
-        savedFormState = docData.form_data;
-        source = "Firebase Cloud";
-      }
-    } catch (e) {
-      console.warn("Direct document cloud hydration failed. Triaging fallbacks...", e);
-      isCloudAvailable = false;
-      updateSyncStatusUI('offline');
-    }
-  }
-
-  // If online document was found, inject it immediately onto the clean monitor
-  if (savedFormState) {
-    Object.keys(savedFormState).forEach(id => {
-      const el = $(id);
-      if (el) el.value = savedFormState[id];
-    });
-
-    if ($("concernType")?.value) updateVocOptions(true);
-    if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
-
-    updateOutput();
-    updateSuggestions();
-    if($('case')) validateCaseField($('case'));
-    if($('min')) validateMinField($('min'));
-    showToast(`Active workspace synced from your profile [Case: ${lastSavedCase}]!`);
-  } else {
-    // Agent is offline, pull what was last left on this specific computer's hard drive
-    await loadLocalFallbackData();
+    console.error("Cloud database reset exception:", e);
+    showToast("Error clearing background cloud records.", true);
+  } finally {
+    isResetting = false; 
   }
 }
 
@@ -383,7 +283,6 @@ function validateCaseField(el) {
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
   
   if (val.length === 0) return; 
-  
   if (val === "NA" || val === "N/A") {
     el.classList.add('val-green');
     return;
@@ -413,7 +312,6 @@ function toggleDrawer(e) {
   if(!drawer) return;
   
   drawer.classList.toggle('drawer-open');
-  
   const btnText = $('drawerToggle')?.querySelector('span');
   const btnIcon = $('drawerToggle')?.querySelector('i');
   
@@ -428,7 +326,7 @@ function toggleDrawer(e) {
 
 document.addEventListener('click', (e) => {
   const drawer = $('playbookPanel');
-  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
+  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target)) {
     drawer.classList.remove('drawer-open');
     const toggleBtn = $('drawerToggle');
     if (toggleBtn) {
@@ -444,11 +342,9 @@ function showToast(msg, isError = false) {
   
   if(isError) {
     toast.style.background = "#ef4444";
-    toast.style.color = "#ffffff";
     toast.style.borderLeft = "5px solid #b91c1c";
   } else {
     toast.style.background = "#10b981";
-    toast.style.color = "#ffffff";
     toast.style.borderLeft = "5px solid #047857";
   }
   
@@ -457,254 +353,30 @@ function showToast(msg, isError = false) {
   setTimeout(() => { toast.classList.remove('show'); }, 3000);
 }
 
-/* ==========================================================================
-   SHIFT MANAGEMENT HISTORY STACKS
-   ========================================================================== */
-async function pushToHistory(caseNumber, textContent) {
-  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
-
-  let history = [];
-  try {
-    history = await db.shift_history.reverse().toArray();
-  } catch(e) {
-    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  }
-
-  if (history.length > 0 && history[0].text === textContent) return;
-
-  const newLog = { id: displayId, time: timestamp, text: textContent };
-  
-  try {
-    await db.shift_history.add(newLog);
-    const count = await db.shift_history.count();
-    if (count > 50) {
-      const oldest = await db.shift_history.orderBy('local_id').first();
-      if(oldest) await db.shift_history.delete(oldest.local_id);
-    }
-  } catch(e) { console.error(e); }
-
-  let lsHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  lsHistory.unshift(newLog);
-  if (lsHistory.length > 50) lsHistory.pop();
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(lsHistory));
-  
-  localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
-  
-  await renderHistoryView();
-  updateFloatingBanner();
-}
-
-async function deleteHistoryItem(index, e) {
-  if(e) e.stopPropagation();
-  
-  try {
-    const items = await db.shift_history.toArray();
-    if(items[index]) {
-      await db.shift_history.delete(items[index].local_id);
-    }
-  } catch(err) { console.error(err); }
-  
-  let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  history.splice(index, 1);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  
-  await renderHistoryView();
-  updateFloatingBanner();
-  showToast("Selected log deleted from shift summary.");
-}
-
-async function renderHistoryView() {
-  const container = $('historyContainer');
-  if (!container) return;
-
-  let history = [];
-  try {
-    history = await db.shift_history.toArray();
-  } catch(e) {
-    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  }
-
-  if (history.length === 0) {
-    container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet...</i>`;
-    return;
-  }
-
-  container.innerHTML = history.map((item, index) => `
-    <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
-      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
-        <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
-      </span>
-      <div style="display: flex; gap: 4px;">
-        <button type="button" id="recopy-${index}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
-          Recopy
-        </button>
-        <button type="button" id="delete-hist-${index}" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
-          <i class="fas fa-trash-alt"></i>
-        </button>
-      </div>
-    </div>
-  `).join("");
-
-  history.forEach((item, index) => {
-    $(`recopy-${index}`)?.addEventListener('click', () => loadHistoryItem(index));
-    $(`delete-hist-${index}`)?.addEventListener('click', (e) => deleteHistoryItem(index, e));
-  });
-}
-
-async function loadHistoryItem(index) {
-  let history = [];
-  try {
-    history = await db.shift_history.toArray();
-  } catch(e) {
-    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  }
-  if (!history[index]) return;
-  
-  navigator.clipboard.writeText(history[index].text);
-  showToast(`Recopied Case ID: ${history[index].id} from History!`);
-}
-
-async function updateFloatingBanner() {
+function updateFloatingBanner() {
   const banner = $('floatingShiftBanner');
   if (!banner) return;
-
-  const isDownloaded = localStorage.getItem(DOWNLOADED_STATE_KEY) === "true";
-  
-  let historyCount = 0;
-  try {
-    historyCount = await db.shift_history.count();
-  } catch(e) {
-    historyCount = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]").length;
-  }
-  
-  if (isDownloaded && historyCount > 0) {
-    banner.style.background = "#10b981"; 
-    banner.style.color = "#ffffff";
-    banner.innerHTML = `<i class="fas fa-check-circle"></i> HISTORY LOGS ALREADY DOWNLOADED & SAVED FOR THIS SHIFT (${historyCount})`;
-    
-    if(bannerTimeout) clearTimeout(bannerTimeout);
-    bannerTimeout = setTimeout(() => {
-      localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
-      updateFloatingBanner();
-    }, 10000);
-
-  } else {
-    banner.style.background = "#fbbf24"; 
-    banner.style.color = "#1e293b";
-    banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> PLEASE DONT FORGET TO SAVE THE CASE END OF SHIFT`;
-  }
-}
-
-async function downloadHistoryLog() {
-  let history = [];
-  try {
-    history = await db.shift_history.toArray();
-  } catch(e) {
-    history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  }
-
-  if (history.length === 0) {
-    showToast("No history data to download yet!", true);
-    return;
-  }
-
-  let fileContent = `==================================================\n`;
-  fileContent += `         SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
-  fileContent += `==================================================\n\n`;
-
-  history.forEach((item, idx) => {
-    fileContent += `--- ENTRY #${idx + 1} | TIMESTAMP: [${item.time}] | REFERENCE ID: ${item.id} ---\n`;
-    fileContent += `${item.text}\n`;
-    fileContent += `\n==================================================\n\n`;
-  });
-
-  const blob = new Blob([fileContent], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const dateStr = new Date().toISOString().slice(0,10);
-  a.href = url; 
-  a.download = `ShiftHistory-Logs-${dateStr}.txt`; 
-  a.click();
-  URL.revokeObjectURL(url);
-  
-  localStorage.setItem(DOWNLOADED_STATE_KEY, "true");
-  
-  updateFloatingBanner();
-  showToast("Shift history download complete!");
-}
-
-async function clearShiftHistory() {
-  if (confirm("🚨 Warning:\n\nThis will completely wipe your local history data manifest stack for this entire shift. Proceed?")) {
-    try {
-      await db.shift_history.clear();
-      await db.sync_queue.clear(); 
-    } catch(e) { console.error(e); }
-    localStorage.setItem(HISTORY_KEY, "[]");
-    localStorage.setItem(DOWNLOADED_STATE_KEY, "false");
-    await renderHistoryView();
-    updateFloatingBanner();
-    showToast("Shift summary history logs entirely flushed.");
-  }
-}
-
-async function resetForm(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  
-  isResetting = true; 
-
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    await db.session_backup.delete('current_workspace_state');
-
-    document.querySelectorAll("input, textarea").forEach(el => {
-      el.value = "";
-      el.classList.remove('val-green', 'val-amber', 'val-crimson');
-    });
-
-    const select = $("concernType");
-    if (select) select.selectedIndex = 0;
-    
-    updateVocOptions(false);
-    
-    if ($("output")) {
-      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
-    }
-    
-    if ($("suggestions")) {
-      $("suggestions").innerHTML = "Select Concern & VOC";
-    }
-    
-    showToast("Form fields reset successfully.");
-  } catch(e) {
-    console.error("Local database reset exception:", e);
-    showToast("Error while clearing background data profiles.", true);
-  } finally {
-    isResetting = false; 
-  }
+  banner.style.background = "#fbbf24"; 
+  banner.style.color = "#1e293b";
+  banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> WORKBENCH IS SYNCED LIVE WITH CENTRAL OPERATIONS DATABASE`;
 }
 
 function copyDoc() {
   const outputText = $("output")?.textContent;
   if (!outputText || outputText.includes("Generating real-time output preview")) {
-    showToast("No active documentation content found to copy!", true);
+    showToast("No documentation content found to copy!", true);
     return;
   }
 
   navigator.clipboard.writeText(outputText).then(() => {
-    showToast("Documentation notes successfully copied to system clipboard!");
-    const caseNum = $("case")?.value || "N/A";
-    pushToHistory(caseNum, outputText);
+    showToast("Notes copied to system clipboard!");
   }).catch(err => {
-    showToast("Clipboard injection routine blocked.", true);
+    showToast("Clipboard routine blocked.", true);
   });
 }
 
 /* ==========================================================================
-   DARK MODE SYSTEM 🌙
+   THEME MANAGER
    ========================================================================== */
 function toggleTheme() {
   const isDark = document.body.classList.toggle("dark-mode");
@@ -719,65 +391,22 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   VOC PROCEDURES MAPPING CONFIG DATA
+   VOC ENGINE REFERENCE MATRICES
    ========================================================================== */
 const TECH_PROCEDURES = {
-  "VOICE CONNECTIVITY": [
-    { text: "Check voice service status", link: "https://yourguide-link.com/voice" },
-    { text: "Validate network profile", link: "https://yourguide-link.com/network" }
-  ],
-  "SMS CONNECTIVITY": [{ text: "Check SMS provisioning", link: "https://yourguide-link.com/sms" }],
-  "DATA CONNECTIVITY": [{ text: "Check data session profiles", link: "https://yourguide-link.com/data" }],
-  "ROAMING CONNECTIVITY": [{ text: "Verify roaming routing flags", link: "https://yourguide-link.com/roaming" }],
-  "COVERAGE CONNECTIVITY": [{ text: "Check physical coverage index maps", link: "https://yourguide-link.com/coverage" }]
-};
-
-const AFTERSALES_PROCEDURES = {
-  "Device Unlocking / Handset Issues": [
-    { text: "Verify IMEI lock status in database", link: "https://yourguide-link.com/unlock" },
-    { text: "Check tenure eligibility metrics", link: "#" }
-  ],
-  "Plan Changes & Tier Modifications": [{ text: "Review active contract matrix lock-ins", link: "https://yourguide-link.com/plans" }],
-  "SIM Related Concerns / SIM Registration": [
-    { text: "Open official consumer registration validation console", link: "https://yourguide-link.com/sim-reg" },
-    { text: "Download excel batch provisioning manifest sheet", link: "https://yourguide-link.com/bulk-sim" }
-  ],
-  "Billing Ledger, Clarifications & Adjustments": [{ text: "Pull ledger micro-transactions record sheet", link: "https://yourguide-link.com/ledger" }],
-  "PUK/PIN Management": [{ text: "Access secure HLR encryption key distribution network", link: "https://yourguide-link.com/puk" }]
+  "VOICE CONNECTIVITY": [{ text: "Check voice service status flags", link: "#" }],
+  "SMS CONNECTIVITY": [{ text: "Check SMS provisioning status", link: "#" }],
+  "DATA CONNECTIVITY": [{ text: "Check active data sessions", link: "#" }],
+  "ROAMING CONNECTIVITY": [{ text: "Verify global routing tags", link: "#" }],
+  "COVERAGE CONNECTIVITY": [{ text: "Check tower coverage indexes", link: "#" }]
 };
 
 const VOC_OPTIONS = {
-  "Technical": [
-    "VOICE CONNECTIVITY", 
-    "SMS CONNECTIVITY", 
-    "DATA CONNECTIVITY", 
-    "ROAMING CONNECTIVITY", 
-    "COVERAGE CONNECTIVITY"
-  ],
-  "Aftersales": [
-    "Activations & Deactivations (Single/Bulk Features/VAS)",
-    "SIM Related Concerns / SIM Registration",
-    "Plan Changes & Tier Modifications",
-    "Ownership & Authorized Representative Changes",
-    "Billing Ledger, Clarifications & Adjustments",
-    "Disputes (MSF, Call, Data, SMS, VAS, Device Amortization)",
-    "Device Unlocking / Handset Issues",
-    "Temporary / Permanent Disconnections & Reconnections",
-    "Mobile Number Portability (MNP) Transactions",
-    "Reloading & Balance Allocations",
-    "Application Status & Requirements",
-    "PUK/PIN Management",
-    "Credit Limit & Account Adjustments",
-    "Network Enhancements & 3G Sunset Processes",
-    "General Inquiries & Customer Feedback",
-    "GENERIC"
-  ],
-  "Inquiry": [], 
-  "Complaint": []
+  "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY"],
+  "Aftersales": ["SIM Related Concerns / SIM Registration", "Plan Changes & Tier Modifications", "Device Unlocking / Handset Issues", "PUK/PIN Management", "GENERIC"],
+  "Inquiry": ["SIM Related Concerns / SIM Registration", "Plan Changes & Tier Modifications", "Device Unlocking / Handset Issues", "PUK/PIN Management", "GENERIC"],
+  "Complaint": ["SIM Related Concerns / SIM Registration", "Plan Changes & Tier Modifications", "Device Unlocking / Handset Issues", "PUK/PIN Management", "GENERIC"]
 };
-
-VOC_OPTIONS["Inquiry"] = VOC_OPTIONS["Aftersales"];
-VOC_OPTIONS["Complaint"] = VOC_OPTIONS["Aftersales"];
 
 function updateVocOptions(preserveValue = false) {
   const mainCategory = $("concernType")?.value;
@@ -801,25 +430,15 @@ function updateVocOptions(preserveValue = false) {
   }
 }
 
-/* ==========================================================================
-   OUTPUT GENERATOR & SUGGESTIONS MATRIX
-   ========================================================================== */
 function updateOutput() {
   if (!$("output") || isResetting) return;
   
   const caseVal = $("case")?.value.trim() || "";
   let ticketHeaderTag = "CASE/SR VALUE";
-  let displayValue = caseVal;
+  let displayValue = caseVal || "N/A";
 
-  if (caseVal.length === 0) {
-    displayValue = "N/A";
-  } else if (caseVal.toUpperCase() === "NA" || caseVal.toUpperCase() === "N/A") {
-    displayValue = caseVal.toUpperCase();
-  } else if (caseVal.length === 8) {
-    ticketHeaderTag = "CASE NUMBER";
-  } else if (caseVal.length === 10) {
-    ticketHeaderTag = "SR NUMBER";
-  }
+  if (caseVal.length === 8) ticketHeaderTag = "CASE NUMBER";
+  if (caseVal.length === 10) ticketHeaderTag = "SR NUMBER";
 
   $("output").textContent = 
 `${ticketHeaderTag}: ${displayValue}
@@ -847,35 +466,23 @@ function updateSuggestions() {
   const concern = $("concernType")?.value;
   const voc = $("voc")?.value;
   
-  const matrixNotice = `<div style="background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; padding: 10px; margin-bottom: 14px; border-radius: 4px; font-weight: bold; color: #f87171;">⚠️ Please check our Aftersales Empowerment Matrix</div>`;
-
   if (!concern) {
     $("suggestions").innerHTML = "Select Concern & VOC";
     return;
   }
 
-  let html = matrixNotice;
+  let html = `<div style="color: #60a5fa; margin-bottom: 8px;"><strong>Operational Matrix Advice:</strong></div>`;
 
   if (!voc) {
-    html += `<i style="color: #94a3b8;">Select a VOC Option to load specific guidelines...</i>`;
+    html += `<i>Choose sub-VOC string to compile live documentation rules...</i>`;
     $("suggestions").innerHTML = html;
     return;
   }
 
-  if (concern === "Technical") {
-    const procedures = TECH_PROCEDURES[voc] || [];
-    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Type/Select a dynamic Technical field option.";
-  } 
-  else if (concern === "Aftersales" || concern === "Inquiry" || concern === "Complaint") {
-    let lookupKey = voc;
-    if (voc.includes("SIM")) lookupKey = "SIM Related Concerns / SIM Registration";
-    if (voc.includes("Plan")) lookupKey = "Plan Changes & Tier Modifications";
-    if (voc.includes("Billing") || voc.includes("Dispute")) lookupKey = "Billing Ledger, Clarifications & Adjustments";
-    if (voc.includes("Unlocking")) lookupKey = "Device Unlocking / Handset Issues";
-    if (voc.includes("PUK")) lookupKey = "PUK/PIN Management";
-
-    const procedures = AFTERSALES_PROCEDURES[lookupKey] || [];
-    html += procedures.length ? procedures.map(p => `• ${p.text} ${p.link && p.link !== "#" ? `<a href="${p.link}" target="_blank" style="color: #60a5fa; text-decoration: underline;">[Open Guide]</a>` : ""}`).join("<br>") : "• Review internal playbook document structures for this tracking item.";
+  if (concern === "Technical" && TECH_PROCEDURES[voc]) {
+    html += TECH_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
+  } else {
+    html += `• Follow standard processing vectors designated for ${voc}.`;
   }
 
   $("suggestions").innerHTML = html;
@@ -884,13 +491,12 @@ function updateSuggestions() {
 /* ==========================================================================
    INITIALIZATION ENGINE & EVENT MOUNT LOOPS
    ========================================================================== */
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
 
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  if (savedTheme === "dark") {
+  if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   }
@@ -899,7 +505,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return;
-    
     el.addEventListener("input", () => { updateOutput(); saveData(); });
     el.addEventListener("change", () => { updateOutput(); saveData(); });
   });
@@ -911,20 +516,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateVocOptions(false);
     updateSuggestions();
   });
-  $("voc")?.addEventListener("change", () => {
-    updateSuggestions();
-  });
+  $("voc")?.addEventListener("change", updateSuggestions);
 
   $("copyBtn")?.addEventListener("click", copyDoc);
   $("dockCopyBtn")?.addEventListener("click", copyDoc);
   $("resetBtn")?.addEventListener("click", resetForm);
   $("dockResetBtn")?.addEventListener("click", resetForm);
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
-  $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
   $("themeToggle")?.addEventListener("click", toggleTheme);
-  $("manualSyncBtn")?.addEventListener("click", syncOfflineQueue);
-  $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
-  $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
   listenToSessionState();
 });
