@@ -273,6 +273,9 @@ async function loadData() {
   }
 }
 
+/* ==========================================================================
+   CROSS-STATION SYNCHRONIZATION & WORKSPACE HYDRATION ENGINE
+   ========================================================================== */
 async function checkAndRestoreCrashData() {
   const currentUser = firebaseAuth.currentUser;
   if (!currentUser) return;
@@ -282,6 +285,7 @@ async function checkAndRestoreCrashData() {
   let savedFormState = null;
   let source = "local hard drive backup"; 
 
+  // 1. Reach out directly to the Singapore Cloud to get your latest active state
   if (isCloudAvailable) {
     try {
       const caseLogsRef = collection(firestoreDb, "case_logs");
@@ -306,6 +310,7 @@ async function checkAndRestoreCrashData() {
     }
   }
 
+  // 2. Fall back to local browser cache if cloud is unreachable
   if (!savedFormState) {
     try {
       const backupState = await db.session_backup.get('current_workspace_state');
@@ -321,12 +326,13 @@ async function checkAndRestoreCrashData() {
 
   if (!savedFormState) return;
 
-  const hasActiveInput = $("case")?.value || $("action")?.value || $("subj")?.value;
-  if (hasActiveInput) return;
+  // 3. CROSS-STATION FLOW: Check if the screen fields are currently completely blank
+  const hasActiveInput = ($("case")?.value.trim() !== "") || 
+                         ($("action")?.value.trim() !== "") || 
+                         ($("subj")?.value.trim() !== "");
 
-  const confirmRestore = confirm(`🔄 Auto Docs Session Recovery Engine:\n\nWe detected an interrupted session (${source}) for Case [${lastSavedCase}]. Would you like to restore your progress?`);
-  
-  if (confirmRestore) {
+  if (!hasActiveInput) {
+    // Station is empty! Automatically inject your saved case data from Station 1 seamlessly
     Object.keys(savedFormState).forEach(id => {
       const el = $(id);
       if (el) el.value = savedFormState[id];
@@ -339,7 +345,27 @@ async function checkAndRestoreCrashData() {
     updateSuggestions();
     if($('case')) validateCaseField($('case'));
     if($('min')) validateMinField($('min'));
-    showToast(`Progress successfully recovered from ${source}!`);
+    showToast(`Active workspace synced from ${source}!`);
+  } 
+  else {
+    // If the agent is ALREADY typing something else on this station, ask before overwriting
+    const confirmRestore = confirm(`🔄 Auto Docs Cloud Sync:\n\nWe found an active session from another station for Case [${lastSavedCase}]. Would you like to load that case data here? This will overwrite your current screen text.`);
+    
+    if (confirmRestore) {
+      Object.keys(savedFormState).forEach(id => {
+        const el = $(id);
+        if (el) el.value = savedFormState[id];
+      });
+
+      if ($("concernType")?.value) updateVocOptions(true);
+      if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+
+      updateOutput();
+      updateSuggestions();
+      if($('case')) validateCaseField($('case'));
+      if($('min')) validateMinField($('min'));
+      showToast(`Workspace updated with data from ${source}!`);
+    }
   }
 }
 
