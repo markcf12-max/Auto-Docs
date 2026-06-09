@@ -138,7 +138,7 @@ async function handleAuthSubmission(e) {
       const registeredName = rosterSnap.data().name.trim().toUpperCase();
       if (registeredName !== fullName) {
         // MODERNIZED: Replaces wrong name validation check
-        showSystemAlert("Validation Error", `The name provided does not match the official records registered for ID ${agentId}.`);
+        showSystemAlert("Validation Error", `The name provided does not match the official records registered for ID ${agentId}.\n\nPlease ensure spelling matches your workplace portal exactly.`);
         return;
       }
       
@@ -468,23 +468,34 @@ async function downloadHistoryLog() {
 }
 
 async function clearShiftHistory() {
-  if (!confirm("🚨 Warning:\n\nThis will completely wipe your cross-station shift history manifest stack from the cloud. Proceed?")) return;
   if (!currentAgentId) return;
 
-  globalShiftHistory = [];
-  
-  try {
-    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-    await updateDoc(docRef, {
-      shift_manifest: []
-    });
-    showToast("Shift summary manifest history flushed completely.");
-  } catch (e) {
-    console.error(e);
-  }
+  // Utilize the custom system alert engine to handle the warning check cleanly
+  showSystemAlert(
+    "Flush History Confirmation", 
+    "This will completely wipe your cross-station shift history manifest stack from the cloud database profile. Proceeding cannot be undone.",
+    true
+  );
 
-  await renderHistoryView();
-  updateFloatingBanner();
+  // Re-routing close button target specifically for structural destruction
+  const closeBtn = $('alertModalCloseBtn');
+  const structuralOverride = async () => {
+    globalShiftHistory = [];
+    try {
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      await updateDoc(docRef, { shift_manifest: [] });
+      showToast("Shift summary manifest history flushed completely.");
+    } catch (e) {
+      console.error(e);
+    }
+    await renderHistoryView();
+    updateFloatingBanner();
+    closeBtn.textContent = "Acknowledge & Dismiss";
+    closeBtn.removeEventListener('click', structuralOverride);
+  };
+
+  closeBtn.textContent = "Confirm Wipe Manifest Stack";
+  closeBtn.addEventListener('click', structuralOverride);
 }
 
 /* ==========================================================================
@@ -496,10 +507,7 @@ function terminateAgentSession() {
   const confirmBtn = $('confirmLogoutSubmitBtn');
 
   if (!logoutModal || !cancelBtn || !confirmBtn) {
-    // Fallback safety layer if HTML is missing elements
-    if (confirm("Log out of current workbench session? Your cloud workspace and history states will be preserved.")) {
-      executeLogOutRoutine();
-    }
+    executeLogOutRoutine();
     return;
   }
 
@@ -509,7 +517,6 @@ function terminateAgentSession() {
   // 2. Closure Handler: Clicked "Stay Active" (Aborts logout process safely)
   const closeLogoutModal = () => {
     logoutModal.style.display = "none";
-    // Scrub event listeners cleanly so memory allocation leaks don't accumulate
     cancelBtn.removeEventListener('click', closeLogoutModal);
     confirmBtn.removeEventListener('click', confirmAction);
   };
@@ -527,7 +534,6 @@ function terminateAgentSession() {
   confirmBtn.addEventListener('click', confirmAction);
 }
 
-// Extracted baseline execution sequence for modular execution control
 function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
   
@@ -791,7 +797,6 @@ function showSystemAlert(title, message, isWarning = true) {
   const closeBtn = $('alertModalCloseBtn');
 
   if (!modal) {
-    // Structural absolute safety fallback if HTML layer isn't saved yet
     alert(`${title}\n\n${message}`);
     return;
   }
@@ -816,10 +821,11 @@ function showSystemAlert(title, message, isWarning = true) {
   const closeRoutine = () => {
     modal.style.display = "none";
     closeBtn.removeEventListener('click', closeRoutine);
+    // Reset close button text safely back to default status context state
+    closeBtn.textContent = "Acknowledge & Dismiss";
   };
   closeBtn.addEventListener('click', closeRoutine);
 }
-
 
 /* ==========================================================================
    INITIALIZATION ENGINE & EVENT MOUNT LOOPS
