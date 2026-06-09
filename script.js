@@ -96,6 +96,8 @@ async function handleAuthSubmission(e) {
 
   if (!/^\d+$/.test(agentId)) {
     showSystemAlert("Format Error", "Agent ID must contain numeric values only!");
+    $('authEmail').value = ""; // Empty the ID field on format error
+    $('authEmail').focus();
     return;
   }
 
@@ -104,25 +106,36 @@ async function handleAuthSubmission(e) {
     const agentSnap = await getDoc(agentRef);
 
     if (currentAuthMode === "LOGIN") {
-      if (agentSnap.exists() && agentSnap.data().password === password) {
-        currentAgentId = agentId;
-        currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
-        localStorage.setItem("active_agent_session_id", agentId);
-        
-        await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
-          await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
-        });
+      if (agentSnap.exists()) {
+        if (agentSnap.data().password === password) {
+          currentAgentId = agentId;
+          currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
+          localStorage.setItem("active_agent_session_id", agentId);
+          
+          await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
+            await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
+          });
 
-        handleSessionLoginTransition();
-        showToast("Identity verified. Session clear!");
+          handleSessionLoginTransition();
+          showToast("Identity verified. Session clear!");
+        } else {
+          // 1. WRONG PASSWORD: Clear password box and focus it
+          showSystemAlert("Authorization Failure", "Incorrect password entered for this security gateway.");
+          $('authPassword').value = ""; 
+          $('authPassword').focus();
+        }
       } else {
-        // MODERNIZED: Replaces raw password check error popup
-        showSystemAlert("Authorization Failure", "Invalid Agent ID or Security Gateway Password.");
+        // 2. WRONG AGENT ID / NO ACCOUNT EXISTS: Clear ID box and focus it
+        showSystemAlert("Authorization Failure", "This Agent ID does not have an active profile registered.");
+        $('authEmail').value = "";
+        $('authEmail').focus();
       }
     } else {
       if (agentSnap.exists()) {
-        // MODERNIZED: Replaces duplicate profile warning popup
+        // 3. ACCOUNT ALREADY EXISTS: Wipes the ID input to prevent duplicate setups
         showSystemAlert("Profile Error", "This numeric Agent ID is already registered to an active workspace.");
+        $('authEmail').value = "";
+        $('authEmail').focus();
         return;
       }
       
@@ -130,15 +143,21 @@ async function handleAuthSubmission(e) {
       const rosterSnap = await getDoc(rosterRef);
 
       if (!rosterSnap.exists()) {
-        // MODERNIZED: Replaces unlisted winid validation block
         showSystemAlert("Security Warning", `Agent ID / WinID [${agentId}] is not authorized in the employee database roster.`);
+        $('authEmail').value = "";
+        $('authEmail').focus();
         return;
       }
 
       const registeredName = rosterSnap.data().name.trim().toUpperCase();
       if (registeredName !== fullName) {
-        // MODERNIZED: Replaces wrong name validation check
-        showSystemAlert("Validation Error", `The name provided does not match the official records registered for ID ${agentId}.\n\nPlease ensure spelling matches your workplace portal exactly.`);
+        // 4. WRONG NAME MATCH: Wipes only the name input so they can retry spellings
+        showSystemAlert(
+          "Validation Error", 
+          `The name provided does not match the official records registered for ID ${agentId}.\n\nPlease ensure spelling matches your workplace portal exactly.`
+        );
+        $('authName').value = "";
+        $('authName').focus();
         return;
       }
       
