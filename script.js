@@ -95,7 +95,7 @@ async function handleAuthSubmission(e) {
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
 
   if (!/^\d+$/.test(agentId)) {
-    alert("❌ Format Error:\nAgent ID must contain numeric values only!");
+    showSystemAlert("Format Error", "Agent ID must contain numeric values only!");
     return;
   }
 
@@ -109,41 +109,39 @@ async function handleAuthSubmission(e) {
         currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
         localStorage.setItem("active_agent_session_id", agentId);
         
-        // METRICS HOOK: Stamp verification system ping status data log
-        await updateDoc(agentRef, {
-          last_active_at: Date.now()
-        }).catch(async () => {
+        await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
           await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
         });
 
         handleSessionLoginTransition();
         showToast("Identity verified. Session clear!");
       } else {
-        alert("❌ Authorization Failure:\nInvalid Agent ID or Security Gateway Password.");
+        // MODERNIZED: Replaces raw password check error popup
+        showSystemAlert("Authorization Failure", "Invalid Agent ID or Security Gateway Password.");
       }
     } else {
-      // 1. Verify if the agent already exists in the roster collection
       if (agentSnap.exists()) {
-        alert("❌ Profile Error:\nThis numeric Agent ID is already registered to a workspace.");
+        // MODERNIZED: Replaces duplicate profile warning popup
+        showSystemAlert("Profile Error", "This numeric Agent ID is already registered to an active workspace.");
         return;
       }
       
-      // 2. SMART VALIDATION CHECK: Check against the master roster we just uploaded
       const rosterRef = doc(firestoreDb, "registered_agents", agentId);
       const rosterSnap = await getDoc(rosterRef);
 
       if (!rosterSnap.exists()) {
-        alert(`❌ Security Warning:\nAgent ID / WinID [${agentId}] is not authorized in the employee database roster.`);
+        // MODERNIZED: Replaces unlisted winid validation block
+        showSystemAlert("Security Warning", `Agent ID / WinID [${agentId}] is not authorized in the employee database roster.`);
         return;
       }
 
       const registeredName = rosterSnap.data().name.trim().toUpperCase();
       if (registeredName !== fullName) {
-        alert(`❌ Validation Error:\nThe name provided does not match the official records registered for ID ${agentId}.`);
+        // MODERNIZED: Replaces wrong name validation check
+        showSystemAlert("Validation Error", `The name provided does not match the official records registered for ID ${agentId}.`);
         return;
       }
       
-      // 3. Commit the new profile document to Firestore
       await setDoc(agentRef, {
         agent_id: agentId,
         full_name: fullName,
@@ -152,21 +150,17 @@ async function handleAuthSubmission(e) {
         last_active_at: Date.now()
       });
       
-      // 4. Fire the success notification badge immediately
       showToast("Registration successful! Account provisioned.");
-      
-      // 5. Transform the UI smoothly back into the Log In modal layout state
       currentAuthMode = "REGISTER"; 
       toggleAuthMode();
       
-      // 6. Pre-fill credentials for quick validation run
       $('authEmail').value = agentId;
       $('authPassword').value = "";
       $('authPassword').focus(); 
     }
   } catch (error) {
     console.error("Auth validation error:", error);
-    alert("❌ Security Exception: Database verification pipeline rejected interaction.");
+    showSystemAlert("Security Exception", "Database verification pipeline rejected interaction.");
   }
 }
 
@@ -784,6 +778,48 @@ function updateSuggestions() {
 
   $("suggestions").innerHTML = html;
 }
+
+/* ==========================================================================
+   DYNAMIC MODERN SYSTEM OVERLAY DIALOGUE CONTROLLER
+   ========================================================================== */
+function showSystemAlert(title, message, isWarning = true) {
+  const modal = $('alertModal');
+  const titleEl = $('alertModalTitle');
+  const msgEl = $('alertModalMessage');
+  const iconBox = $('alertModalIconContainer');
+  const icon = $('alertModalIcon');
+  const closeBtn = $('alertModalCloseBtn');
+
+  if (!modal) {
+    // Structural absolute safety fallback if HTML layer isn't saved yet
+    alert(`${title}\n\n${message}`);
+    return;
+  }
+
+  // Configure UI highlights based on message type
+  if (isWarning) {
+    iconBox.style.background = "rgba(239, 68, 68, 0.1)";
+    iconBox.style.color = "#ef4444";
+    icon.className = "fas fa-exclamation-circle";
+    closeBtn.style.background = "#2563eb"; 
+  } else {
+    iconBox.style.background = "rgba(16, 185, 129, 0.1)";
+    iconBox.style.color = "#10b981";
+    icon.className = "fas fa-check-circle";
+    closeBtn.style.background = "#10b981";
+  }
+
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+  modal.style.display = "flex";
+
+  const closeRoutine = () => {
+    modal.style.display = "none";
+    closeBtn.removeEventListener('click', closeRoutine);
+  };
+  closeBtn.addEventListener('click', closeRoutine);
+}
+
 
 /* ==========================================================================
    INITIALIZATION ENGINE & EVENT MOUNT LOOPS
