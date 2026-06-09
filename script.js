@@ -2,7 +2,7 @@
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
@@ -19,13 +19,14 @@ const firestoreDb = getFirestore(app);
 
 const THEME_KEY = "auto_docs_theme";
 let bannerTimeout = null; 
-let isResetting = false;     
+let isResetting = false;      
 let saveTimeout = null;      
 let currentAuthMode = "LOGIN"; 
 let globalShiftHistory = []; // In-memory reference for the active cloud session layout
 
 // Session Management State variables for Numeric Database Routing
 let currentAgentId = null; 
+let currentAgentName = "Unknown Agent"; // Global variable to store active agent's name
 
 function $(id) {
   return document.getElementById(id);
@@ -66,12 +67,24 @@ function toggleAuthMode(e) {
     $('authSubtitle').textContent = "Configure secure numeric credential tokens";
     $('authSubmitBtn').textContent = "Provision Account";
     $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
+    
+    // Dynamically display our new Full Name element container
+    if ($('authNameContainer')) {
+      $('authNameContainer').style.display = "flex";
+      $('authName').required = true;
+    }
   } else {
     currentAuthMode = "LOGIN";
     $('authTitle').textContent = "Agent Workbench Sign In";
     $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
     $('authSubmitBtn').textContent = "Authorize Session";
     $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
+    
+    // Dynamically drop structural visibility of registration elements
+    if ($('authNameContainer')) {
+      $('authNameContainer').style.display = "none";
+      $('authName').required = false;
+    }
   }
 }
 
@@ -79,6 +92,7 @@ async function handleAuthSubmission(e) {
   e.preventDefault();
   const agentId = $('authEmail').value.trim();
   const password = $('authPassword').value.trim();
+  const fullName = $('authName')?.value.trim().toUpperCase() || "";
 
   if (!/^\d+$/.test(agentId)) {
     alert("❌ Format Error:\nAgent ID must contain numeric values only!");
@@ -92,8 +106,16 @@ async function handleAuthSubmission(e) {
     if (currentAuthMode === "LOGIN") {
       if (agentSnap.exists() && agentSnap.data().password === password) {
         currentAgentId = agentId;
+        currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
         localStorage.setItem("active_agent_session_id", agentId);
         
+        // METRICS HOOK: Stamp verification system ping status data log
+        await updateDoc(agentRef, {
+          last_active_at: Date.now()
+        }).catch(async () => {
+          await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
+        });
+
         handleSessionLoginTransition();
         showToast("Identity verified. Session clear!");
       } else {
@@ -106,27 +128,41 @@ async function handleAuthSubmission(e) {
         return;
       }
       
-      // 2. Commit the new profile document to Firestore
+      // 2. SMART VALIDATION CHECK: Check against the master roster we just uploaded
+      const rosterRef = doc(firestoreDb, "registered_agents", agentId);
+      const rosterSnap = await getDoc(rosterRef);
+
+      if (!rosterSnap.exists()) {
+        alert(`❌ Security Warning:\nAgent ID / WinID [${agentId}] is not authorized in the employee database roster.`);
+        return;
+      }
+
+      const registeredName = rosterSnap.data().name.trim().toUpperCase();
+      if (registeredName !== fullName) {
+        alert(`❌ Validation Error:\nThe name provided does not match the official records registered for ID ${agentId}.`);
+        return;
+      }
+      
+      // 3. Commit the new profile document to Firestore
       await setDoc(agentRef, {
         agent_id: agentId,
+        full_name: fullName,
         password: password,
-        created_at: Date.now()
+        created_at: Date.now(),
+        last_active_at: Date.now()
       });
       
-      // 3. Fire the success notification badge immediately at the top of the viewport
+      // 4. Fire the success notification badge immediately
       showToast("Registration successful! Account provisioned.");
       
-      // 4. Transform the UI smoothly back into the Log In modal layout state
-      currentAuthMode = "LOGIN";
-      $('authTitle').textContent = "Agent Workbench Sign In";
-      $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
-      $('authSubmitBtn').textContent = "Authorize Session";
-      $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
+      // 5. Transform the UI smoothly back into the Log In modal layout state
+      currentAuthMode = "REGISTER"; 
+      toggleAuthMode();
       
-      // 5. Pre-fill the newly registered ID so they don't have to retype it
+      // 6. Pre-fill credentials for quick validation run
       $('authEmail').value = agentId;
       $('authPassword').value = "";
-      $('authPassword').focus(); // Automatically snap cursor to password field for speed
+      $('authPassword').focus(); 
     }
   } catch (error) {
     console.error("Auth validation error:", error);
@@ -141,12 +177,11 @@ async function handleSessionLoginTransition() {
   updateOutput();
   updateSuggestions();
   
-  // Directly pull live workspace data from the cloud database using Custom ID Mapping
+  // Directly pull live workspace data from the cloud database
   await pullLiveWorkspace();
 }
 
 function listenToSessionState() {
-  // Read local caching mechanism to maintain station position stability on manual reload loops
   const cachedId = localStorage.getItem("active_agent_session_id");
   
   document.querySelectorAll("input, textarea").forEach(el => {
@@ -160,9 +195,13 @@ function listenToSessionState() {
 
   if (cachedId) {
     currentAgentId = cachedId;
+    getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
+      if(snap.exists()) currentAgentName = snap.data().full_name || "Agent " + cachedId;
+    });
     handleSessionLoginTransition();
   } else {
     currentAgentId = null;
+    currentAgentName = "Unknown Agent";
     $('authModal').style.display = "flex";
     if ($("output")) {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
@@ -253,7 +292,7 @@ async function pullLiveWorkspace() {
 }
 
 /* ==========================================================================
-   REAL-TIME OPERATIONAL BROADCAST BANNER ENGINE (OPTION 4)
+   REAL-TIME OPERATIONAL BROADCAST BANNER ENGINE
    ========================================================================== */
 function listenToOperationalBroadcasts() {
   const banner = $('adminBroadcastBanner');
@@ -277,8 +316,33 @@ function listenToOperationalBroadcasts() {
       banner.style.display = "none";
     }
   }, (error) => {
-    console.warn("Broadcast listener network drop or document parameters missing:", error);
+    console.warn("Broadcast listener network drop:", error);
   });
+}
+
+/* ==========================================================================
+   ANALYTICS & OPERATIONAL METRICS COMPILATION ROUTINES
+   ========================================================================== */
+async function logCaseSubmissionToAnalytics(caseNumber) {
+  if (!currentAgentId) return;
+
+  const rightNow = new Date();
+  const dateString = rightNow.toISOString().split('T')[0]; 
+  const metricDocId = `${currentAgentId}-${Date.now()}`;
+  
+  const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
+
+  try {
+    await setDoc(metricRef, {
+      agent_id: currentAgentId,
+      agent_name: currentAgentName,
+      case_id: caseNumber || "N/A",
+      completed_at: rightNow.toISOString(),
+      submission_date: dateString
+    });
+  } catch(e) {
+    console.warn("Performance metric profiling skipped: ", e);
+  }
 }
 
 /* ==========================================================================
@@ -302,8 +366,12 @@ async function pushToHistory(caseNumber, textContent) {
     await updateDoc(docRef, {
       shift_manifest: globalShiftHistory
     });
+
+    // Run telemetry collection insertion automatically on copy
+    await logCaseSubmissionToAnalytics(displayId);
+
   } catch (err) {
-    console.error("Error committing shift log token to cloud storage profiles:", err);
+    console.error("Error committing shift log token:", err);
   }
 
   await renderHistoryView();
