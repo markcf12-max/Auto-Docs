@@ -494,12 +494,47 @@ async function clearShiftHistory() {
 }
 
 /* ==========================================================================
-   CLEAN LOGOUT AND INSTANT RESET OPERATIONS
+   CLEAN LOGOUT AND INSTANT RESET OPERATIONS (MODERNIZED OVERLAY VIEW)
    ========================================================================== */
 function terminateAgentSession() {
-  if (!confirm("Log out of current workbench session? Your cloud workspace and history states will be preserved.")) {
+  const logoutModal = $('logoutModal');
+  const cancelBtn = $('confirmLogoutCancelBtn');
+  const confirmBtn = $('confirmLogoutSubmitBtn');
+
+  if (!logoutModal || !cancelBtn || !confirmBtn) {
+    // Fallback safety layer if HTML is missing elements
+    if (confirm("Log out of current workbench session? Your cloud workspace and history states will be preserved.")) {
+      executeLogOutRoutine();
+    }
     return;
   }
+
+  // 1. Unveil the sleek dark overlay viewport layout
+  logoutModal.style.display = "flex";
+
+  // 2. Closure Handler: Clicked "Stay Active" (Aborts logout process safely)
+  const closeLogoutModal = () => {
+    logoutModal.style.display = "none";
+    // Scrub event listeners cleanly so memory allocation leaks don't accumulate
+    cancelBtn.removeEventListener('click', closeLogoutModal);
+    confirmBtn.removeEventListener('click', confirmAction);
+  };
+
+  // 3. Destructor Handler: Clicked "Log Out" (Triggers session cache wipe)
+  const confirmAction = () => {
+    logoutModal.style.display = "none";
+    cancelBtn.removeEventListener('click', closeLogoutModal);
+    confirmBtn.removeEventListener('click', confirmAction);
+    executeLogOutRoutine();
+  };
+
+  // Mount listeners directly to the modal interface layout nodes
+  cancelBtn.addEventListener('click', closeLogoutModal);
+  confirmBtn.addEventListener('click', confirmAction);
+}
+
+// Extracted baseline execution sequence for modular execution control
+function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
   
   localStorage.removeItem("active_agent_session_id");
