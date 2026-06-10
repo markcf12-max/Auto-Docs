@@ -212,6 +212,7 @@ async function handleAuthSubmission(e) {
 
 async function handleSessionLoginTransition() {
   $('authModal').style.display = "none";
+  $('logoutBtn').style.display = "block"; // 👈 ADD THIS LINE HERE
   updateSyncStatusUI('online');
   
   updateOutput();
