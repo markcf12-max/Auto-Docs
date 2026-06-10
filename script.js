@@ -878,7 +878,7 @@ async function executeSupervisorExtraction() {
       return str;
     };
 
-    /* ==========================================================================
+/* ==========================================================================
        BRANCH A: EXTRACT LABELED CASE METRICS WITH DEEP BACKUP SCAN
        ========================================================================== */
     if (reportType === "CASES") {
@@ -905,7 +905,7 @@ async function executeSupervisorExtraction() {
         }
         
         // Structured header layout specifically tailored for raw draft payload visualization
-        csvContent += "Draft Log Doc ID,Agent ID/WinID,Last Active Case Target,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
+        csvContent += "Draft Log Doc ID,Agent ID/WinID,Last Active Case Target,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection\n";
         
         backupSnap.forEach((docSnap) => {
           const d = docSnap.data();
@@ -926,15 +926,14 @@ async function executeSupervisorExtraction() {
             cleanValue(snap.company      || snap.field_company      || "BLANK DRAFT"),
             cleanValue(snap.email        || snap.field_email        || "BLANK DRAFT"),
             cleanValue(snap.subj         || snap.field_subj         || "BLANK DRAFT"),
-            cleanValue(snap.voc          || snap.field_voc          || "BLANK DRAFT"),
-            cleanValue(snap.case         || snap.field_case         || "BLANK DRAFT")
+            cleanValue(snap.voc          || snap.field_voc          || "BLANK DRAFT")
           ].join(",") + "\n";
           
           recordsCount++;
         });
       } else {
         // Build traditional spreadsheet configuration using user-friendly clean metrics layouts
-        csvContent += "Submission ID,Agent ID,Agent Name,Line of Business,Reference ID,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
+        csvContent += "Agent ID,Agent Name,Line of Business,Case/SR,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection\n";
 
         performanceSnapshot.forEach((docSnap) => {
           const rawDoc = docSnap.data();
@@ -947,14 +946,13 @@ async function executeSupervisorExtraction() {
           
           // DIAGNOSTIC CHECK: Detect old flat records that don't have form properties in DB
           const isLegacyFlatRecord = !rawDoc.snapshot && !rawDoc.form_data && !rawDoc.action && !rawDoc.wocas;
-          const fallbackString = isLegacyFlatRecord ? "LEGACY LOG: NO VALUE CAPTURED" : "N/A";
+          const fallbackString = isLegacyFlatRecord ? "No Log" : "N/A";
 
           console.log(`Processing Record ID: ${docSnap.id}, Keys evaluated:`, Object.keys(snap));
 
           const row = [
-            cleanValue(docSnap.id),
             cleanValue(rawDoc.agent_id),
-            cleanValue(rawDoc.agent_name || "LEGACY REGISTER"),
+            cleanValue(rawDoc.agent_name || "No Log"),
             cleanValue(agentLob),
             cleanValue(rawDoc.case_id || snap.case || snap.field_case || "N/A"),
             cleanValue(rawDoc.completed_at || rawDoc.updated_at || "N/A"),
@@ -968,9 +966,7 @@ async function executeSupervisorExtraction() {
             cleanValue(snap.company      || snap.field_company      || fallbackString),
             cleanValue(snap.email        || snap.field_email        || fallbackString),
             cleanValue(snap.subj         || snap.field_subj         || fallbackString),
-            cleanValue(snap.voc          || snap.field_voc          || fallbackString),
-            // Smart Fallback mapping: If root has case_id, pull that instead of a blank N/A
-            cleanValue(rawDoc.case_id    || snap.case || snap.field_case || fallbackString)
+            cleanValue(snap.voc          || snap.field_voc          || fallbackString)
           ];
 
           csvContent += row.join(",") + "\n";
