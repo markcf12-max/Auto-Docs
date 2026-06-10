@@ -27,6 +27,7 @@ let globalShiftHistory = []; // In-memory reference for the active cloud session
 // Session Management State variables for Numeric Database Routing
 let currentAgentId = null; 
 let currentAgentName = "Unknown Agent"; // Global variable to store active agent's name
+let currentAgentLob = "UNKNOWN";        // Variable tracking operational business silo partition (ES vs EBG)
 
 function $(id) {
   return document.getElementById(id);
@@ -56,7 +57,7 @@ function updateSyncStatusUI(status) {
 }
 
 /* ==========================================================================
-   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW
+   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW WITH LOB ENHANCEMENTS
    ========================================================================== */
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
@@ -68,11 +69,10 @@ function toggleAuthMode(e) {
     $('authSubmitBtn').textContent = "Provision Account";
     $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
     
-    // Dynamically display our new Full Name element container
-    if ($('authNameContainer')) {
-      $('authNameContainer').style.display = "flex";
-      $('authName').required = true;
-    }
+    if ($('authNameContainer')) $('authNameContainer').style.display = "flex";
+    if ($('authLobContainer')) $('authLobContainer').style.display = "flex";
+    $('authName').required = true;
+    $('authLob').required = true;
   } else {
     currentAuthMode = "LOGIN";
     $('authTitle').textContent = "Agent Workbench Sign In";
@@ -80,11 +80,10 @@ function toggleAuthMode(e) {
     $('authSubmitBtn').textContent = "Authorize Session";
     $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
     
-    // Dynamically drop structural visibility of registration elements
-    if ($('authNameContainer')) {
-      $('authNameContainer').style.display = "none";
-      $('authName').required = false;
-    }
+    if ($('authNameContainer')) $('authNameContainer').style.display = "none";
+    if ($('authLobContainer')) $('authLobContainer').style.display = "none";
+    $('authName').required = false;
+    $('authLob').required = false;
   }
 }
 
@@ -93,10 +92,26 @@ async function handleAuthSubmission(e) {
   const agentId = $('authEmail').value.trim();
   const password = $('authPassword').value.trim();
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
+  const selectedLob = $('authLob')?.value || "";
+
+  // SUPERVISOR PORTAL ENTRY BYPASS
+  if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
+    if (password === "SuperOps2026!") {
+      $('authModal').style.display = "none";
+      showSupervisorPanel();
+      showToast("Supervisor Matrix Decrypted.");
+      return;
+    } else {
+      showSystemAlert("Access Denied", "Invalid administrative supervisor master token.");
+      $('authPassword').value = "";
+      $('authPassword').focus();
+      return;
+    }
+  }
 
   if (!/^\d+$/.test(agentId)) {
     showSystemAlert("Format Error", "Agent ID must contain numeric values only!");
-    $('authEmail').value = ""; // Empty the ID field on format error
+    $('authEmail').value = "";
     $('authEmail').focus();
     return;
   }
@@ -110,6 +125,7 @@ async function handleAuthSubmission(e) {
         if (agentSnap.data().password === password) {
           currentAgentId = agentId;
           currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
+          currentAgentLob = agentSnap.data().lob || "UNKNOWN";
           localStorage.setItem("active_agent_session_id", agentId);
           
           await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
@@ -117,22 +133,19 @@ async function handleAuthSubmission(e) {
           });
 
           handleSessionLoginTransition();
-          showToast("Identity verified. Session clear!");
+          showToast(`Identity verified. ${currentAgentLob} Session Clear!`);
         } else {
-          // 1. WRONG PASSWORD: Clear password box and focus it
           showSystemAlert("Authorization Failure", "Incorrect password entered for this security gateway.");
           $('authPassword').value = ""; 
           $('authPassword').focus();
         }
       } else {
-        // 2. WRONG AGENT ID / NO ACCOUNT EXISTS: Clear ID box and focus it
         showSystemAlert("Authorization Failure", "This Agent ID does not have an active profile registered.");
         $('authEmail').value = "";
         $('authEmail').focus();
       }
     } else {
       if (agentSnap.exists()) {
-        // 3. ACCOUNT ALREADY EXISTS: Wipes the ID input to prevent duplicate setups
         showSystemAlert("Profile Error", "This numeric Agent ID is already registered to an active workspace.");
         $('authEmail').value = "";
         $('authEmail').focus();
@@ -151,13 +164,14 @@ async function handleAuthSubmission(e) {
 
       const registeredName = rosterSnap.data().name.trim().toUpperCase();
       if (registeredName !== fullName) {
-        // 4. WRONG NAME MATCH: Wipes only the name input so they can retry spellings
-        showSystemAlert(
-          "Validation Error", 
-          `The name provided does not match the official records registered for ID ${agentId}.\n\nPlease ensure spelling matches your workplace portal exactly.`
-        );
+        showSystemAlert("Validation Error", `The name provided does not match the official records registered for ID ${agentId}.`);
         $('authName').value = "";
         $('authName').focus();
+        return;
+      }
+
+      if (!selectedLob) {
+        showSystemAlert("Validation Error", "You must assign your designated Line of Business (ES or EBG) profile target.");
         return;
       }
       
@@ -165,6 +179,7 @@ async function handleAuthSubmission(e) {
         agent_id: agentId,
         full_name: fullName,
         password: password,
+        lob: selectedLob,
         created_at: Date.now(),
         last_active_at: Date.now()
       });
@@ -209,12 +224,16 @@ function listenToSessionState() {
   if (cachedId) {
     currentAgentId = cachedId;
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
-      if(snap.exists()) currentAgentName = snap.data().full_name || "Agent " + cachedId;
+      if(snap.exists()) {
+        currentAgentName = snap.data().full_name || "Agent " + cachedId;
+        currentAgentLob = snap.data().lob || "UNKNOWN";
+      }
     });
     handleSessionLoginTransition();
   } else {
     currentAgentId = null;
     currentAgentName = "Unknown Agent";
+    currentAgentLob = "UNKNOWN";
     $('authModal').style.display = "flex";
     if ($("output")) {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
@@ -349,6 +368,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     await setDoc(metricRef, {
       agent_id: currentAgentId,
       agent_name: currentAgentName,
+      lob: currentAgentLob, 
       case_id: caseNumber || "N/A",
       completed_at: rightNow.toISOString(),
       submission_date: dateString
@@ -359,7 +379,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
 }
 
 /* ==========================================================================
-   CLOUD-BACKED SHIFT HISTORY LOGS MANIFEST SYSTEM
+   CLOUD-BACKED SHIFT HISTORY LOGS MANIFEST SYSTEM WITH EXCEL FORMATTING
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
   if (!currentAgentId) return;
@@ -380,7 +400,6 @@ async function pushToHistory(caseNumber, textContent) {
       shift_manifest: globalShiftHistory
     });
 
-    // Run telemetry collection insertion automatically on copy
     await logCaseSubmissionToAnalytics(displayId);
 
   } catch (err) {
@@ -464,39 +483,43 @@ async function downloadHistoryLog() {
     return;
   }
 
-  let fileContent = `==================================================\n`;
-  fileContent += `         SHIFT LOGS MANIFEST EXPORT CORNER       \n`;
-  fileContent += `==================================================\n\n`;
+  // Define structured headers that Microsoft Excel auto-detects natively
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Agent ID,Agent Name,Line of Business (LOB),Timestamp,Reference Case ID,Documentation Raw Text\n";
 
-  globalShiftHistory.forEach((item, idx) => {
-    fileContent += `--- ENTRY #${idx + 1} | TIMESTAMP: [${item.time}] | REFERENCE ID: ${item.id} ---\n`;
-    fileContent += `${item.text}\n`;
-    fileContent += `\n==================================================\n\n`;
+  globalShiftHistory.forEach((item) => {
+    const safeId = `"${item.id.replace(/"/g, '""')}"`;
+    const safeTime = `"${item.time.replace(/"/g, '""')}"`;
+    const safeText = `"${item.text.replace(/"/g, '""')}"`;
+    const safeAgentId = `"${currentAgentId || 'N/A'}"`;
+    const safeAgentName = `"${currentAgentName.replace(/"/g, '""')}"`;
+    const safeLob = `"${currentAgentLob}"`;
+
+    csvContent += `${safeAgentId},${safeAgentName},${safeLob},${safeTime},${safeId},${safeText}\n`;
   });
 
-  const blob = new Blob([fileContent], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
   const dateStr = new Date().toISOString().slice(0,10);
-  a.href = url; 
-  a.download = `ShiftHistory-Logs-${dateStr}.txt`; 
-  a.click();
-  URL.revokeObjectURL(url);
   
-  showToast("Shift history manifest download completed!");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `Agent_Shift_Log_${currentAgentId}_${dateStr}.csv`);
+  document.body.appendChild(link);
+  
+  link.click();
+  document.body.removeChild(link);
+  showToast("Shift History spreadsheet generated for Excel!");
 }
 
 async function clearShiftHistory() {
   if (!currentAgentId) return;
 
-  // Utilize the custom system alert engine to handle the warning check cleanly
   showSystemAlert(
     "Flush History Confirmation", 
     "This will completely wipe your cross-station shift history manifest stack from the cloud database profile. Proceeding cannot be undone.",
     true
   );
 
-  // Re-routing close button target specifically for structural destruction
   const closeBtn = $('alertModalCloseBtn');
   const structuralOverride = async () => {
     globalShiftHistory = [];
@@ -518,7 +541,80 @@ async function clearShiftHistory() {
 }
 
 /* ==========================================================================
-   CLEAN LOGOUT AND INSTANT RESET OPERATIONS (MODERNIZED OVERLAY VIEW)
+   SUPERVISOR OPERATIONS PORTAL & EXCEL BALANCER CONFLICT EXTRACTIONS
+   ========================================================================== */
+function showSupervisorPanel() {
+  $('supervisorAdminPanel').style.display = "flex";
+  $('adminFilterDate').value = new Date().toISOString().split('T')[0];
+}
+
+async function executeSupervisorExtraction() {
+  try {
+    showToast("Processing cloud database query metrics...");
+    
+    const selectedLobFilter = $('adminFilterLob').value;
+    const selectedDateFilter = $('adminFilterDate').value; 
+    
+    const metricsRef = collection(firestoreDb, "cases_performance_metrics");
+    const snapshot = await getDocs(metricsRef);
+    
+    if (snapshot.empty) {
+      showSystemAlert("Data Void", "No production tracking tokens found in the active collection.");
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Metric ID,Agent ID,Agent Name,Line of Business (LOB),Case / SR Reference Number,Exact System Timestamp,Calendar Date Tag\n";
+
+    let recordsCount = 0;
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const agentLob = data.lob || "UNKNOWN";
+      const submissionDate = data.submission_date || "";
+
+      if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+      if (selectedDateFilter && submissionDate !== selectedDateFilter) return;
+
+      const row = [
+        `"${doc.id}"`,
+        `"${data.agent_id || 'N/A'}"`,
+        `"${(data.agent_name || 'Unknown').replace(/"/g, '""')}"`,
+        `"${agentLob}"`,
+        `"${(data.case_id || 'N/A').replace(/"/g, '""')}"`,
+        `"${data.completed_at || 'N/A'}"`,
+        `"${submissionDate}"`
+      ];
+      
+      csvContent += row.join(",") + "\n";
+      recordsCount++;
+    });
+
+    if (recordsCount === 0) {
+      showSystemAlert("Zero Results", "No data matches your selected LOB and date filters.");
+      return;
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    const filenamDate = selectedDateFilter || "All-History";
+    
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `LOB_Performance_Report_[${selectedLobFilter}]_${filenamDate}.csv`);
+    document.body.appendChild(link);
+    
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Successfully extracted ${recordsCount} entries to Excel!`);
+
+  } catch (error) {
+    console.error("Supervisor data extraction pipeline exception: ", error);
+    showSystemAlert("Query Interrupted", "Database rejected compilation stream command instructions.");
+  }
+}
+
+/* ==========================================================================
+   CLEAN LOGOUT AND INSTANT RESET OPERATIONS
    ========================================================================== */
 function terminateAgentSession() {
   const logoutModal = $('logoutModal');
@@ -530,17 +626,14 @@ function terminateAgentSession() {
     return;
   }
 
-  // 1. Unveil the sleek dark overlay viewport layout
   logoutModal.style.display = "flex";
 
-  // 2. Closure Handler: Clicked "Stay Active" (Aborts logout process safely)
   const closeLogoutModal = () => {
     logoutModal.style.display = "none";
     cancelBtn.removeEventListener('click', closeLogoutModal);
     confirmBtn.removeEventListener('click', confirmAction);
   };
 
-  // 3. Destructor Handler: Clicked "Log Out" (Triggers session cache wipe)
   const confirmAction = () => {
     logoutModal.style.display = "none";
     cancelBtn.removeEventListener('click', closeLogoutModal);
@@ -548,7 +641,6 @@ function terminateAgentSession() {
     executeLogOutRoutine();
   };
 
-  // Mount listeners directly to the modal interface layout nodes
   cancelBtn.addEventListener('click', closeLogoutModal);
   confirmBtn.addEventListener('click', confirmAction);
 }
@@ -717,7 +809,6 @@ const TECH_PROCEDURES = {
   "COVERAGE CONNECTIVITY": [{ text: "Check tower coverage indexes", link: "#" }]
 };
 
-// Master shared dataset for billing, registration, portfolio updates, and disputes
 const SHARED_COMMERCIAL_VOC = [
   "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", 
   "AVAILMENT OF ADD-ONS", "BALANCE TRANSFER", "BALANCE:ACCOUNT RECONCILIATION", "BALANCE:CLARIFICATION ON BILLED CHARGES", 
@@ -753,7 +844,7 @@ const SHARED_COMMERCIAL_VOC = [
   "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE", "GENERAL INQUIRY", 
   "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION", "SIM REG: SIM VALIDITY EXTENSION", 
   "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM", 
-  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER", 
+  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH OF OWNER", 
   "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", 
   "SIM REG: UPDATE ID", "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", 
   "SIM REG: REGULATORY TEMPO DISCON", "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATED", 
@@ -763,14 +854,7 @@ const SHARED_COMMERCIAL_VOC = [
 ];
 
 const VOC_OPTIONS = {
-  "Technical": [
-    "VOICE CONNECTIVITY", 
-    "SMS CONNECTIVITY", 
-    "DATA CONNECTIVITY", 
-    "ROAMING CONNECTIVITY", 
-    "COVERAGE CONNECTIVITY",
-    "GENERIC"
-  ],
+  "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY", "GENERIC"],
   "Aftersales": SHARED_COMMERCIAL_VOC,
   "Inquiry": SHARED_COMMERCIAL_VOC,
   "Complaint": SHARED_COMMERCIAL_VOC
@@ -872,7 +956,6 @@ function showSystemAlert(title, message, isWarning = true) {
     return;
   }
 
-  // Configure UI highlights based on message type
   if (isWarning) {
     iconBox.style.background = "rgba(239, 68, 68, 0.1)";
     iconBox.style.color = "#ef4444";
@@ -892,7 +975,6 @@ function showSystemAlert(title, message, isWarning = true) {
   const closeRoutine = () => {
     modal.style.display = "none";
     closeBtn.removeEventListener('click', closeRoutine);
-    // Reset close button text safely back to default status context state
     closeBtn.textContent = "Acknowledge & Dismiss";
   };
   closeBtn.addEventListener('click', closeRoutine);
@@ -905,6 +987,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
+  $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
@@ -944,6 +1027,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize the real-time operational dashboard broadcast stream
   listenToOperationalBroadcasts();
-
   listenToSessionState();
 });
