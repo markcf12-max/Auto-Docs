@@ -414,6 +414,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
   const snapshotData = {
     concernType: getCleanVal("concernType"),
     voc:         getCleanVal("voc"),
+    case:        getCleanVal("case"),
     subj:        getCleanVal("subj"),
     name:        getCleanVal("name"),
     min:         getCleanVal("min"),
@@ -430,7 +431,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
       agent_id: currentAgentId,
       agent_name: currentAgentName,
       lob: currentAgentLob, 
-      case_id: caseNumber || "N/A",
+      case_id: caseNumber || getCleanVal("case") || "N/A",
       completed_at: rightNow.toISOString(),
       submission_date: dateString,
       snapshot: snapshotData
@@ -839,7 +840,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & TAB-DELINEATED WORKBOOK ENGINE
+   SUPERVISOR OPERATIONS PORTAL & DIRECT MAPPER EXTRACTION ENGINE (FIXED)
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
@@ -870,72 +871,74 @@ async function executeSupervisorExtraction() {
     let csvContent = "";
     let recordsCount = 0;
 
-    // Strips out tabs and breaks to prevent string cross-contamination
     const clean = (val) => {
       if (val === undefined || val === null || val === "") return "";
       return val.toString().replace(/[\t\n\r]/g, " ").trim();
     };
 
     /* ==========================================================================
-       BRANCH A: TAB-DELIMITED CASES WORKBOOK EXTRACTION
+       BRANCH A: EXTRACT CASE DATA DIRECTLY FROM THE SOURCE (case_logs -> form_data)
        ========================================================================== */
     if (reportType === "CASES") {
+      // 1. Fetch performance benchmarks to filter by submission date
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
       const q = query(performanceRef, where("submission_date", "==", selectedDateFilter));
-      const snapshot = await getDocs(q);
+      const performanceSnapshot = await getDocs(q);
       
-      if (snapshot.empty) {
+      if (performanceSnapshot.empty) {
         showSystemAlert("Data Void", `No distinct case log submissions found matching target date: [${selectedDateFilter}].`);
         return;
       }
 
+      // Create a set of agent IDs that had submissions on this date
+      const activeAgentIdsForDate = new Set();
+      const performanceDataMap = {};
+      
+      performanceSnapshot.forEach(docSnap => {
+        const pData = docSnap.data();
+        if (pData.agent_id) {
+          activeAgentIdsForDate.add(pData.agent_id);
+          performanceDataMap[pData.agent_id] = pData;
+        }
+      });
+
+      // 2. Extract operational workspace values straight out of case_logs
       const logsRef = collection(firestoreDb, "case_logs");
       const logsSnapshot = await getDocs(logsRef);
-      const workspaceDetailsMap = {};
-      logsSnapshot.forEach(docSnap => {
-        workspaceDetailsMap[docSnap.id] = docSnap.data().form_data || {};
-      });
 
       // Headers delimited using literal tab escapes (\t)
       csvContent += "WinID\tAssigned LOB\tConcern Type\tVOC Option\tCase/SR Number\tSubject\tCustomer Name\tMIN\tCompany\tEmail\tThread ID\tDate-Time\tAction Taken\tWOCAS\tLast Sync Timestamp\n";
 
-      snapshot.forEach((docSnap) => {
-        const pData = docSnap.data();
-        const targetAgentId = pData.agent_id || "N/A";
-        const agentLob = pData.lob || "UNKNOWN";
+      logsSnapshot.forEach((docSnap) => {
+        const agentId = docSnap.id;
+        
+        // Filter out records that don't match our active user list for the target date
+        if (!activeAgentIdsForDate.has(agentId)) return;
+
+        const logDocData = docSnap.data();
+        const formData = logDocData.form_data || {};
+        const pData = performanceDataMap[agentId] || {};
+        const agentLob = pData.lob || logDocData.lob || "UNKNOWN";
         
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        const itemSnap = pData.snapshot || {};
-        const legacyForm = pData.form_data || {};
-        const backupScratch = workspaceDetailsMap[targetAgentId] || {};
-
-        const fetchField = (primaryKey, alternateKey = "") => {
-          return itemSnap[primaryKey] || 
-                 pData[primaryKey] || 
-                 legacyForm[primaryKey] || 
-                 backupScratch[primaryKey] || 
-                 (alternateKey && itemSnap[alternateKey]) ||
-                 (alternateKey && backupScratch[alternateKey]) || 
-                 "";
-        };
-
+        // Route queries safely straight into form_data properties
         const row = [
-          clean(targetAgentId),
+          clean(agentId),
           clean(agentLob),
-          clean(fetchField("concernType")),
-          clean(fetchField("voc")),
-          clean(pData.case_id || "N/A"),
-          clean(fetchField("subj", "subject")),
-          clean(fetchField("name", "customerName")),
-          clean(fetchField("min", "mobileNumber")),
-          clean(fetchField("company")),
-          clean(fetchField("email")),
-          clean(fetchField("thread", "threadId")),
-          clean(fetchField("datetime", "dateTime")),
-          clean(fetchField("action", "actionTaken")),
-          clean(fetchField("wocas")),
-          clean(pData.completed_at ? new Date(pData.completed_at).toLocaleString() : "N/A")
+          clean(formData.concernType),
+          clean(formData.voc),
+          clean(formData.case || logDocData.case_number || pData.case_id || "N/A"),
+          clean(formData.subj || formData.subject),
+          clean(formData.name || formData.customerName),
+          clean(formData.min || formData.mobileNumber),
+          clean(formData.company),
+          clean(formData.email),
+          clean(formData.thread || formData.threadId),
+          clean(formData.datetime || formData.dateTime),
+          clean(formData.action || formData.actionTaken),
+          clean(formData.wocas),
+          clean(logDocData.updated_at ? new Date(logDocData.updated_at).toLocaleString() : (pData.completed_at ? new Date(pData.completed_at).toLocaleString() : "N/A"))
         ];
         
         csvContent += row.join("\t") + "\n";
@@ -985,7 +988,6 @@ async function executeSupervisorExtraction() {
       return;
     }
 
-    // Output strictly configured as an Excel-compatible tab-separated stream
     const blob = new Blob([csvContent], { type: "text/tab-separated-values;charset=utf-8;" });
     const link = document.createElement("a");
     const filenameLabel = reportType === "CASES" ? "Detailed_Cases_Workbook" : "Compliance_Telemetry_Report";
@@ -999,7 +1001,7 @@ async function executeSupervisorExtraction() {
     showToast(`Successfully exported ${recordsCount} ${reportType.toLowerCase()} rows to Excel!`);
 
   } catch (error) {
-    console.error("Supervisor data extraction core workspace error:", error);
+    console.error("Supervisor data extraction core error:", error);
     showSystemAlert("Query Interrupted", "Database pipeline rejected structural extraction parameter instructions.");
   }
 }
