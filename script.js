@@ -34,7 +34,83 @@ function $(id) {
 }
 
 /* ==========================================================================
-   UI STATUS INDICATORS
+   VOC ENGINE REFERENCE MATRICES (UNIFIED WORKSTATION ARRAYS)
+   ========================================================================== */
+const TECH_PROCEDURES = {
+  "VOICE CONNECTIVITY": [{ text: "Check voice service status flags", link: "#" }],
+  "SMS CONNECTIVITY": [{ text: "Check SMS provisioning status", link: "#" }],
+  "DATA CONNECTIVITY": [{ text: "Check active data sessions", link: "#" }],
+  "ROAMING CONNECTIVITY": [{ text: "Verify global routing tags", link: "#" }],
+  "COVERAGE CONNECTIVITY": [{ text: "Check tower coverage indexes", link: "#" }]
+};
+
+const SHARED_COMMERCIAL_VOC = [
+  "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", 
+  "AVAILMENT OF ADD-ONS", "BALANCE TRANSFER", "BALANCE:ACCOUNT RECONCILIATION", "BALANCE:CLARIFICATION ON BILLED CHARGES", 
+  "BALANCE:COLLECTION REMINDER", "BALANCE:NON-RECEIPT OF BILL", "BALANCE:POSTING OF PAYMENT", "BALANCE:PRO-RATA", 
+  "BALANCE:REMAINING ALLOCATION", "BALANCE:TOP UP", "BALANCE:UNBILLED", "BAN", "BAR SMS", "BARRING:DATA", 
+  "BARRING:LOSS", "BILL DETAILS:DUE DATE/CUTOFF", "BIN ABUSE", "BIN FRAUD", "CHANGE IN BILLING ADDRESS", 
+  "CHANGE IN CREDIT LIMIT", "E-SIM", "CHANGE IN CUSTOMER INFORMATION", "CHANGE OF OWNERSHIP", "COVERAGE", 
+  "DATA CONNECTIVITY:INTERMITTENT CONNECTION", "DATA CONNECTIVITY:NO CONNECTION", "DATA CONNECTIVITY:SPECIFIC WEBSITE/APPLICATION", 
+  "DATA CONNECTIVITY:SLOW CONNECTION", "DEACTIVATION OF FLEXIBUNDLES", "DISCONNECTION", "DISPUTE: MSF CHARGES", 
+  "DISPUTE: CALL CHARGES", "DISPUTE:DATA CHARGES", "DISPUTE:SMS CHARGES", "DISPUTE: PCC", "DISPUTE:VAS CHARGES", 
+  "FAIR USE POLICY", "FAST DEPLETION", "FLP RESENDING OF LOAD", "HANDSET UNLOCKING", "HOAX CALL/SMS", 
+  "HOME PREPAID WIFI", "INABILITY TO CALL THE HOTLINE/SPECIAL NUMBER", "INTERNATIONAL ROAMING- STATUS", 
+  "INABILITY TO REGISTER", "LIFTING:DATA", "LIFTING:INCOMING/OUTGOING/DATA", "LIFTING:REDIRECTION", "MENU UPDATE", 
+  "MOBILE APPLICATION", "OTHER PROCEDURAL CONCERN", "PASALOAD", "PAYMENT ARRANGEMENT", "PAYMENT CHANNEL", 
+  "PLAN DOWNGRADE/UPGRADE", "PLAN INCLUSION", "PRODUCT/PROMO INQUIRY", "PROMO MECHANICS", "PROMO RATES/INCLUSION", 
+  "PUK/PIN", "REFUND", "REGISTRATION PROCEDURE", "RELOADING PROCEDURE", "RELOADING:DELAYED CONFIRMATION MESSAGE", 
+  "RELOADING:INABILITY TO RELOAD", "RELOADING:MULTIPLE DEDUCTION", "RELOADING:NO CONFIRMATION MESSAGE", 
+  "RELOADING:UNCREDITED LOAD", "REPLACEMENT:DEVICE", "REPLACEMENT:SIM", "RETAILER INCENTIVE", "RETENTION", 
+  "REWARDS", "SELF CARE CHANNEL", "SERVICE CONTRACT", "SERVICE DOWNTIME:CALL", "SERVICE DOWNTIME:DATA", 
+  "SERVICE DOWNTIME:LOADING", "SERVICE DOWNTIME:REGISTRATION", "SERVICE DOWNTIME:SMS", "SERVICE DOWNTIME:VAS", 
+  "SIM UPGRADE", "SMS CONNECTIVITY:INCOMING", "SMS CONNECTIVITY:MULTIPLE", "SMS CONNECTIVITY:DELAYED", 
+  "SMS CONNECTIVITY:OUTGOING", "SMS CONNECTIVITY:PREMIUM SMS", "SOA:BILL REPRINT", "SOA:E-STATEMENT", 
+  "STATUS: ACCOUNT", "SOA:NON RECEIPT/DELAYED", "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING OF DEALER/RETAILER SIM", 
+  "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION", "VAS TECH:UNABLE TO REGISTER", "VOICE CONNECTIVITY: INCOMING", 
+  "VOICE CONNECTIVITY: OUTGOING", "VOICE QUALITY", "BALANCE: AMOUNT TO SETTLE", "DISSATISFACTION", "MNP INQUIRY", 
+  "SUCCESSFUL MNP INTERPORT-IN (TO POSTPAID)", "SUCCESSFUL MNP INTERPORT-IN (TO PREPAID)", "SUCCESSFUL MNP INTERPORT-OUT", 
+  "SUCCESSFUL MNP INTRAPORT (TO POSTPAID)", "SUCCESSFUL MNP INTRAPORT (TO PREPAID)", "MNP SIM ACTIVATION", 
+  "MNP SIM/DEVICE DELIVERY", "UNSUCCESSFUL MNP (POSTPAID)-BILL ISSUES", "UNSUCCESSFUL MNP (PREPAID)-BILL ISSUES", 
+  "UNSUCCESSFUL MNP (POSTPAID)–CHANGE OF MIND", "UNSUCCESSFUL MNP (PREPAID)–CHANGE OF MIND", "UNSUCCESSFUL MNP (POSTPAID)-FINANCIAL REASON", 
+  "UNSUCCESSFUL MNP (PREPAID)-FINANCIAL REASON", "UNSUCCESSFUL MNP (POSTPAID)-UNACCEPTABLE PLAN OFFER", 
+  "UNSUCCESSFUL MNP (POSTPAID)-UNACCEPTABLE PROMO OFFER", "UNSUCCESSFUL MNP (PREPAID)-UNACCEPTABLE PROMO OFFER", 
+  "UNSUCCESSFUL MNP (POSTPAID)-TOOLS ISSUE", "UNSUCCESSFUL MNP (PREPAID)-TOOLS ISSUE", "UNSUCCESSFUL MNP (POSTPAID)–UNDECIDED", 
+  "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE", "GENERAL INQUIRY", 
+  "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION", "SIM REG: SIM VALIDITY EXTENSION", 
+  "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM", 
+  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER", 
+  "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", 
+  "SIM REG: UPDATE ID", "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", 
+  "SIM REG: REGULATORY TEMPO DISCON", "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATIONED", 
+  "Reconnection from Voluntary TD", "Reconnection from Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", 
+  "Case Management – Billing Dispute", "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", 
+  "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
+];
+
+const VOC_OPTIONS = {
+  "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY", "GENERIC"],
+  "Aftersales": SHARED_COMMERCIAL_VOC,
+  "Inquiry": SHARED_COMMERCIAL_VOC,
+  "Complaint": SHARED_COMMERCIAL_VOC
+};
+
+/* ==========================================================================
+   SUPERVISOR-MANAGED EMAIL SPIEL REPOSITORY
+   ========================================================================== */
+const EMAIL_SPIEL_MATRIX = {
+  "Technical": {
+    "DATA CONNECTIVITY": "Dear Customer,\n\nThank you for reaching out. We have analyzed your cellular provisioning profile regarding your mobile data connection. Please perform a hard restart of your device to force network re-registration. If connectivity issues persist, reply with your current location coordinates so our field engineers can verify cell tower load vectors.\n\nBest regards,\n[Agent Name]\nEnterprise Technical Support Desk",
+    "VOICE CONNECTIVITY": "Dear Customer,\n\nWe appreciate you bringing your incoming/outgoing voice calling disruptions to our attention. Our team has verified that your core SIM configuration is active. Please toggle Airplane Mode ON for 30 seconds and then OFF to re-align your network configuration profile.\n\nBest regards,\n[Agent Name]\nTechnical Solutions Group"
+  },
+  "Aftersales": {
+    "E-SIM": "Dear Customer,\n\nWe have successfully received your request regarding your business E-SIM conversion mapping profile. Attached to this email notification, you will find your localized secure QR registration token along with comprehensive profile download directions.\n\nBest regards,\n[Agent Name]\nAccount Lifecycle Management",
+    "PLAN DOWNGRADE/UPGRADE": "Dear Customer,\n\nThis email confirms that your enterprise subscription tier modification request has been formally processed. Your newly aligned data allotments and commercial pricing variables will take effect on your next structural billing cycle interface.\n\nBest regards,\n[Agent Name]\nCorporate Operations Team"
+  }
+};
+
+/* ==========================================================================
+   UI STATUS INDICATORS & EXTRAS
    ========================================================================== */
 function updateSyncStatusUI(status) {
   const badge = $('syncStatus');
@@ -56,8 +132,118 @@ function updateSyncStatusUI(status) {
   }
 }
 
+function updateVocOptions(preserveValue = false) {
+  const mainCategory = $("concernType")?.value;
+  const vocSelect = $("voc");
+  if (!vocSelect) return;
+
+  const currentVocValue = vocSelect.value;
+  vocSelect.innerHTML = '<option value="">Select VOC Option</option>';
+
+  if (mainCategory && VOC_OPTIONS[mainCategory]) {
+    VOC_OPTIONS[mainCategory].forEach(option => {
+      const optEl = document.createElement("option");
+      optEl.value = option;
+      optEl.textContent = option;
+      vocSelect.appendChild(optEl);
+    });
+  }
+
+  if (preserveValue && currentVocValue) {
+    vocSelect.value = currentVocValue;
+  }
+}
+
+function updateOutput() {
+  if (!$("output") || isResetting || !currentAgentId) return;
+  
+  const caseVal = $("case")?.value.trim() || "";
+  let ticketHeaderTag = "CASE/SR VALUE";
+  let displayValue = caseVal || "N/A";
+
+  if (caseVal.length === 8) ticketHeaderTag = "CASE NUMBER";
+  if (caseVal.length === 10) ticketHeaderTag = "SR NUMBER";
+
+  $("output").textContent = 
+`${ticketHeaderTag}: ${displayValue}
+CONCERN TYPE: ${$("concernType")?.value || ""}
+VOC: ${$("voc")?.value || ""}
+
+SUBJ: ${$("subj")?.value || ""}
+
+NAME: ${$("name")?.value || ""}
+MIN: ${$("min")?.value || ""}
+COMPANY: ${$("company")?.value || ""}
+EMAIL: ${$("email")?.value || ""}
+THREAD: ${$("thread")?.value || ""}
+DATE/TIME: ${$("datetime")?.value || ""}
+
+ACTION:
+${$("action")?.value || ""}
+
+WOCAS:
+${$("wocas")?.value || ""}`;
+}
+
+function updateSuggestions() {
+  const target = $("suggestions");
+  if (!target || isResetting) return;
+  const concern = $("concernType")?.value;
+  const voc = $("voc")?.value;
+  
+  if (!concern) {
+    target.innerHTML = "Select Concern & VOC";
+    return;
+  }
+
+  let html = `<div style="color: #60a5fa; margin-bottom: 8px;"><strong>Operational Matrix Advice:</strong></div>`;
+
+  if (!voc) {
+    html += `<i>Choose sub-VOC string to compile live documentation rules...</i>`;
+    target.innerHTML = html;
+    return;
+  }
+
+  if (concern === "Technical" && TECH_PROCEDURES[voc]) {
+    html += TECH_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
+  } else {
+    html += `• Follow standard processing vectors designated for ${voc}.`;
+  }
+
+  target.innerHTML = html;
+  updatePlaybookSpiel(concern, voc);
+}
+
 /* ==========================================================================
-   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW WITH TELEMETRY TRACKING
+   PLAYBOOK DYNAMIC SPIEL SYSTEM WITH INTEGRATED GUARDRAILS (COPY BTN REMOVED)
+   ========================================================================== */
+function updatePlaybookSpiel(concern, voc) {
+  const container = $('playbookSpielContainer');
+  if (!container) return;
+
+  if (!concern || !voc || !EMAIL_SPIEL_MATRIX[concern] || !EMAIL_SPIEL_MATRIX[concern][voc]) {
+    container.innerHTML = `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">No standard sample email spiel registered for the selected ${concern || 'N/A'} ➔ ${voc || 'N/A'} vector context.</div>`;
+    return;
+  }
+
+  let localizedRawTemplate = EMAIL_SPIEL_MATRIX[concern][voc];
+  let fullyCompiledTemplate = localizedRawTemplate.replace("[Agent Name]", currentAgentName);
+
+  container.innerHTML = `
+    <!-- High-Visibility Supervisor Guardrail Badge -->
+    <div style="background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; color: #fbbf24; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 1.4;">
+      <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> REMINDER: Customize the sample email if fitted to the concern.
+    </div>
+
+    <!-- Live Workspace Template Code Container -->
+    <div style="position: relative; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 12px;">
+      <pre id="playbookRawSpielText" style="margin: 0; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;">${fullyCompiledTemplate}</pre>
+    </div>
+  `;
+}
+
+/* ==========================================================================
+   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW
    ========================================================================== */
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
@@ -71,8 +257,8 @@ function toggleAuthMode(e) {
     
     if ($('authNameContainer')) $('authNameContainer').style.display = "flex";
     if ($('authLobContainer')) $('authLobContainer').style.display = "flex";
-    $('authName').required = true;
-    $('authLob').required = true;
+    if ($('authName')) $('authName').required = true;
+    if ($('authLob')) $('authLob').required = true;
   } else {
     currentAuthMode = "LOGIN";
     $('authTitle').textContent = "Agent Workbench Sign In";
@@ -82,8 +268,8 @@ function toggleAuthMode(e) {
     
     if ($('authNameContainer')) $('authNameContainer').style.display = "none";
     if ($('authLobContainer')) $('authLobContainer').style.display = "none";
-    $('authName').required = false;
-    $('authLob').required = false;
+    if ($('authName')) $('authName').required = false;
+    if ($('authLob')) $('authLob').required = false;
   }
 }
 
@@ -213,11 +399,11 @@ async function handleAuthSubmission(e) {
 
 async function handleSessionLoginTransition() {
   $('authModal').style.display = "none";
-  $('logoutBtn').style.display = "block";
+  if ($('logoutBtn')) $('logoutBtn').style.display = "block";
   updateSyncStatusUI('online');
   
-  updateOutput();
   updateVocOptions(true);
+  updateOutput();
   updateSuggestions();
   
   await pullLiveWorkspace();
@@ -256,13 +442,15 @@ function listenToSessionState() {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+    const spielPanel = $('playbookSpielContainer');
+    if (spielPanel) spielPanel.innerHTML = "";
     renderHistoryView();
   }
 }
 
 function showLoginGateway(isRegisterMode = false) {
   $('authModal').style.display = "flex";
-  $('logoutBtn').style.display = "none";
+  if ($('logoutBtn')) $('logoutBtn').style.display = "none";
   if (isRegisterMode) {
     currentAuthMode = "REGISTER";
     $('authTitle').textContent = "Register Agent Profile";
@@ -289,9 +477,8 @@ async function saveData(forceInstant = false) {
   if (isResetting || !currentAgentId) return; 
   if (saveTimeout) clearTimeout(saveTimeout);
 
-  updateSyncStatusUI('saving');
-
   const executeSave = async () => {
+    updateSyncStatusUI('saving');
     const data = {};
     document.querySelectorAll("input, textarea, select").forEach(el => {
       if (el.id) data[el.id] = el.value;
@@ -416,7 +603,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     voc:         getCleanVal("voc"),
     case:        getCleanVal("case"),
     subj:        getCleanVal("subj"),
-    name:         getCleanVal("name"),
+    name:        getCleanVal("name"),
     min:         getCleanVal("min"),
     company:     getCleanVal("company"),
     email:       getCleanVal("email"),
@@ -455,7 +642,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
 }
 
 /* ==========================================================================
-   SHIFT HISTORY LOGS MANIFEST SYSTEM
+   SHIFT HISTORY MANIFEST SYSTEM (TEXT-ONLY EXPORT VIA PROSE)
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
   if (!currentAgentId) return;
@@ -553,38 +740,51 @@ function updateFloatingBanner() {
   banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> LIVE OPERATIONS CHANNEL | ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: (${historyCount})`;
 }
 
+/* ==========================================================================
+   AGENT TEXT ONLY SHIFT LOG HISTORY EXPORT
+   ========================================================================== */
 async function downloadHistoryLog() {
   if (globalShiftHistory.length === 0) {
     showToast("No history data to download yet!", true);
     return;
   }
 
-  let csvContent = "";
-  csvContent += "Agent ID,Agent Name,Line of Business (LOB),Timestamp,Reference Case ID,Documentation Raw Text\n";
+  const rightNow = new Date();
+  const options = { year: 'numeric', month: 'short', day: '2-digit' };
+  const currentCalendarDate = rightNow.toLocaleDateString('en-US', options); 
 
-  globalShiftHistory.forEach((item) => {
-    const escapeCsv = (val) => `"${val.toString().replace(/"/g, '""').trim()}"`;
-    const safeId = escapeCsv(item.id);
-    const safeTime = escapeCsv(item.time);
-    const safeText = escapeCsv(item.text);
-    const safeAgentId = escapeCsv(currentAgentId || 'N/A');
-    const safeAgentName = escapeCsv(currentAgentName);
-    const safeLob = escapeCsv(currentAgentLob);
+  let textContent = `==========================================================================\n`;
+  textContent += `OFFICIAL AGENT PERFORMANCE WORKSTATION LOG SHIFT MANIFEST\n`;
+  textContent += `==========================================================================\n`;
+  textContent += `EXTRACT DATE : ${currentCalendarDate}\n`;
+  textContent += `AGENT WINID  : ${currentAgentId || 'N/A'}\n`;
+  textContent += `AGENT NAME   : ${currentAgentName}\n`;
+  textContent += `DESIGNATED LOB: ${currentAgentLob}\n`;
+  textContent += `TOTAL VOLUMES: ${globalShiftHistory.length} Transacted System Documentation Blocks\n`;
+  textContent += `==========================================================================\n\n`;
 
-    csvContent += `${safeAgentId},${safeAgentName},${safeLob},${safeTime},${safeId},${safeText}\n`;
+  globalShiftHistory.forEach((item, idx) => {
+    textContent += `--------------------------------------------------------------------------\n`;
+    textContent += `LOG ITEM #${idx + 1} | [${currentCalendarDate} @ ${item.time}]\n`;
+    textContent += `CASE/SR NUMBER: ${item.id || 'N/A'}\n`;
+    textContent += `--------------------------------------------------------------------------\n`;
+    textContent += `DAW NOTES:\n`;
+    textContent += `${item.text}\n`;
+    textContent += `--------------------------------------------------------------------------\n\n`;
   });
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  textContent += `\n[EOF] End of Compiled Text Audit Track.`;
+
+  const blob = new Blob([textContent], { type: "text/plain;charset=utf-8;" });
   const link = document.createElement("a");
-  const dateStr = new Date().toISOString().slice(0,10);
+  const dateStr = rightNow.toISOString().slice(0,10);
   
   link.href = URL.createObjectURL(blob);
-  link.setAttribute("download", `Agent_Shift_Log_${currentAgentId}_${dateStr}.csv`);
+  link.setAttribute("download", `Agent_Shift_Log_${currentAgentId}_${dateStr}.txt`);
   document.body.appendChild(link);
-  
   link.click();
   document.body.removeChild(link);
-  showToast("Shift History workbook generated in CSV format!");
+  showToast("Shift History workbook compiled as plain-text file (.txt) successfully!");
 }
 
 async function clearShiftHistory() {
@@ -597,6 +797,8 @@ async function clearShiftHistory() {
   );
 
   const closeBtn = $('alertModalCloseBtn');
+  if (!closeBtn) return;
+  
   const structuralOverride = async () => {
     globalShiftHistory = [];
     try {
@@ -617,147 +819,8 @@ async function clearShiftHistory() {
 }
 
 /* ==========================================================================
-   VOC ENGINE REFERENCE MATRICES (UNIFIED WORKSTATION ARRAYS)
+   ALERTS, TOASTS & UTILS
    ========================================================================== */
-const TECH_PROCEDURES = {
-  "VOICE CONNECTIVITY": [{ text: "Check voice service status flags", link: "#" }],
-  "SMS CONNECTIVITY": [{ text: "Check SMS provisioning status", link: "#" }],
-  "DATA CONNECTIVITY": [{ text: "Check active data sessions", link: "#" }],
-  "ROAMING CONNECTIVITY": [{ text: "Verify global routing tags", link: "#" }],
-  "COVERAGE CONNECTIVITY": [{ text: "Check tower coverage indexes", link: "#" }]
-};
-
-const SHARED_COMMERCIAL_VOC = [
-  "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", 
-  "AVAILMENT OF ADD-ONS", "BALANCE TRANSFER", "BALANCE:ACCOUNT RECONCILIATION", "BALANCE:CLARIFICATION ON BILLED CHARGES", 
-  "BALANCE:COLLECTION REMINDER", "BALANCE:NON-RECEIPT OF BILL", "BALANCE:POSTING OF PAYMENT", "BALANCE:PRO-RATA", 
-  "BALANCE:REMAINING ALLOCATION", "BALANCE:TOP UP", "BALANCE:UNBILLED", "BAN", "BAR SMS", "BARRING:DATA", 
-  "BARRING:LOSS", "BILL DETAILS:DUE DATE/CUTOFF", "BIN ABUSE", "BIN FRAUD", "CHANGE IN BILLING ADDRESS", 
-  "CHANGE IN CREDIT LIMIT", "E-SIM", "CHANGE IN CUSTOMER INFORMATION", "CHANGE OF OWNERSHIP", "COVERAGE", 
-  "DATA CONNECTIVITY:INTERMITTENT CONNECTION", "DATA CONNECTIVITY:NO CONNECTION", "DATA CONNECTIVITY:SPECIFIC WEBSITE/APPLICATION", 
-  "DATA CONNECTIVITY:SLOW CONNECTION", "DEACTIVATION OF FLEXIBUNDLES", "DISCONNECTION", "DISPUTE: MSF CHARGES", 
-  "DISPUTE: CALL CHARGES", "DISPUTE:DATA CHARGES", "DISPUTE:SMS CHARGES", "DISPUTE: PCC", "DISPUTE:VAS CHARGES", 
-  "FAIR USE POLICY", "FAST DEPLETION", "FLP RESENDING OF LOAD", "HANDSET UNLOCKING", "HOAX CALL/SMS", 
-  "HOME PREPAID WIFI", "INABILITY TO CALL THE HOTLINE/SPECIAL NUMBER", "INTERNATIONAL ROAMING- STATUS", 
-  "INABILITY TO REGISTER", "LIFTING:DATA", "LIFTING:INCOMING/OUTGOING/DATA", "LIFTING:REDIRECTION", "MENU UPDATE", 
-  "MOBILE APPLICATION", "OTHER PROCEDURAL CONCERN", "PASALOAD", "PAYMENT ARRANGEMENT", "PAYMENT CHANNEL", 
-  "PLAN DOWNGRADE/UPGRADE", "PLAN INCLUSION", "PRODUCT/PROMO INQUIRY", "PROMO MECHANICS", "PROMO RATES/INCLUSION", 
-  "PUK/PIN", "REFUND", "REGISTRATION PROCEDURE", "RELOADING PROCEDURE", "RELOADING:DELAYED CONFIRMATION MESSAGE", 
-  "RELOADING:INABILITY TO RELOAD", "RELOADING:MULTIPLE DEDUCTION", "RELOADING:NO CONFIRMATION MESSAGE", 
-  "RELOADING:UNCREDITED LOAD", "REPLACEMENT:DEVICE", "REPLACEMENT:SIM", "RETAILER INCENTIVE", "RETENTION", 
-  "REWARDS", "SELF CARE CHANNEL", "SERVICE CONTRACT", "SERVICE DOWNTIME:CALL", "SERVICE DOWNTIME:DATA", 
-  "SERVICE DOWNTIME:LOADING", "SERVICE DOWNTIME:REGISTRATION", "SERVICE DOWNTIME:SMS", "SERVICE DOWNTIME:VAS", 
-  "SIM UPGRADE", "SMS CONNECTIVITY:INCOMING", "SMS CONNECTIVITY:MULTIPLE", "SMS CONNECTIVITY:DELAYED", 
-  "SMS CONNECTIVITY:OUTGOING", "SMS CONNECTIVITY:PREMIUM SMS", "SOA:BILL REPRINT", "SOA:E-STATEMENT", 
-  "STATUS: ACCOUNT", "SOA:NON RECEIPT/DELAYED", "SUBSCRIBER TAG STATUS:NO SERVICE", "UNBLOCKING OF DEALER/RETAILER SIM", 
-  "VAS CANCELLATION", "VAS TECH:VAS CANCELLATION", "VAS TECH:UNABLE TO REGISTER", "VOICE CONNECTIVITY: INCOMING", 
-  "VOICE CONNECTIVITY: OUTGOING", "VOICE QUALITY", "BALANCE: AMOUNT TO SETTLE", "DISSATISFACTION", "MNP INQUIRY", 
-  "SUCCESSFUL MNP INTERPORT-IN (TO POSTPAID)", "SUCCESSFUL MNP INTERPORT-IN (TO PREPAID)", "SUCCESSFUL MNP INTERPORT-OUT", 
-  "SUCCESSFUL MNP INTRAPORT (TO POSTPAID)", "SUCCESSFUL MNP INTRAPORT (TO PREPAID)", "MNP SIM ACTIVATION", 
-  "MNP SIM/DEVICE DELIVERY", "UNSUCCESSFUL MNP (POSTPAID)-BILL ISSUES", "UNSUCCESSFUL MNP (PREPAID)-BILL ISSUES", 
-  "UNSUCCESSFUL MNP (POSTPAID)–CHANGE OF MIND", "UNSUCCESSFUL MNP (PREPAID)–CHANGE OF MIND", "UNSUCCESSFUL MNP (POSTPAID)-FINANCIAL REASON", 
-  "UNSUCCESSFUL MNP (PREPAID)-FINANCIAL REASON", "UNSUCCESSFUL MNP (POSTPAID)-UNACCEPTABLE PLAN OFFER", 
-  "UNSUCCESSFUL MNP (POSTPAID)-UNACCEPTABLE PROMO OFFER", "UNSUCCESSFUL MNP (PREPAID)-UNACCEPTABLE PROMO OFFER", 
-  "UNSUCCESSFUL MNP (POSTPAID)-TOOLS ISSUE", "UNSUCCESSFUL MNP (PREPAID)-TOOLS ISSUE", "UNSUCCESSFUL MNP (POSTPAID)–UNDECIDED", 
-  "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE", "GENERAL INQUIRY", 
-  "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION", "SIM REG: SIM VALIDITY EXTENSION", 
-  "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM", 
-  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER", 
-  "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", 
-  "SIM REG: UPDATE ID", "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", 
-  "SIM REG: REGULATORY TEMPO DISCON", "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATED", 
-  "Reconnection from Voluntary TD", "Reconnection from Involuntary TD", "VPD due to Deceased", "Waiver of Reconnection Fee", 
-  "Case Management – Billing Dispute", "Customer Account Adjustment", "DISPUTE ON MONETARY", "DISPUTE ON NON MONETARY", 
-  "DEFECTIVE SIM", "3G SUNSET/NETWORK ENHANCEMENT", "GENERIC"
-];
-
-const VOC_OPTIONS = {
-  "Technical": ["VOICE CONNECTIVITY", "SMS CONNECTIVITY", "DATA CONNECTIVITY", "ROAMING CONNECTIVITY", "COVERAGE CONNECTIVITY", "GENERIC"],
-  "Aftersales": SHARED_COMMERCIAL_VOC,
-  "Inquiry": SHARED_COMMERCIAL_VOC,
-  "Complaint": SHARED_COMMERCIAL_VOC
-};
-
-function updateVocOptions(preserveValue = false) {
-  const mainCategory = $("concernType")?.value;
-  const vocSelect = $("voc");
-  if (!vocSelect) return;
-
-  const currentVocValue = vocSelect.value;
-  vocSelect.innerHTML = '<option value="">Select VOC Option</option>';
-
-  if (mainCategory && VOC_OPTIONS[mainCategory]) {
-    VOC_OPTIONS[mainCategory].forEach(option => {
-      const optEl = document.createElement("option");
-      optEl.value = option;
-      optEl.textContent = option;
-      vocSelect.appendChild(optEl);
-    });
-  }
-
-  if (preserveValue && currentVocValue) {
-    vocSelect.value = currentVocValue;
-  }
-}
-
-function updateOutput() {
-  if (!$("output") || isResetting) return;
-  
-  const caseVal = $("case")?.value.trim() || "";
-  let ticketHeaderTag = "CASE/SR VALUE";
-  let displayValue = caseVal || "N/A";
-
-  if (caseVal.length === 8) ticketHeaderTag = "CASE NUMBER";
-  if (caseVal.length === 10) ticketHeaderTag = "SR NUMBER";
-
-  $("output").textContent = 
-`${ticketHeaderTag}: ${displayValue}
-CONCERN TYPE: ${$("concernType")?.value || ""}
-VOC: ${$("voc")?.value || ""}
-
-SUBJ: ${$("subj")?.value || ""}
-
-NAME: ${$("name")?.value || ""}
-MIN: ${$("min")?.value || ""}
-COMPANY: ${$("company")?.value || ""}
-EMAIL: ${$("email")?.value || ""}
-THREAD: ${$("thread")?.value || ""}
-DATE/TIME: ${$("datetime")?.value || ""}
-
-ACTION:
-${$("action")?.value || ""}
-
-WOCAS:
-${$("wocas")?.value || ""}`;
-}
-
-function updateSuggestions() {
-  if (!$("suggestions") || isResetting) return;
-  const concern = $("concernType")?.value;
-  const voc = $("voc")?.value;
-  
-  if (!concern) {
-    $("suggestions").innerHTML = "Select Concern & VOC";
-    return;
-  }
-
-  let html = `<div style="color: #60a5fa; margin-bottom: 8px;"><strong>Operational Matrix Advice:</strong></div>`;
-
-  if (!voc) {
-    html += `<i>Choose sub-VOC string to compile live documentation rules...</i>`;
-    $("suggestions").innerHTML = html;
-    return;
-  }
-
-  if (concern === "Technical" && TECH_PROCEDURES[voc]) {
-    html += TECH_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
-  } else {
-    html += `• Follow standard processing vectors designated for ${voc}.`;
-  }
-
-  $("suggestions").innerHTML = html;
-}
-
 function showSystemAlert(title, message, isWarning = true) {
   const modal = $('alertModal');
   const titleEl = $('alertModalTitle');
@@ -772,27 +835,29 @@ function showSystemAlert(title, message, isWarning = true) {
   }
 
   if (isWarning) {
-    iconBox.style.background = "rgba(239, 68, 68, 0.1)";
-    iconBox.style.color = "#ef4444";
-    icon.className = "fas fa-exclamation-circle";
-    closeBtn.style.background = "#2563eb"; 
+    if (iconBox) iconBox.style.background = "rgba(239, 68, 68, 0.1)";
+    if (iconBox) iconBox.style.color = "#ef4444";
+    if (icon) icon.className = "fas fa-exclamation-circle";
+    if (closeBtn) closeBtn.style.background = "#2563eb"; 
   } else {
-    iconBox.style.background = "rgba(16, 185, 129, 0.1)";
-    iconBox.style.color = "#10b981";
-    icon.className = "fas fa-check-circle";
-    closeBtn.style.background = "#10b981";
+    if (iconBox) iconBox.style.background = "rgba(16, 185, 129, 0.1)";
+    if (iconBox) iconBox.style.color = "#10b981";
+    if (icon) icon.className = "fas fa-check-circle";
+    if (closeBtn) closeBtn.style.background = "#10b981";
   }
 
-  titleEl.textContent = title;
-  msgEl.textContent = message;
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
   modal.style.display = "flex";
 
   const closeRoutine = () => {
     modal.style.display = "none";
-    closeBtn.removeEventListener('click', closeRoutine);
-    closeBtn.textContent = "Acknowledge & Dismiss";
+    if (closeBtn) {
+      closeBtn.removeEventListener('click', closeRoutine);
+      closeBtn.textContent = "Acknowledge & Dismiss";
+    }
   };
-  closeBtn.addEventListener('click', closeRoutine);
+  if (closeBtn) closeBtn.addEventListener('click', closeRoutine);
 }
 
 function showToast(msg, isError = false) {
@@ -807,7 +872,8 @@ function showToast(msg, isError = false) {
     toast.style.borderLeft = "5px solid #047857";
   }
   
-  $('toastMessage').textContent = msg;
+  const label = $('toastMessage');
+  if (label) label.textContent = msg;
   toast.classList.add('show');
   setTimeout(() => { toast.classList.remove('show'); }, 3000);
 }
@@ -841,30 +907,36 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & ADVANCED DEEP-SCAN EXPORT ENGINE
+   SUPERVISOR OPERATIONS PORTAL WITH DATE RANGE FILTERS
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
   if (panel) panel.style.display = "flex";
-  const dateEl = $('adminFilterDate');
-  if (dateEl) {
+  
+  const startDateEl = $('adminFilterStartDate');
+  const endDateEl = $('adminFilterEndDate');
+  
+  if (startDateEl && endDateEl) {
     const rightNow = new Date();
-    const yyyy = rightNow.getFullYear();
-    const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
-    const dd = String(rightNow.getDate()).padStart(2, '0');
-    dateEl.value = `${yyyy}-${mm}-${dd}`;
+    const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
+    startDateEl.value = todayStr;
+    endDateEl.value = todayStr;
   }
 }
 
 async function executeSupervisorExtraction() {
   try {
     const reportType = $('adminFilterDataType')?.value || "CASES";
-    const selectedLobFilter = $('adminFilterLob').value;
-    const selectedDateFilter = $('adminFilterDate').value; 
+    const selectedLobFilter = $('adminFilterLob')?.value || "ALL";
+    const startDateFilter = $('adminFilterStartDate')?.value || ""; 
+    const endDateFilter = $('adminFilterEndDate')?.value || ""; 
 
-    showToast(`Deep Scanning database for ${reportType.toLowerCase()}...`);
-    console.log("--- STARTING DEEP SCAN EXTRACTION ---");
-    console.log("Filters applied - LOB:", selectedLobFilter, "Date:", selectedDateFilter || "ALL TIME");
+    if (!startDateFilter || !endDateFilter) {
+      showSystemAlert("Parameter Under-specified", "Supervisors must define both Start and End boundary parameters.");
+      return;
+    }
+
+    showToast(`Deep Scanning metrics partition query range...`);
 
     let csvContent = "";
     let recordsCount = 0;
@@ -878,43 +950,35 @@ async function executeSupervisorExtraction() {
       return str;
     };
 
-/* ==========================================================================
-       BRANCH A: EXTRACT LABELED CASE METRICS WITH DEEP BACKUP SCAN
-       ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
-      let q = query(performanceRef); 
-
-      if (selectedDateFilter) {
-        q = query(performanceRef, where("submission_date", "==", selectedDateFilter));
-      }
+      
+      const q = query(
+        performanceRef, 
+        where("submission_date", ">=", startDateFilter), 
+        where("submission_date", "<=", endDateFilter)
+      );
 
       const performanceSnapshot = await getDocs(q);
-      console.log(`Total documents found in 'cases_performance_metrics': ${performanceSnapshot.size}`);
       
-      // FALLBACK TRAP: If archive is completely empty, scrape raw draft payloads out of case_logs!
       if (performanceSnapshot.empty) {
-        console.warn("History archive is empty! Initiating deep fallback scan into active workspace containers...");
+        console.warn("Targeted history range void. Scanning global active workspace drafts...");
         const backupRef = collection(firestoreDb, "case_logs");
         const backupSnap = await getDocs(backupRef);
-        console.log(`Documents found in active workspace backups ('case_logs'): ${backupSnap.size}`);
         
         if (backupSnap.empty) {
-          showSystemAlert("Data Void", "No records found across historical archives or active real-time workspaces.");
+          showSystemAlert("Data Void", "No records found in historical logs or real-time workspaces.");
           return;
         }
         
-        // Structured header layout specifically tailored for raw draft payload visualization
         csvContent += "Draft Log Doc ID,Agent ID/WinID,Last Active Case Target,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection\n";
         
         backupSnap.forEach((docSnap) => {
           const d = docSnap.data();
           const snap = d.form_data || d || {};
           
-          // Normalize old structural styles directly out of live active drafts
           csvContent += [
-            cleanValue(docSnap.id),
-            cleanValue(d.agent_id),
+            cleanValue(docSnap.id), cleanValue(d.agent_id),
             cleanValue(d.case_number || snap.case || snap.field_case || "BLANK DRAFT"),
             cleanValue(snap.action       || snap.field_action       || "BLANK DRAFT"),
             cleanValue(snap.wocas        || snap.field_wocas        || "BLANK DRAFT"),
@@ -932,7 +996,6 @@ async function executeSupervisorExtraction() {
           recordsCount++;
         });
       } else {
-        // Build traditional spreadsheet configuration using user-friendly clean metrics layouts
         csvContent += "Agent ID,Agent Name,Line of Business,Case/SR,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection\n";
 
         performanceSnapshot.forEach((docSnap) => {
@@ -941,19 +1004,12 @@ async function executeSupervisorExtraction() {
 
           if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-          // Advanced Safe-Mapping: Root, snapshot, or form_data fallback
           const snap = rawDoc.snapshot || rawDoc.form_data || rawDoc || {};
-          
-          // DIAGNOSTIC CHECK: Detect old flat records that don't have form properties in DB
           const isLegacyFlatRecord = !rawDoc.snapshot && !rawDoc.form_data && !rawDoc.action && !rawDoc.wocas;
           const fallbackString = isLegacyFlatRecord ? "No Log" : "N/A";
 
-          console.log(`Processing Record ID: ${docSnap.id}, Keys evaluated:`, Object.keys(snap));
-
-          const row = [
-            cleanValue(rawDoc.agent_id),
-            cleanValue(rawDoc.agent_name || "No Log"),
-            cleanValue(agentLob),
+          csvContent += [
+            cleanValue(rawDoc.agent_id), cleanValue(rawDoc.agent_name || "No Log"), cleanValue(agentLob),
             cleanValue(rawDoc.case_id || snap.case || snap.field_case || "N/A"),
             cleanValue(rawDoc.completed_at || rawDoc.updated_at || "N/A"),
             cleanValue(snap.action       || snap.field_action       || fallbackString),
@@ -967,23 +1023,23 @@ async function executeSupervisorExtraction() {
             cleanValue(snap.email        || snap.field_email        || fallbackString),
             cleanValue(snap.subj         || snap.field_subj         || fallbackString),
             cleanValue(snap.voc          || snap.field_voc          || fallbackString)
-          ];
-
-          csvContent += row.join(",") + "\n";
+          ].join(",") + "\n";
           recordsCount++;
         });
       }
-
-    /* ==========================================================================
-       BRANCH B: COMPLIANCE METRICS EXTRACTION
-       ========================================================================== */
     } else {
       const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
-      let q = selectedDateFilter ? query(metricsRef, where("date", "==", selectedDateFilter)) : query(metricsRef);
+      
+      const q = query(
+        metricsRef, 
+        where("date", ">=", startDateFilter), 
+        where("date", "<=", endDateFilter)
+      );
+      
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        showSystemAlert("Data Void", "No metrics or system portal logs exist for this query configuration.");
+        showSystemAlert("Data Void", "No timeline compliance telemetry rows match this date range query.");
         return;
       }
 
@@ -995,43 +1051,30 @@ async function executeSupervisorExtraction() {
 
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        const row = [
-          cleanValue(data.agent_id),
-          cleanValue(data.agent_name),
-          cleanValue(agentLob),
-          data.cases_logged_count || 0,
-          data.wocas_logged_count || 0,
-          data.login_count || 0,
-          data.logout_count || 0,
-          data.abrupt_disconnect_count || 0,
+        csvContent += [
+          cleanValue(data.agent_id), cleanValue(data.agent_name), cleanValue(agentLob),
+          data.cases_logged_count || 0, data.wocas_logged_count || 0, data.login_count || 0, data.logout_count || 0, data.abrupt_disconnect_count || 0,
           cleanValue(data.last_activity_at ? new Date(data.last_activity_at).toLocaleTimeString() : "N/A")
-        ];
-        
-        csvContent += row.join(",") + "\n";
+        ].join(",") + "\n";
         recordsCount++;
       });
     }
 
     if (recordsCount === 0) {
-      showSystemAlert("Zero Results", "No data matched your filtering parameters.");
+      showSystemAlert("Zero Results", "No system records matched your composite structural filters.");
       return;
     }
 
-    // Build and release downloadable system blob link elements
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    const filenameLabel = reportType === "CASES" ? "Clean_Cases_Workbook" : "Compliance_Telemetry_Report";
-    const dateLabel = selectedDateFilter || "ALL_TIME";
+    const filenameLabel = reportType === "CASES" ? "Range_Cases_Workbook" : "Range_Telemetry_Report";
     
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `${filenameLabel}_${selectedLobFilter}_${dateLabel}.csv`);
+    link.setAttribute("download", `${filenameLabel}_${selectedLobFilter}_from_${startDateFilter}_to_${endDateFilter}.csv`);
     document.body.appendChild(link);
-    
     link.click();
     document.body.removeChild(link);
-    
-    showToast(`Successfully downloaded ${recordsCount} items!`);
-    console.log("--- DEEP SCAN COMPLETE ---");
+    showToast(`Successfully extracted ${recordsCount} range items!`);
 
   } catch (error) {
     console.error("CRITICAL EXTRACTION PIPELINE FAILURE:", error);
@@ -1040,7 +1083,7 @@ async function executeSupervisorExtraction() {
 }
 
 /* ==========================================================================
-   CLEAN LOGOUT AND INSTANT RESET OPERATIONS
+   RESET & LOGOUT UTILITIES
    ========================================================================== */
 function terminateAgentSession() {
   const logoutModal = $('logoutModal');
@@ -1076,10 +1119,7 @@ async function executeLogOutRoutine() {
   
   if (currentAgentId) {
     const rightNow = new Date();
-    const yyyy = rightNow.getFullYear();
-    const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
-    const dd = String(rightNow.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
     
     try {
       const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
@@ -1119,12 +1159,12 @@ async function resetForm(event) {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+    const spielPanel = $('playbookSpielContainer');
+    if (spielPanel) spielPanel.innerHTML = "";
 
     if (currentAgentId) {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-      await setDoc(docRef, {
-        form_data: {}
-      }, { merge: true });
+      await setDoc(docRef, { form_data: {} }, { merge: true });
     }
     
     showToast("Active workspace cleared.");
@@ -1133,11 +1173,12 @@ async function resetForm(event) {
     showToast("Error clearing cloud form properties.", true);
   } finally {
     isResetting = false; 
+    updateOutput();
   }
 }
 
 /* ==========================================================================
-   INITIALIZATION ENGINE & EVENT MOUNT LOOPS
+   INITIALIZATION ENGINE & LOOPS
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
@@ -1153,7 +1194,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const trackingFields = ["case", "concernType", "voc", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
   trackingFields.forEach(id => {
     const el = $(id);
-    if (!el) return;
+    if (!el) return; 
     el.addEventListener("input", () => { updateOutput(); saveData(false); });
     el.addEventListener("change", () => { updateOutput(); saveData(true); });
     el.addEventListener("blur", () => { saveData(true); });
@@ -1175,7 +1216,6 @@ document.addEventListener("DOMContentLoaded", () => {
   
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
   $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
-  
   $("themeToggle")?.addEventListener("click", toggleTheme);
 
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
@@ -1198,9 +1238,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   REAL-TIME VALIDATORS & REGEX WRAPPERS
+   VALIDATORS & DRAWERS
    ========================================================================== */
 function validateCaseField(el) {
+  if (!el) return;
   const val = el.value.trim().toUpperCase();
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
   
@@ -1220,11 +1261,10 @@ function validateCaseField(el) {
 }
 
 function validateMinField(el) {
+  if (!el) return;
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
   if (el.value.trim().length > 0) {
     el.classList.add('val-green');
-  } else {
-    el.classList.remove('val-green');
   }
 }
 
@@ -1247,17 +1287,14 @@ function toggleDrawer(e) {
 }
 
 /* ==========================================================================
-   UNGRACEFUL STABILITY CRASH MONITORING
+   UNGRACEFUL STABILITY MONITORING
    ========================================================================== */
 window.addEventListener('beforeunload', () => {
   const cachedAgentId = localStorage.getItem("active_agent_session_id");
   if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor") return;
 
   const rightNow = new Date();
-  const yyyy = rightNow.getFullYear();
-  const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
-  const dd = String(rightNow.getDate()).padStart(2, '0');
-  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
   
   const trackingPayload = {
     agent_id: cachedAgentId,
