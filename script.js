@@ -2,7 +2,7 @@
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, where, getDocs, increment } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
@@ -57,7 +57,7 @@ function updateSyncStatusUI(status) {
 }
 
 /* ==========================================================================
-   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW WITH LOB ENHANCEMENTS
+   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW WITH TELEMETRY TRACKING
    ========================================================================== */
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
@@ -93,6 +93,7 @@ async function handleAuthSubmission(e) {
   const password = $('authPassword').value.trim();
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
   const selectedLob = $('authLob')?.value || "";
+  const todayStr = new Date().toISOString().split('T')[0];
 
   // SUPERVISOR PORTAL ENTRY BYPASS
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
@@ -131,6 +132,17 @@ async function handleAuthSubmission(e) {
           await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
             await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
           });
+
+          // STABILITY METRIC: Record Successful Login Event
+          const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${agentId}_${todayStr}`);
+          await setDoc(metricDayRef, {
+            agent_id: agentId,
+            agent_name: currentAgentName,
+            lob: currentAgentLob,
+            date: todayStr,
+            login_count: increment(1),
+            last_activity_at: Date.now()
+          }, { merge: true });
 
           handleSessionLoginTransition();
           showToast(`Identity verified. ${currentAgentLob} Session Clear!`);
@@ -203,6 +215,7 @@ async function handleSessionLoginTransition() {
   updateSyncStatusUI('online');
   
   updateOutput();
+  updateVocOptions(true);
   updateSuggestions();
   
   // Directly pull live workspace data from the cloud database
@@ -227,19 +240,44 @@ function listenToSessionState() {
       if(snap.exists()) {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
         currentAgentLob = snap.data().lob || "UNKNOWN";
+        handleSessionLoginTransition();
+      } else {
+        localStorage.removeItem("active_agent_session_id");
+        showLoginGateway(false);
       }
     });
-    handleSessionLoginTransition();
   } else {
     currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
-    $('authModal').style.display = "flex";
+    showLoginGateway(false);
     if ($("output")) {
       $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
     }
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
     renderHistoryView();
+  }
+}
+
+function showLoginGateway(isRegisterMode = false) {
+  $('authModal').style.display = "flex";
+  $('logoutBtn').style.display = "none";
+  if (isRegisterMode) {
+    currentAuthMode = "REGISTER";
+    $('authTitle').textContent = "Register Agent Profile";
+    $('authSubtitle').textContent = "Configure secure numeric credential tokens";
+    $('authSubmitBtn').textContent = "Provision Account";
+    $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
+    if ($('authNameContainer')) $('authNameContainer').style.display = "flex";
+    if ($('authLobContainer')) $('authLobContainer').style.display = "flex";
+  } else {
+    currentAuthMode = "LOGIN";
+    $('authTitle').textContent = "Agent Workbench Sign In";
+    $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
+    $('authSubmitBtn').textContent = "Authorize Session";
+    $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
+    if ($('authNameContainer')) $('authNameContainer').style.display = "none";
+    if ($('authLobContainer')) $('authLobContainer').style.display = "none";
   }
 }
 
@@ -373,6 +411,16 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
       completed_at: rightNow.toISOString(),
       submission_date: dateString
     });
+
+    // Also update structural counter in our compliance dashboard collection
+    const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${dateString}`);
+    const isWocas = $("wocas")?.value.trim().length > 0;
+    await setDoc(metricDayRef, {
+      cases_logged_count: increment(1),
+      wocas_logged_count: isWocas ? increment(1) : increment(0),
+      last_activity_at: Date.now()
+    }, { merge: true });
+
   } catch(e) {
     console.warn("Performance metric profiling skipped: ", e);
   }
@@ -541,7 +589,7 @@ async function clearShiftHistory() {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & EXCEL BALANCER CONFLICT EXTRACTIONS
+   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR
    ========================================================================== */
 function showSupervisorPanel() {
   $('supervisorAdminPanel').style.display = "flex";
@@ -550,40 +598,41 @@ function showSupervisorPanel() {
 
 async function executeSupervisorExtraction() {
   try {
-    showToast("Processing cloud database query metrics...");
+    showToast("Processing unified operational telemetry query...");
     
     const selectedLobFilter = $('adminFilterLob').value;
     const selectedDateFilter = $('adminFilterDate').value; 
     
-    const metricsRef = collection(firestoreDb, "cases_performance_metrics");
-    const snapshot = await getDocs(metricsRef);
+    const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
+    let q = query(metricsRef, where("date", "==", selectedDateFilter));
+    const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-      showSystemAlert("Data Void", "No production tracking tokens found in the active collection.");
+      showSystemAlert("Data Void", `No operational tracking parameters logged on date: [${selectedDateFilter}].`);
       return;
     }
 
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Metric ID,Agent ID,Agent Name,Line of Business (LOB),Case / SR Reference Number,Exact System Timestamp,Calendar Date Tag\n";
+    csvContent += "Agent ID,Agent Name,Line of Business (LOB),Total Cases Logged,WOCAS Submissions,Shift Login Frequency,Graceful Logouts,Unexpected Drops / System Crashes,Last Activity Log\n";
 
     let recordsCount = 0;
 
     snapshot.forEach((doc) => {
       const data = doc.data();
       const agentLob = data.lob || "UNKNOWN";
-      const submissionDate = data.submission_date || "";
 
       if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
-      if (selectedDateFilter && submissionDate !== selectedDateFilter) return;
 
       const row = [
-        `"${doc.id}"`,
         `"${data.agent_id || 'N/A'}"`,
         `"${(data.agent_name || 'Unknown').replace(/"/g, '""')}"`,
         `"${agentLob}"`,
-        `"${(data.case_id || 'N/A').replace(/"/g, '""')}"`,
-        `"${data.completed_at || 'N/A'}"`,
-        `"${submissionDate}"`
+        data.cases_logged_count || 0,
+        data.wocas_logged_count || 0,
+        data.login_count || 0,
+        data.logout_count || 0,
+        data.abrupt_disconnect_count || 0,
+        `"${data.last_activity_at ? new Date(data.last_activity_at).toLocaleTimeString() : 'N/A'}"`
       ];
       
       csvContent += row.join(",") + "\n";
@@ -591,21 +640,20 @@ async function executeSupervisorExtraction() {
     });
 
     if (recordsCount === 0) {
-      showSystemAlert("Zero Results", "No data matches your selected LOB and date filters.");
+      showSystemAlert("Zero Results", `No operational profiles match [${selectedLobFilter}] filters on this date context.`);
       return;
     }
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    const filenamDate = selectedDateFilter || "All-History";
     
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `LOB_Performance_Report_[${selectedLobFilter}]_${filenamDate}.csv`);
+    link.setAttribute("download", `Compliance_Telemetry_Report_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
     document.body.appendChild(link);
     
     link.click();
     document.body.removeChild(link);
-    showToast(`Successfully extracted ${recordsCount} entries to Excel!`);
+    showToast(`Successfully extracted ${recordsCount} compliance rows to Excel!`);
 
   } catch (error) {
     console.error("Supervisor data extraction pipeline exception: ", error);
@@ -614,87 +662,8 @@ async function executeSupervisorExtraction() {
 }
 
 /* ==========================================================================
-   CLEAN LOGOUT AND INSTANT RESET OPERATIONS
-   ========================================================================== */
-function terminateAgentSession() {
-  const logoutModal = $('logoutModal');
-  const cancelBtn = $('confirmLogoutCancelBtn');
-  const confirmBtn = $('confirmLogoutSubmitBtn');
-
-  if (!logoutModal || !cancelBtn || !confirmBtn) {
-    executeLogOutRoutine();
-    return;
-  }
-
-  logoutModal.style.display = "flex";
-
-  const closeLogoutModal = () => {
-    logoutModal.style.display = "none";
-    cancelBtn.removeEventListener('click', closeLogoutModal);
-    confirmBtn.removeEventListener('click', confirmAction);
-  };
-
-  const confirmAction = () => {
-    logoutModal.style.display = "none";
-    cancelBtn.removeEventListener('click', closeLogoutModal);
-    confirmBtn.removeEventListener('click', confirmAction);
-    executeLogOutRoutine();
-  };
-
-  cancelBtn.addEventListener('click', closeLogoutModal);
-  confirmBtn.addEventListener('click', confirmAction);
-}
-
-function executeLogOutRoutine() {
-  if (saveTimeout) clearTimeout(saveTimeout);
-  
-  localStorage.removeItem("active_agent_session_id");
-  listenToSessionState();
-  showToast("Session closed safely. Workspace locked.");
-}
-
-async function resetForm(event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  
-  isResetting = true; 
-
-  try {
-    document.querySelectorAll("input, textarea").forEach(el => {
-      el.value = "";
-      el.classList.remove('val-green', 'val-amber', 'val-crimson');
-    });
-
-    const select = $("concernType");
-    if (select) select.selectedIndex = 0;
-    updateVocOptions(false);
-    
-    if ($("output")) {
-      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
-    }
-    if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
-
-    if (currentAgentId) {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-      await setDoc(docRef, {
-        form_data: {}
-      }, { merge: true });
-    }
-    
-    showToast("Active workspace cleared.");
-  } catch(e) {
-    console.error("Cloud database reset exception:", e);
-    showToast("Error clearing cloud form properties.", true);
-  } finally {
-    isResetting = false; 
-  }
-}
-
-/* ==========================================================================
    REAL-TIME VALIDATORS & REGEX WRAPPERS
-   ========================================================================= */
+   ========================================================================== */
 function validateCaseField(el) {
   const val = el.value.trim().toUpperCase();
   el.classList.remove('val-amber', 'val-green', 'val-crimson');
@@ -739,63 +708,6 @@ function toggleDrawer(e) {
     if (btnText) btnText.textContent = "View Playbooks";
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
-}
-
-document.addEventListener('click', (e) => {
-  const drawer = $('playbookPanel');
-  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
-    drawer.classList.remove('drawer-open');
-    const toggleBtn = $('drawerToggle');
-    if (toggleBtn) {
-      if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
-      if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
-    }
-  }
-});
-
-function showToast(msg, isError = false) {
-  const toast = $('toast');
-  if(!toast) return;
-  
-  if(isError) {
-    toast.style.background = "#ef4444";
-    toast.style.borderLeft = "5px solid #b91c1c";
-  } else {
-    toast.style.background = "#10b981";
-    toast.style.borderLeft = "5px solid #047857";
-  }
-  
-  $('toastMessage').textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); }, 3000);
-}
-
-function copyDoc() {
-  const outputText = $("output")?.textContent;
-  if (!outputText || outputText.includes("Generating real-time output preview")) {
-    showToast("No documentation content found to copy!", true);
-    return;
-  }
-
-  navigator.clipboard.writeText(outputText).then(() => {
-    showToast("Notes copied to system clipboard!");
-    const caseNum = $("case")?.value || "N/A";
-    pushToHistory(caseNum, outputText);
-  }).catch(err => {
-    showToast("Clipboard routine blocked.", true);
-  });
-}
-
-function toggleTheme() {
-  const isDark = document.body.classList.toggle("dark-mode");
-  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  updateThemeIcon(isDark);
-}
-
-function updateThemeIcon(isDark) {
-  const icon = document.querySelector("#themeToggle i");
-  if (!icon) return;
-  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
 }
 
 /* ==========================================================================
@@ -844,7 +756,7 @@ const SHARED_COMMERCIAL_VOC = [
   "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE", "GENERAL INQUIRY", 
   "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION", "SIM REG: SIM VALIDITY EXTENSION", 
   "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM", 
-  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH OF OWNER", 
+  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER", 
   "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", 
   "SIM REG: UPDATE ID", "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", 
   "SIM REG: REGULATORY TEMPO DISCON", "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATED", 
@@ -940,9 +852,6 @@ function updateSuggestions() {
   $("suggestions").innerHTML = html;
 }
 
-/* ==========================================================================
-   DYNAMIC MODERN SYSTEM OVERLAY DIALOGUE CONTROLLER
-   ========================================================================== */
 function showSystemAlert(title, message, isWarning = true) {
   const modal = $('alertModal');
   const titleEl = $('alertModalTitle');
@@ -978,6 +887,144 @@ function showSystemAlert(title, message, isWarning = true) {
     closeBtn.textContent = "Acknowledge & Dismiss";
   };
   closeBtn.addEventListener('click', closeRoutine);
+}
+
+function showToast(msg, isError = false) {
+  const toast = $('toast');
+  if(!toast) return;
+  
+  if(isError) {
+    toast.style.background = "#ef4444";
+    toast.style.borderLeft = "5px solid #b91c1c";
+  } else {
+    toast.style.background = "#10b981";
+    toast.style.borderLeft = "5px solid #047857";
+  }
+  
+  $('toastMessage').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+function copyDoc() {
+  const outputText = $("output")?.textContent;
+  if (!outputText || outputText.includes("Generating real-time output preview")) {
+    showToast("No documentation content found to copy!", true);
+    return;
+  }
+
+  navigator.clipboard.writeText(outputText).then(() => {
+    showToast("Notes copied to system clipboard!");
+    const caseNum = $("case")?.value || "N/A";
+    pushToHistory(caseNum, outputText);
+  }).catch(err => {
+    showToast("Clipboard routine blocked.", true);
+  });
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+}
+
+/* ==========================================================================
+   CLEAN LOGOUT AND INSTANT RESET OPERATIONS
+   ========================================================================== */
+function terminateAgentSession() {
+  const logoutModal = $('logoutModal');
+  const cancelBtn = $('confirmLogoutCancelBtn');
+  const confirmBtn = $('confirmLogoutSubmitBtn');
+
+  if (!logoutModal || !cancelBtn || !confirmBtn) {
+    executeLogOutRoutine();
+    return;
+  }
+
+  logoutModal.style.display = "flex";
+
+  const closeLogoutModal = () => {
+    logoutModal.style.display = "none";
+    cancelBtn.removeEventListener('click', closeLogoutModal);
+    confirmBtn.removeEventListener('click', confirmAction);
+  };
+
+  const confirmAction = () => {
+    logoutModal.style.display = "none";
+    cancelBtn.removeEventListener('click', closeLogoutModal);
+    confirmBtn.removeEventListener('click', confirmAction);
+    executeLogOutRoutine();
+  };
+
+  cancelBtn.addEventListener('click', closeLogoutModal);
+  confirmBtn.addEventListener('click', confirmAction);
+}
+
+async function executeLogOutRoutine() {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  
+  if (currentAgentId) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    try {
+      // STABILITY METRIC: Record Clean Logout Action Parameter
+      const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
+      await setDoc(metricDayRef, {
+        logout_count: increment(1),
+        last_activity_at: Date.now()
+      }, { merge: true });
+    } catch (e) {
+      console.warn("Could not log exit telemetry payload:", e);
+    }
+  }
+  
+  localStorage.removeItem("active_agent_session_id");
+  listenToSessionState();
+  showToast("Session closed safely. Workspace locked.");
+}
+
+async function resetForm(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  isResetting = true; 
+
+  try {
+    document.querySelectorAll("input, textarea").forEach(el => {
+      el.value = "";
+      el.classList.remove('val-green', 'val-amber', 'val-crimson');
+    });
+
+    const select = $("concernType");
+    if (select) select.selectedIndex = 0;
+    updateVocOptions(false);
+    
+    if ($("output")) {
+      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
+    }
+    if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+
+    if (currentAgentId) {
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      await setDoc(docRef, {
+        form_data: {}
+      }, { merge: true });
+    }
+    
+    showToast("Active workspace cleared.");
+  } catch(e) {
+    console.error("Cloud database reset exception:", e);
+    showToast("Error clearing cloud form properties.", true);
+  } finally {
+    isResetting = false; 
+  }
 }
 
 /* ==========================================================================
@@ -1025,7 +1072,67 @@ document.addEventListener("DOMContentLoaded", () => {
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
+  // Global overlay alignment listener for background off-click drawer closing actions
+  document.addEventListener('click', (e) => {
+    const drawer = $('playbookPanel');
+    if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
+      drawer.classList.remove('drawer-open');
+      const toggleBtn = $('drawerToggle');
+      if (toggleBtn) {
+        if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
+        if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
+      }
+    }
+  });
+
   // Initialize the real-time operational dashboard broadcast stream
   listenToOperationalBroadcasts();
   listenToSessionState();
 });
+
+/* ==========================================================================
+   UNGRACEFUL STABILITY CRASH MONITORING (TAB CLOSURES / WINDOW THROTTLES)
+   ========================================================================== */
+window.addEventListener('beforeunload', () => {
+  const cachedAgentId = localStorage.getItem("active_agent_session_id");
+  // Bypass if no user is signed into the application or if session is administrative
+  if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor") return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  // Directly write fallback compliance telemetry string synchronously into localstorage 
+  // to ensure data survival across abrupt platform teardowns.
+  const trackingPayload = {
+    agent_id: cachedAgentId,
+    date: todayStr,
+    event: "ABRUPT_DISCONNECT",
+    timestamp: Date.now()
+  };
+
+  // Convert payload data object into string blocks for structural fallback storage queues
+  const existingDropsQueue = JSON.parse(localStorage.getItem("auto_docs_dropped_sessions") || "[]");
+  existingDropsQueue.push(trackingPayload);
+  localStorage.setItem("auto_docs_dropped_sessions", JSON.stringify(existingDropsQueue));
+});
+
+// Structural self-healing verification routine: Process pending offline drops upon reboot
+(async function processPendingAbruptDrops() {
+  const dropsQueue = JSON.parse(localStorage.getItem("auto_docs_dropped_sessions") || "[]");
+  if (dropsQueue.length === 0) return;
+
+  localStorage.removeItem("auto_docs_dropped_sessions");
+
+  for (const drop of dropsQueue) {
+    try {
+      const targetDocRef = doc(firestoreDb, "daily_compliance_telemetry", `${drop.agent_id}_${drop.date}`);
+      await setDoc(targetDocRef, {
+        agent_id: drop.agent_id,
+        date: drop.date,
+        abrupt_disconnect_count: increment(1),
+        last_activity_at: drop.timestamp
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Failed to flush background drop telemetry metric:", err);
+    }
+  }
+})();
