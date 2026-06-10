@@ -198,6 +198,15 @@
         <button onclick="document.getElementById('supervisorAdminPanel').style.display='none'; window.location.reload();" class="btn-close-modal">&times;</button>
       </div>
       <p class="supervisor-desc">Compile and extract raw daily agent output metrics directly from the cloud backend data modules.</p>
+      
+      <div class="modal-form-group">
+        <label for="adminFilterDataType">Target Report Profile Variant</label>
+        <select id="adminFilterDataType">
+          <option value="CASES" selected>Detailed Case Records Workbook (Full Form Fields Data)</option>
+          <option value="TELEMETRY">Agent Shift Metrics Tracking (Logins / Logouts / Drop Crashes)</option>
+        </select>
+      </div>
+
       <div class="modal-form-group">
         <label for="adminFilterLob">Filter Line of Business (LOB)</label>
         <select id="adminFilterLob">
@@ -206,10 +215,12 @@
           <option value="EBG">EBG (Enterprise Business Group) Only</option>
         </select>
       </div>
+
       <div class="modal-form-group">
         <label for="adminFilterDate">Target Operational Date Filter</label>
         <input type="date" id="adminFilterDate">
       </div>
+
       <div class="supervisor-footer">
         <button onclick="window.location.reload();" class="btn-exit-portal">Exit Portal</button>
         <button id="adminExtractSubmitBtn" class="btn-download-excel"><i class="fas fa-file-excel"></i> Download Excel Spreadsheet</button>
