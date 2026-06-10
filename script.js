@@ -94,7 +94,6 @@ async function handleAuthSubmission(e) {
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
   const selectedLob = $('authLob')?.value || "";
   
-  // Calculate today's local date string for consistent tracking doc formatting
   const rightNow = new Date();
   const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
 
@@ -284,7 +283,7 @@ function showLoginGateway(isRegisterMode = false) {
 }
 
 /* ==========================================================================
-   SOLE SOURCE OF TRUTH: CLOUD DATA ENGINE
+   CORE CLOUD WORKSPACE ENGINE
    ========================================================================== */
 async function saveData(forceInstant = false) {
   if (isResetting || !currentAgentId) return; 
@@ -407,6 +406,21 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
   const metricDocId = `${currentAgentId}-${Date.now()}`;
   const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
 
+  // Bundle every input form field into this instance record
+  const snapshotData = {
+    concernType: $("concernType")?.value || "N/A",
+    voc: $("voc")?.value || "N/A",
+    subj: $("subj")?.value || "N/A",
+    name: $("name")?.value || "N/A",
+    min: $("min")?.value || "N/A",
+    company: $("company")?.value || "N/A",
+    email: $("email")?.value || "N/A",
+    thread: $("thread")?.value || "N/A",
+    datetime: $("datetime")?.value || "N/A",
+    action: $("action")?.value || "N/A",
+    wocas: $("wocas")?.value || "N/A"
+  };
+
   try {
     await setDoc(metricRef, {
       agent_id: currentAgentId,
@@ -414,11 +428,12 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
       lob: currentAgentLob, 
       case_id: caseNumber || "N/A",
       completed_at: rightNow.toISOString(),
-      submission_date: dateString
+      submission_date: dateString,
+      snapshot: snapshotData
     });
 
     const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${dateString}`);
-    const isWocas = $("wocas")?.value.trim().length > 0;
+    const isWocas = snapshotData.wocas.trim().length > 0;
     await setDoc(metricDayRef, {
       agent_id: currentAgentId,
       agent_name: currentAgentName,
@@ -435,7 +450,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
 }
 
 /* ==========================================================================
-   CLOUD-BACKED SHIFT HISTORY LOGS MANIFEST SYSTEM WITH EXCEL FORMATTING
+   SHIFT HISTORY LOGS MANIFEST SYSTEM
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
   if (!currentAgentId) return;
@@ -456,6 +471,7 @@ async function pushToHistory(caseNumber, textContent) {
       shift_manifest: globalShiftHistory
     });
 
+    // Run execution payload step
     await logCaseSubmissionToAnalytics(displayId);
 
   } catch (err) {
@@ -857,7 +873,7 @@ async function executeSupervisorExtraction() {
     };
 
     /* ==========================================================================
-       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (FIXED: MULTIPLE DISTINCT CASES)
+       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (PULLS HISTORIC INSTANCE SNAPSHOTS)
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
@@ -869,15 +885,6 @@ async function executeSupervisorExtraction() {
         return;
       }
 
-      // Backfill data map tracking granular details inside individual active text fields
-      const logsRef = collection(firestoreDb, "case_logs");
-      const logsSnapshot = await getDocs(logsRef);
-      const workspaceDetailsMap = {};
-      
-      logsSnapshot.forEach(docSnap => {
-        workspaceDetailsMap[docSnap.id] = docSnap.data().form_data || {};
-      });
-
       csvContent += "WinID,Assigned LOB,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
 
       snapshot.forEach((docSnap) => {
@@ -887,23 +894,24 @@ async function executeSupervisorExtraction() {
         
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        const cachedForm = workspaceDetailsMap[targetAgentId] || {};
+        // Pulling the distinct field snapshot saved at the exact instance of creation
+        const itemSnapshot = pData.snapshot || {};
 
         const row = [
           clean(targetAgentId),
           clean(agentLob),
-          clean(cachedForm.concernType || "N/A"),
-          clean(cachedForm.voc || "N/A"),
+          clean(itemSnapshot.concernType || "N/A"),
+          clean(itemSnapshot.voc || "N/A"),
           clean(pData.case_id || "N/A"),
-          clean(cachedForm.subj || "N/A"),
-          clean(cachedForm.name || "N/A"),
-          clean(cachedForm.min || "N/A"),
-          clean(cachedForm.company || "N/A"),
-          clean(cachedForm.email || "N/A"),
-          clean(cachedForm.thread || "N/A"),
-          clean(cachedForm.datetime || "N/A"),
-          clean(cachedForm.action || "N/A"),
-          clean(cachedForm.wocas || "N/A"),
+          clean(itemSnapshot.subj || "N/A"),
+          clean(itemSnapshot.name || "N/A"),
+          clean(itemSnapshot.min || "N/A"),
+          clean(itemSnapshot.company || "N/A"),
+          clean(itemSnapshot.email || "N/A"),
+          clean(itemSnapshot.thread || "N/A"),
+          clean(itemSnapshot.datetime || "N/A"),
+          clean(itemSnapshot.action || "N/A"),
+          clean(itemSnapshot.wocas || "N/A"),
           clean(pData.completed_at ? new Date(pData.completed_at).toLocaleString() : "N/A")
         ];
         
@@ -1180,7 +1188,7 @@ function toggleDrawer(e) {
 }
 
 /* ==========================================================================
-   UNGRACEFUL STABILITY CRASH MONITORING (TAB CLOSURES / WINDOW THROTTLES)
+   UNGRACEFUL STABILITY CRASH MONITORING
    ========================================================================== */
 window.addEventListener('beforeunload', () => {
   const cachedAgentId = localStorage.getItem("active_agent_session_id");
