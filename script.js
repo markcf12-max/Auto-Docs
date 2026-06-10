@@ -558,32 +558,31 @@ async function downloadHistoryLog() {
     return;
   }
 
-  // Force explicit Comma separations explicitly defining standard parameters for local machines
-  let csvContent = "data:text/csv;charset=utf-8,sep=\n";
-  csvContent += "Agent ID,Agent Name,Line of Business (LOB),Timestamp,Reference Case ID,Documentation Raw Text\n";
+  let csvContent = "";
+  csvContent += "Agent ID\tAgent Name\tLine of Business (LOB)\tTimestamp\tReference Case ID\tDocumentation Raw Text\n";
 
   globalShiftHistory.forEach((item) => {
-    const safeId = `"${item.id.replace(/"/g, '""')}"`;
-    const safeTime = `"${item.time.replace(/"/g, '""')}"`;
-    const safeText = `"${item.text.replace(/"/g, '""')}"`;
-    const safeAgentId = `"${currentAgentId || 'N/A'}"`;
-    const safeAgentName = `"${currentAgentName.replace(/"/g, '""')}"`;
-    const safeLob = `"${currentAgentLob}"`;
+    const safeId = item.id.replace(/[\t\n\r]/g, " ").trim();
+    const safeTime = item.time.replace(/[\t\n\r]/g, " ").trim();
+    const safeText = item.text.replace(/[\t\n\r]/g, " ").trim();
+    const safeAgentId = (currentAgentId || 'N/A').trim();
+    const safeAgentName = currentAgentName.replace(/[\t\n\r]/g, " ").trim();
+    const safeLob = currentAgentLob.trim();
 
-    csvContent += `${safeAgentId},${safeAgentName},${safeLob},${safeTime},${safeId},${safeText}\n`;
+    csvContent += `${safeAgentId}\t${safeAgentName}\t${safeLob}\t${safeTime}\t${safeId}\t${safeText}\n`;
   });
 
-  const encodedUri = encodeURI(csvContent);
+  const blob = new Blob([csvContent], { type: "text/tab-separated-values;charset=utf-8;" });
   const link = document.createElement("a");
   const dateStr = new Date().toISOString().slice(0,10);
   
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `Agent_Shift_Log_${currentAgentId}_${dateStr}.csv`);
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", `Agent_Shift_Log_${currentAgentId}_${dateStr}.xls`);
   document.body.appendChild(link);
   
   link.click();
   document.body.removeChild(link);
-  showToast("Shift History spreadsheet generated for Excel!");
+  showToast("Shift History workbook generated for Excel!");
 }
 
 async function clearShiftHistory() {
@@ -840,7 +839,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR (EXCEL FORCE REPAIR)
+   SUPERVISOR OPERATIONS PORTAL & TAB-DELINEATED WORKBOOK ENGINE
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
@@ -868,17 +867,17 @@ async function executeSupervisorExtraction() {
 
     showToast(`Compiling requested ${reportType.toLowerCase()} records matrix...`);
 
-    // "sep=\n" dynamically forces Excel to interpret commas correctly across all regions
-    let csvContent = "sep=\n";
+    let csvContent = "";
     let recordsCount = 0;
 
+    // Strips out tabs and breaks to prevent string cross-contamination
     const clean = (val) => {
-      if (val === undefined || val === null || val === "") return '""';
-      return `"${val.toString().replace(/"/g, '""').trim()}"`;
+      if (val === undefined || val === null || val === "") return "";
+      return val.toString().replace(/[\t\n\r]/g, " ").trim();
     };
 
     /* ==========================================================================
-       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION
+       BRANCH A: TAB-DELIMITED CASES WORKBOOK EXTRACTION
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
@@ -897,7 +896,8 @@ async function executeSupervisorExtraction() {
         workspaceDetailsMap[docSnap.id] = docSnap.data().form_data || {};
       });
 
-      csvContent += "WinID,Assigned LOB,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
+      // Headers delimited using literal tab escapes (\t)
+      csvContent += "WinID\tAssigned LOB\tConcern Type\tVOC Option\tCase/SR Number\tSubject\tCustomer Name\tMIN\tCompany\tEmail\tThread ID\tDate-Time\tAction Taken\tWOCAS\tLast Sync Timestamp\n";
 
       snapshot.forEach((docSnap) => {
         const pData = docSnap.data();
@@ -938,7 +938,7 @@ async function executeSupervisorExtraction() {
           clean(pData.completed_at ? new Date(pData.completed_at).toLocaleString() : "N/A")
         ];
         
-        csvContent += row.join(",") + "\n";
+        csvContent += row.join("\t") + "\n";
         recordsCount++;
       });
 
@@ -955,7 +955,7 @@ async function executeSupervisorExtraction() {
         return;
       }
 
-      csvContent += "WinID,Agent Name,Line of Business (LOB),Total Cases Logged,WOCAS Submissions,Shift Login Frequency,Graceful Logouts,Unexpected Drops / System Crashes,Last Activity Log\n";
+      csvContent += "WinID\tAgent Name\tLine of Business (LOB)\tTotal Cases Logged\tWOCAS Submissions\tShift Login Frequency\tGraceful Logouts\tUnexpected Drops / System Crashes\tLast Activity Log\n";
 
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
@@ -975,7 +975,7 @@ async function executeSupervisorExtraction() {
           clean(data.last_activity_at ? new Date(data.last_activity_at).toLocaleTimeString() : "N/A")
         ];
         
-        csvContent += row.join(",") + "\n";
+        csvContent += row.join("\t") + "\n";
         recordsCount++;
       });
     }
@@ -985,13 +985,13 @@ async function executeSupervisorExtraction() {
       return;
     }
 
-    // Convert string data into a strict application/csv blob object to maintain absolute structure
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    // Output strictly configured as an Excel-compatible tab-separated stream
+    const blob = new Blob([csvContent], { type: "text/tab-separated-values;charset=utf-8;" });
     const link = document.createElement("a");
     const filenameLabel = reportType === "CASES" ? "Detailed_Cases_Workbook" : "Compliance_Telemetry_Report";
     
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `${filenameLabel}_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
+    link.setAttribute("download", `${filenameLabel}_[${selectedLobFilter}]_${selectedDateFilter}.xls`);
     document.body.appendChild(link);
     
     link.click();
