@@ -93,7 +93,10 @@ async function handleAuthSubmission(e) {
   const password = $('authPassword').value.trim();
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
   const selectedLob = $('authLob')?.value || "";
-  const todayStr = new Date().toISOString().split('T')[0];
+  
+  // Calculate today's local date string for consistent tracking doc formatting
+  const rightNow = new Date();
+  const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
 
   // SUPERVISOR PORTAL ENTRY BYPASS
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
@@ -396,9 +399,12 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
   if (!currentAgentId) return;
 
   const rightNow = new Date();
-  const dateString = rightNow.toISOString().split('T')[0]; 
-  const metricDocId = `${currentAgentId}-${Date.now()}`;
+  const yyyy = rightNow.getFullYear();
+  const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
+  const dd = String(rightNow.getDate()).padStart(2, '0');
+  const dateString = `${yyyy}-${mm}-${dd}`;
   
+  const metricDocId = `${currentAgentId}-${Date.now()}`;
   const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
 
   try {
@@ -414,6 +420,10 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${dateString}`);
     const isWocas = $("wocas")?.value.trim().length > 0;
     await setDoc(metricDayRef, {
+      agent_id: currentAgentId,
+      agent_name: currentAgentName,
+      lob: currentAgentLob,
+      date: dateString,
       cases_logged_count: increment(1),
       wocas_logged_count: isWocas ? increment(1) : increment(0),
       last_activity_at: Date.now()
@@ -816,7 +826,13 @@ function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
   if (panel) panel.style.display = "flex";
   const dateEl = $('adminFilterDate');
-  if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+  if (dateEl) {
+    const rightNow = new Date();
+    const yyyy = rightNow.getFullYear();
+    const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
+    const dd = String(rightNow.getDate()).padStart(2, '0');
+    dateEl.value = `${yyyy}-${mm}-${dd}`;
+  }
 }
 
 async function executeSupervisorExtraction() {
@@ -841,71 +857,54 @@ async function executeSupervisorExtraction() {
     };
 
     /* ==========================================================================
-       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (FROM ACTIVE WORKSPACES)
+       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (FIXED: MULTIPLE DISTINCT CASES)
        ========================================================================== */
     if (reportType === "CASES") {
-      const telemetryRef = collection(firestoreDb, "daily_compliance_telemetry");
-      const telemetryQuery = query(telemetryRef, where("date", "==", selectedDateFilter));
-      const telemetrySnapshot = await getDocs(telemetryQuery);
-      
-      const agentLobMap = {};
-      telemetrySnapshot.forEach(docSnap => {
-        const tData = docSnap.data();
-        if (tData.agent_id) {
-          agentLobMap[tData.agent_id] = tData.lob || "UNKNOWN";
-        }
-      });
-
-      const logsRef = collection(firestoreDb, "case_logs");
-      const snapshot = await getDocs(logsRef);
+      const performanceRef = collection(firestoreDb, "cases_performance_metrics");
+      const q = query(performanceRef, where("submission_date", "==", selectedDateFilter));
+      const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        showSystemAlert("Data Void", "No active case data logs found anywhere in the cloud database system.");
+        showSystemAlert("Data Void", `No distinct case log submissions found matching target date: [${selectedDateFilter}].`);
         return;
       }
+
+      // Backfill data map tracking granular details inside individual active text fields
+      const logsRef = collection(firestoreDb, "case_logs");
+      const logsSnapshot = await getDocs(logsRef);
+      const workspaceDetailsMap = {};
+      
+      logsSnapshot.forEach(docSnap => {
+        workspaceDetailsMap[docSnap.id] = docSnap.data().form_data || {};
+      });
 
       csvContent += "WinID,Assigned LOB,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
 
       snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const formData = data.form_data || {};
-        const targetAgentId = data.agent_id || "N/A";
+        const pData = docSnap.data();
+        const targetAgentId = pData.agent_id || "N/A";
+        const agentLob = pData.lob || "UNKNOWN";
         
-        let agentLob = agentLobMap[targetAgentId];
-        if (!agentLob) {
-          agentLob = formData.concernType === "Technical" ? "ES" : "EBG"; 
-        }
-        
-        // Inside array callback context, 'return' skips to next item iteration loop cleanly
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        // Local timezone date compiler block to prevent UTC evening shifts
-let lastUpdatedDate = "";
-if (data.updated_at) {
-  const localDate = new Date(data.updated_at);
-  const yyyy = localDate.getFullYear();
-  const mm = String(localDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(localDate.getDate()).padStart(2, '0');
-  lastUpdatedDate = `${yyyy}-${mm}-${dd}`;
-}
-        if (lastUpdatedDate !== selectedDateFilter) return;
+        const cachedForm = workspaceDetailsMap[targetAgentId] || {};
 
         const row = [
           clean(targetAgentId),
           clean(agentLob),
-          clean(formData.concernType),
-          clean(formData.voc),
-          clean(formData.case),
-          clean(formData.subj),
-          clean(formData.name),
-          clean(formData.min),
-          clean(formData.company),
-          clean(formData.email),
-          clean(formData.thread),
-          clean(formData.datetime),
-          clean(formData.action),
-          clean(formData.wocas),
-          clean(data.updated_at ? new Date(data.updated_at).toLocaleString() : "N/A")
+          clean(cachedForm.concernType || "N/A"),
+          clean(cachedForm.voc || "N/A"),
+          clean(pData.case_id || "N/A"),
+          clean(cachedForm.subj || "N/A"),
+          clean(cachedForm.name || "N/A"),
+          clean(cachedForm.min || "N/A"),
+          clean(cachedForm.company || "N/A"),
+          clean(cachedForm.email || "N/A"),
+          clean(cachedForm.thread || "N/A"),
+          clean(cachedForm.datetime || "N/A"),
+          clean(cachedForm.action || "N/A"),
+          clean(cachedForm.wocas || "N/A"),
+          clean(pData.completed_at ? new Date(pData.completed_at).toLocaleString() : "N/A")
         ];
         
         csvContent += row.join(",") + "\n";
@@ -1009,7 +1008,12 @@ async function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
   
   if (currentAgentId) {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const rightNow = new Date();
+    const yyyy = rightNow.getFullYear();
+    const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
+    const dd = String(rightNow.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    
     try {
       const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
       await setDoc(metricDayRef, {
@@ -1182,7 +1186,11 @@ window.addEventListener('beforeunload', () => {
   const cachedAgentId = localStorage.getItem("active_agent_session_id");
   if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor") return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const rightNow = new Date();
+  const yyyy = rightNow.getFullYear();
+  const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
+  const dd = String(rightNow.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
   
   const trackingPayload = {
     agent_id: cachedAgentId,
