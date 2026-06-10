@@ -22,12 +22,12 @@ let bannerTimeout = null;
 let isResetting = false;      
 let saveTimeout = null;      
 let currentAuthMode = "LOGIN"; 
-let globalShiftHistory = []; // In-memory reference for the active cloud session layout
+let globalShiftHistory = []; 
 
 // Session Management State variables for Numeric Database Routing
 let currentAgentId = null; 
-let currentAgentName = "Unknown Agent"; // Global variable to store active agent's name
-let currentAgentLob = "UNKNOWN";        // Variable tracking operational business silo partition (ES vs EBG)
+let currentAgentName = "Unknown Agent"; 
+let currentAgentLob = "UNKNOWN";        
 
 function $(id) {
   return document.getElementById(id);
@@ -133,7 +133,6 @@ async function handleAuthSubmission(e) {
             await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
           });
 
-          // STABILITY METRIC: Record Successful Login Event
           const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${agentId}_${todayStr}`);
           await setDoc(metricDayRef, {
             agent_id: agentId,
@@ -219,7 +218,6 @@ async function handleSessionLoginTransition() {
   updateVocOptions(true);
   updateSuggestions();
   
-  // Directly pull live workspace data from the cloud database
   await pullLiveWorkspace();
 }
 
@@ -413,7 +411,6 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
       submission_date: dateString
     });
 
-    // Also update structural counter in our compliance dashboard collection
     const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${dateString}`);
     const isWocas = $("wocas")?.value.trim().length > 0;
     await setDoc(metricDayRef, {
@@ -532,7 +529,6 @@ async function downloadHistoryLog() {
     return;
   }
 
-  // Define structured headers that Microsoft Excel auto-detects natively
   let csvContent = "data:text/csv;charset=utf-8,";
   csvContent += "Agent ID,Agent Name,Line of Business (LOB),Timestamp,Reference Case ID,Documentation Raw Text\n";
 
@@ -817,8 +813,10 @@ function updateThemeIcon(isDark) {
    SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR
    ========================================================================== */
 function showSupervisorPanel() {
-  $('supervisorAdminPanel').style.display = "flex";
-  $('adminFilterDate').value = new Date().toISOString().split('T')[0];
+  const panel = $('supervisorAdminPanel');
+  if (panel) panel.style.display = "flex";
+  const dateEl = $('adminFilterDate');
+  if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
 }
 
 async function executeSupervisorExtraction() {
@@ -878,7 +876,7 @@ async function executeSupervisorExtraction() {
           agentLob = formData.concernType === "Technical" ? "ES" : "EBG"; 
         }
         
-        // STABILITY FIX: Use 'return' inside a standard forEach to jump to next iteration safely
+        // Inside array callback context, 'return' skips to next item iteration loop cleanly
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
         const lastUpdatedDate = data.updated_at ? new Date(data.updated_at).toISOString().split('T')[0] : "";
@@ -967,32 +965,6 @@ async function executeSupervisorExtraction() {
   }
 }
 
-    /* ==========================================================================
-       FILE DISPOSITION GATEWAY (DOWNLOAD PIPELINE TRIGGER)
-       ========================================================================== */
-    if (recordsCount === 0) {
-      showSystemAlert("Zero Results", `No operational records matching your [${selectedLobFilter}] selection filter were tracked on this date.`);
-      return;
-    }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    const filenameLabel = reportType === "CASES" ? "Detailed_Cases_Workbook" : "Compliance_Telemetry_Report";
-    
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `${filenameLabel}_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
-    document.body.appendChild(link);
-    
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Successfully exported ${recordsCount} ${reportType.toLowerCase()} rows to Excel!`);
-
-  } catch (error) {
-    console.error("Supervisor data extraction core workspace error:", error);
-    showSystemAlert("Query Interrupted", "Database pipeline rejected structural extraction parameter instructions.");
-  }
-}
-
 /* ==========================================================================
    CLEAN LOGOUT AND INSTANT RESET OPERATIONS
    ========================================================================== */
@@ -1031,7 +1003,6 @@ async function executeLogOutRoutine() {
   if (currentAgentId) {
     const todayStr = new Date().toISOString().split('T')[0];
     try {
-      // STABILITY METRIC: Record Clean Logout Action Parameter
       const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
       await setDoc(metricDayRef, {
         logout_count: increment(1),
@@ -1131,7 +1102,6 @@ document.addEventListener("DOMContentLoaded", () => {
   $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
   $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-  // Global overlay alignment listener for background off-click drawer closing actions
   document.addEventListener('click', (e) => {
     const drawer = $('playbookPanel');
     if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
@@ -1144,7 +1114,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize the real-time operational dashboard broadcast stream
   listenToOperationalBroadcasts();
   listenToSessionState();
 });
@@ -1203,13 +1172,10 @@ function toggleDrawer(e) {
    ========================================================================== */
 window.addEventListener('beforeunload', () => {
   const cachedAgentId = localStorage.getItem("active_agent_session_id");
-  // Bypass if no user is signed into the application or if session is administrative
   if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor") return;
 
   const todayStr = new Date().toISOString().split('T')[0];
   
-  // Directly write fallback compliance telemetry string synchronously into localstorage 
-  // to ensure data survival across abrupt platform teardowns.
   const trackingPayload = {
     agent_id: cachedAgentId,
     date: todayStr,
@@ -1217,13 +1183,11 @@ window.addEventListener('beforeunload', () => {
     timestamp: Date.now()
   };
 
-  // Convert payload data object into string blocks for structural fallback storage queues
   const existingDropsQueue = JSON.parse(localStorage.getItem("auto_docs_dropped_sessions") || "[]");
   existingDropsQueue.push(trackingPayload);
   localStorage.setItem("auto_docs_dropped_sessions", JSON.stringify(existingDropsQueue));
 });
 
-// Structural self-healing verification routine: Process pending offline drops upon reboot
 (async function processPendingAbruptDrops() {
   const dropsQueue = JSON.parse(localStorage.getItem("auto_docs_dropped_sessions") || "[]");
   if (dropsQueue.length === 0) return;
