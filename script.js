@@ -846,7 +846,6 @@ async function executeSupervisorExtraction() {
        BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (FROM ACTIVE WORKSPACES)
        ========================================================================== */
     if (reportType === "CASES") {
-      // 1. Fetch telemetry mapping first to resolve true, official agent profiles
       const telemetryRef = collection(firestoreDb, "daily_compliance_telemetry");
       const telemetryQuery = query(telemetryRef, where("date", "==", selectedDateFilter));
       const telemetrySnapshot = await getDocs(telemetryQuery);
@@ -874,12 +873,12 @@ async function executeSupervisorExtraction() {
         const formData = data.form_data || {};
         const targetAgentId = data.agent_id || "N/A";
         
-        // FIX: Resolve the true historical LOB configuration via map fallback
         let agentLob = agentLobMap[targetAgentId];
         if (!agentLob) {
           agentLob = formData.concernType === "Technical" ? "ES" : "EBG"; 
         }
         
+        // STABILITY FIX: Use 'return' inside a standard forEach to jump to next iteration safely
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
         const lastUpdatedDate = data.updated_at ? new Date(data.updated_at).toISOString().split('T')[0] : "";
