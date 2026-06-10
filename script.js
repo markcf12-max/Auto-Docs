@@ -212,7 +212,7 @@ async function handleAuthSubmission(e) {
 
 async function handleSessionLoginTransition() {
   $('authModal').style.display = "none";
-  $('logoutBtn').style.display = "block"; // 👈 ADD THIS LINE HERE
+  $('logoutBtn').style.display = "block";
   updateSyncStatusUI('online');
   
   updateOutput();
@@ -590,128 +590,6 @@ async function clearShiftHistory() {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR
-   ========================================================================== */
-function showSupervisorPanel() {
-  $('supervisorAdminPanel').style.display = "flex";
-  $('adminFilterDate').value = new Date().toISOString().split('T')[0];
-}
-
-async function executeSupervisorExtraction() {
-  try {
-    showToast("Processing unified operational telemetry query...");
-    
-    const selectedLobFilter = $('adminFilterLob').value;
-    const selectedDateFilter = $('adminFilterDate').value; 
-    
-    const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
-    let q = query(metricsRef, where("date", "==", selectedDateFilter));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-      showSystemAlert("Data Void", `No operational tracking parameters logged on date: [${selectedDateFilter}].`);
-      return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Agent ID,Agent Name,Line of Business (LOB),Total Cases Logged,WOCAS Submissions,Shift Login Frequency,Graceful Logouts,Unexpected Drops / System Crashes,Last Activity Log\n";
-
-    let recordsCount = 0;
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const agentLob = data.lob || "UNKNOWN";
-
-      if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
-
-      const row = [
-        `"${data.agent_id || 'N/A'}"`,
-        `"${(data.agent_name || 'Unknown').replace(/"/g, '""')}"`,
-        `"${agentLob}"`,
-        data.cases_logged_count || 0,
-        data.wocas_logged_count || 0,
-        data.login_count || 0,
-        data.logout_count || 0,
-        data.abrupt_disconnect_count || 0,
-        `"${data.last_activity_at ? new Date(data.last_activity_at).toLocaleTimeString() : 'N/A'}"`
-      ];
-      
-      csvContent += row.join(",") + "\n";
-      recordsCount++;
-    });
-
-    if (recordsCount === 0) {
-      showSystemAlert("Zero Results", `No operational profiles match [${selectedLobFilter}] filters on this date context.`);
-      return;
-    }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Compliance_Telemetry_Report_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
-    document.body.appendChild(link);
-    
-    link.click();
-    document.body.removeChild(link);
-    showToast(`Successfully extracted ${recordsCount} compliance rows to Excel!`);
-
-  } catch (error) {
-    console.error("Supervisor data extraction pipeline exception: ", error);
-    showSystemAlert("Query Interrupted", "Database rejected compilation stream command instructions.");
-  }
-}
-
-/* ==========================================================================
-   REAL-TIME VALIDATORS & REGEX WRAPPERS
-   ========================================================================== */
-function validateCaseField(el) {
-  const val = el.value.trim().toUpperCase();
-  el.classList.remove('val-amber', 'val-green', 'val-crimson');
-  
-  if (val.length === 0) return; 
-  if (val === "NA" || val === "N/A") {
-    el.classList.add('val-green');
-    return;
-  }
-  
-  if (val.length === 8 || val.length === 10) {
-    el.classList.add('val-green');
-  } else if (val.length > 10) {
-    el.classList.add('val-crimson');
-  } else {
-    el.classList.add('val-amber');
-  }
-}
-
-function validateMinField(el) {
-  el.classList.remove('val-amber', 'val-crimson');
-  if (el.value.trim().length > 0) {
-    el.classList.add('val-green');
-  } else {
-    el.classList.remove('val-green');
-  }
-}
-
-function toggleDrawer(e) {
-  if(e) e.stopPropagation();
-  const drawer = $('playbookPanel');
-  if(!drawer) return;
-  
-  drawer.classList.toggle('drawer-open');
-  const btnText = $('drawerToggle')?.querySelector('span');
-  const btnIcon = $('drawerToggle')?.querySelector('i');
-  
-  if(drawer.classList.contains('drawer-open')) {
-    if (btnText) btnText.textContent = "Close Playbooks";
-    if (btnIcon) btnIcon.className = "fas fa-times";
-  } else {
-    if (btnText) btnText.textContent = "View Playbooks";
-    if (btnIcon) btnIcon.className = "fas fa-book-open";
-  }
-}
-
-/* ==========================================================================
    VOC ENGINE REFERENCE MATRICES (UNIFIED WORKSTATION ARRAYS)
    ========================================================================== */
 const TECH_PROCEDURES = {
@@ -936,6 +814,149 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
+   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR
+   ========================================================================== */
+function showSupervisorPanel() {
+  $('supervisorAdminPanel').style.display = "flex";
+  $('adminFilterDate').value = new Date().toISOString().split('T')[0];
+}
+
+async function executeSupervisorExtraction() {
+  try {
+    const reportType = $('adminFilterDataType')?.value || "CASES";
+    const selectedLobFilter = $('adminFilterLob').value;
+    const selectedDateFilter = $('adminFilterDate').value; 
+
+    if (!selectedDateFilter) {
+      showSystemAlert("Filter Required", "Please select a Target Run Date before executing a data stream extraction.", true);
+      return;
+    }
+
+    showToast(`Compiling requested ${reportType.toLowerCase()} records matrix...`);
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    let recordsCount = 0;
+
+    // Helper function to safely escape text fields so formatting breaks don't fracture Excel layout columns
+    const clean = (val) => {
+      if (val === undefined || val === null) return '""';
+      return `"${val.toString().replace(/"/g, '""').trim()}"`;
+    };
+
+    /* ==========================================================================
+       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (FROM ACTIVE WORKSPACES)
+       ========================================================================== */
+    if (reportType === "CASES") {
+      const logsRef = collection(firestoreDb, "case_logs");
+      const snapshot = await getDocs(logsRef);
+      
+      if (snapshot.empty) {
+        showSystemAlert("Data Void", "No active case data logs found anywhere in the cloud database system.");
+        return;
+      }
+
+      // Headers matching individual documentation workspace fields entered by agents
+      csvContent += "WinID,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const formData = data.form_data || {};
+        
+        // Auto-assign Line of Business based on the agent's chosen primary category path
+        const agentLob = formData.concernType === "Technical" ? "ES" : "EBG";
+        if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+
+        // Extract internal timestamp format and match to supervisor calendar input
+        const lastUpdatedDate = data.updated_at ? new Date(data.updated_at).toISOString().split('T')[0] : "";
+        if (lastUpdatedDate !== selectedDateFilter) return;
+
+        const row = [
+          clean(data.agent_id || "N/A"),
+          clean(formData.concernType),
+          clean(formData.voc),
+          clean(formData.case),
+          clean(formData.subj),
+          clean(formData.name),
+          clean(formData.min),
+          clean(formData.company),
+          clean(formData.email),
+          clean(formData.thread),
+          clean(formData.datetime),
+          clean(formData.action),
+          clean(formData.wocas),
+          clean(data.updated_at ? new Date(data.updated_at).toLocaleString() : "N/A")
+        ];
+        
+        csvContent += row.join(",") + "\n";
+        recordsCount++;
+      });
+
+    /* ==========================================================================
+       BRANCH B: COMPLIANCE METRICS EXTRACTION (LOGINS, LOGOUTS, UNEXPECTED DROPS)
+       ========================================================================== */
+    } else {
+      const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
+      const q = query(metricsRef, where("date", "==", selectedDateFilter));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        showSystemAlert("Data Void", `No tracking metrics or portal access events logged on date context: [${selectedDateFilter}].`);
+        return;
+      }
+
+      // Headers mapping directly to compliance tracking parameters with WinID and Agent Name
+      csvContent += "WinID,Agent Name,Line of Business (LOB),Total Cases Logged,WOCAS Submissions,Shift Login Frequency,Graceful Logouts,Unexpected Drops / System Crashes,Last Activity Log\n";
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const agentLob = data.lob || "UNKNOWN";
+
+        if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+
+        const row = [
+          clean(data.agent_id || "N/A"),
+          clean(data.agent_name || "Unknown"),
+          clean(agentLob),
+          data.cases_logged_count || 0,
+          data.wocas_logged_count || 0,
+          data.login_count || 0,
+          data.logout_count || 0,
+          data.abrupt_disconnect_count || 0,
+          clean(data.last_activity_at ? new Date(data.last_activity_at).toLocaleTimeString() : "N/A")
+        ];
+        
+        csvContent += row.join(",") + "\n";
+        recordsCount++;
+      });
+    }
+
+    /* ==========================================================================
+       FILE DISPOSITION GATEWAY (DOWNLOAD PIPELINE TRIGGER)
+       ========================================================================== */
+    if (recordsCount === 0) {
+      showSystemAlert("Zero Results", `No operational records matching your [${selectedLobFilter}] selection filter were tracked on this date.`);
+      return;
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    const filenameLabel = reportType === "CASES" ? "Detailed_Cases_Workbook" : "Compliance_Telemetry_Report";
+    
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${filenameLabel}_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
+    document.body.appendChild(link);
+    
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Successfully exported ${recordsCount} ${reportType.toLowerCase()} rows to Excel!`);
+
+  } catch (error) {
+    console.error("Supervisor data extraction core workspace error:", error);
+    showSystemAlert("Query Interrupted", "Database pipeline rejected structural extraction parameter instructions.");
+  }
+}
+
+/* ==========================================================================
    CLEAN LOGOUT AND INSTANT RESET OPERATIONS
    ========================================================================== */
 function terminateAgentSession() {
@@ -1090,6 +1111,55 @@ document.addEventListener("DOMContentLoaded", () => {
   listenToOperationalBroadcasts();
   listenToSessionState();
 });
+
+/* ==========================================================================
+   REAL-TIME VALIDATORS & REGEX WRAPPERS
+   ========================================================================== */
+function validateCaseField(el) {
+  const val = el.value.trim().toUpperCase();
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
+  
+  if (val.length === 0) return; 
+  if (val === "NA" || val === "N/A") {
+    el.classList.add('val-green');
+    return;
+  }
+  
+  if (val.length === 8 || val.length === 10) {
+    el.classList.add('val-green');
+  } else if (val.length > 10) {
+    el.classList.add('val-crimson');
+  } else {
+    el.classList.add('val-amber');
+  }
+}
+
+function validateMinField(el) {
+  el.classList.remove('val-amber', 'val-crimson');
+  if (el.value.trim().length > 0) {
+    el.classList.add('val-green');
+  } else {
+    el.classList.remove('val-green');
+  }
+}
+
+function toggleDrawer(e) {
+  if(e) e.stopPropagation();
+  const drawer = $('playbookPanel');
+  if(!drawer) return;
+  
+  drawer.classList.toggle('drawer-open');
+  const btnText = $('drawerToggle')?.querySelector('span');
+  const btnIcon = $('drawerToggle')?.querySelector('i');
+  
+  if(drawer.classList.contains('drawer-open')) {
+    if (btnText) btnText.textContent = "Close Playbooks";
+    if (btnIcon) btnIcon.className = "fas fa-times";
+  } else {
+    if (btnText) btnText.textContent = "View Playbooks";
+    if (btnIcon) btnIcon.className = "fas fa-book-open";
+  }
+}
 
 /* ==========================================================================
    UNGRACEFUL STABILITY CRASH MONITORING (TAB CLOSURES / WINDOW THROTTLES)
