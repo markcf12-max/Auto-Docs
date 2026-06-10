@@ -406,19 +406,25 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
   const metricDocId = `${currentAgentId}-${Date.now()}`;
   const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
 
-  // Bundle every input form field into this instance record
+  // Helper to extract values cleanly using the exact HTML input IDs
+  const getCleanVal = (elementId) => {
+    const el = document.getElementById(elementId);
+    return el ? el.value.trim() : "";
+  };
+
+  // Maps directly to the standard input IDs inside your markup
   const snapshotData = {
-    concernType: $("concernType")?.value || "N/A",
-    voc: $("voc")?.value || "N/A",
-    subj: $("subj")?.value || "N/A",
-    name: $("name")?.value || "N/A",
-    min: $("min")?.value || "N/A",
-    company: $("company")?.value || "N/A",
-    email: $("email")?.value || "N/A",
-    thread: $("thread")?.value || "N/A",
-    datetime: $("datetime")?.value || "N/A",
-    action: $("action")?.value || "N/A",
-    wocas: $("wocas")?.value || "N/A"
+    concernType: getCleanVal("concernType"),
+    voc:         getCleanVal("voc"),
+    subj:        getCleanVal("subj"),
+    name:        getCleanVal("name"),
+    min:         getCleanVal("min"),
+    company:     getCleanVal("company"),
+    email:       getCleanVal("email"),
+    thread:      getCleanVal("thread"),
+    datetime:    getCleanVal("datetime"),
+    action:      getCleanVal("action"),
+    wocas:       getCleanVal("wocas")
   };
 
   try {
@@ -433,7 +439,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     });
 
     const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${dateString}`);
-    const isWocas = snapshotData.wocas.trim().length > 0;
+    const isWocas = snapshotData.wocas.length > 0;
     await setDoc(metricDayRef, {
       agent_id: currentAgentId,
       agent_name: currentAgentName,
@@ -471,7 +477,7 @@ async function pushToHistory(caseNumber, textContent) {
       shift_manifest: globalShiftHistory
     });
 
-    // Run execution payload step
+    // Fire off direct analytical snapshot storage sequence
     await logCaseSubmissionToAnalytics(displayId);
 
   } catch (err) {
@@ -836,7 +842,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR
+   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR (FALLBACK REPAIR ENGINE)
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
@@ -868,12 +874,12 @@ async function executeSupervisorExtraction() {
     let recordsCount = 0;
 
     const clean = (val) => {
-      if (val === undefined || val === null) return '""';
+      if (val === undefined || val === null || val === "") return '""';
       return `"${val.toString().replace(/"/g, '""').trim()}"`;
     };
 
     /* ==========================================================================
-       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (PULLS HISTORIC INSTANCE SNAPSHOTS)
+       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (WITH ROBUST MAP CATCHES)
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
@@ -885,6 +891,14 @@ async function executeSupervisorExtraction() {
         return;
       }
 
+      // Load active workspace templates to retroactively backfill historically broken rows
+      const logsRef = collection(firestoreDb, "case_logs");
+      const logsSnapshot = await getDocs(logsRef);
+      const workspaceDetailsMap = {};
+      logsSnapshot.forEach(docSnap => {
+        workspaceDetailsMap[docSnap.id] = docSnap.data().form_data || {};
+      });
+
       csvContent += "WinID,Assigned LOB,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
 
       snapshot.forEach((docSnap) => {
@@ -894,24 +908,37 @@ async function executeSupervisorExtraction() {
         
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        // Pulling the distinct field snapshot saved at the exact instance of creation
-        const itemSnapshot = pData.snapshot || {};
+        // Target all possible storage locations to bypass historical data drops
+        const itemSnap = pData.snapshot || {};
+        const legacyForm = pData.form_data || {};
+        const backupScratch = workspaceDetailsMap[targetAgentId] || {};
+
+        // Cascade search architecture checking clean HTML standard tags vs alternative structures
+        const fetchField = (primaryKey, alternateKey = "") => {
+          return itemSnap[primaryKey] || 
+                 pData[primaryKey] || 
+                 legacyForm[primaryKey] || 
+                 backupScratch[primaryKey] || 
+                 (alternateKey && itemSnap[alternateKey]) ||
+                 (alternateKey && backupScratch[alternateKey]) || 
+                 "";
+        };
 
         const row = [
           clean(targetAgentId),
           clean(agentLob),
-          clean(itemSnapshot.concernType || "N/A"),
-          clean(itemSnapshot.voc || "N/A"),
+          clean(fetchField("concernType")),
+          clean(fetchField("voc")),
           clean(pData.case_id || "N/A"),
-          clean(itemSnapshot.subj || "N/A"),
-          clean(itemSnapshot.name || "N/A"),
-          clean(itemSnapshot.min || "N/A"),
-          clean(itemSnapshot.company || "N/A"),
-          clean(itemSnapshot.email || "N/A"),
-          clean(itemSnapshot.thread || "N/A"),
-          clean(itemSnapshot.datetime || "N/A"),
-          clean(itemSnapshot.action || "N/A"),
-          clean(itemSnapshot.wocas || "N/A"),
+          clean(fetchField("subj", "subject")),
+          clean(fetchField("name", "customerName")),
+          clean(fetchField("min", "mobileNumber")),
+          clean(fetchField("company")),
+          clean(fetchField("email")),
+          clean(fetchField("thread", "threadId")),
+          clean(fetchField("datetime", "dateTime")),
+          clean(fetchField("action", "actionTaken")),
+          clean(fetchField("wocas")),
           clean(pData.completed_at ? new Date(pData.completed_at).toLocaleString() : "N/A")
         ];
         
