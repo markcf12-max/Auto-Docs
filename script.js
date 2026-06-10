@@ -284,7 +284,7 @@ function showLoginGateway(isRegisterMode = false) {
 
 /* ==========================================================================
    CORE CLOUD WORKSPACE ENGINE
-   ========================================================================== */
+   ========================================================================= */
 async function saveData(forceInstant = false) {
   if (isResetting || !currentAgentId) return; 
   if (saveTimeout) clearTimeout(saveTimeout);
@@ -406,13 +406,11 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
   const metricDocId = `${currentAgentId}-${Date.now()}`;
   const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
 
-  // Helper to extract values cleanly using the exact HTML input IDs
   const getCleanVal = (elementId) => {
     const el = document.getElementById(elementId);
     return el ? el.value.trim() : "";
   };
 
-  // Maps directly to the standard input IDs inside your markup
   const snapshotData = {
     concernType: getCleanVal("concernType"),
     voc:         getCleanVal("voc"),
@@ -477,7 +475,6 @@ async function pushToHistory(caseNumber, textContent) {
       shift_manifest: globalShiftHistory
     });
 
-    // Fire off direct analytical snapshot storage sequence
     await logCaseSubmissionToAnalytics(displayId);
 
   } catch (err) {
@@ -561,7 +558,8 @@ async function downloadHistoryLog() {
     return;
   }
 
-  let csvContent = "data:text/csv;charset=utf-8,";
+  // Force explicit Comma separations explicitly defining standard parameters for local machines
+  let csvContent = "data:text/csv;charset=utf-8,sep=\n";
   csvContent += "Agent ID,Agent Name,Line of Business (LOB),Timestamp,Reference Case ID,Documentation Raw Text\n";
 
   globalShiftHistory.forEach((item) => {
@@ -842,7 +840,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR (FALLBACK REPAIR ENGINE)
+   SUPERVISOR OPERATIONS PORTAL & AUDIT TELEMETRY EXTRACTOR (EXCEL FORCE REPAIR)
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
@@ -870,7 +868,8 @@ async function executeSupervisorExtraction() {
 
     showToast(`Compiling requested ${reportType.toLowerCase()} records matrix...`);
 
-    let csvContent = "data:text/csv;charset=utf-8,";
+    // "sep=\n" dynamically forces Excel to interpret commas correctly across all regions
+    let csvContent = "sep=\n";
     let recordsCount = 0;
 
     const clean = (val) => {
@@ -879,7 +878,7 @@ async function executeSupervisorExtraction() {
     };
 
     /* ==========================================================================
-       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (WITH ROBUST MAP CATCHES)
+       BRANCH A: DETAILED CASES WORKBOOK EXTRACTION
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
@@ -891,7 +890,6 @@ async function executeSupervisorExtraction() {
         return;
       }
 
-      // Load active workspace templates to retroactively backfill historically broken rows
       const logsRef = collection(firestoreDb, "case_logs");
       const logsSnapshot = await getDocs(logsRef);
       const workspaceDetailsMap = {};
@@ -908,12 +906,10 @@ async function executeSupervisorExtraction() {
         
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        // Target all possible storage locations to bypass historical data drops
         const itemSnap = pData.snapshot || {};
         const legacyForm = pData.form_data || {};
         const backupScratch = workspaceDetailsMap[targetAgentId] || {};
 
-        // Cascade search architecture checking clean HTML standard tags vs alternative structures
         const fetchField = (primaryKey, alternateKey = "") => {
           return itemSnap[primaryKey] || 
                  pData[primaryKey] || 
@@ -989,11 +985,12 @@ async function executeSupervisorExtraction() {
       return;
     }
 
-    const encodedUri = encodeURI(csvContent);
+    // Convert string data into a strict application/csv blob object to maintain absolute structure
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const filenameLabel = reportType === "CASES" ? "Detailed_Cases_Workbook" : "Compliance_Telemetry_Report";
     
-    link.setAttribute("href", encodedUri);
+    link.href = URL.createObjectURL(blob);
     link.setAttribute("download", `${filenameLabel}_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
     document.body.appendChild(link);
     
