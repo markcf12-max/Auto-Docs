@@ -862,17 +862,11 @@ async function executeSupervisorExtraction() {
     const selectedLobFilter = $('adminFilterLob').value;
     const selectedDateFilter = $('adminFilterDate').value; 
 
-    if (!selectedDateFilter) {
-      showSystemAlert("Filter Required", "Please select a Target Run Date before executing a data stream extraction.", true);
-      return;
-    }
-
     showToast(`Compiling requested ${reportType.toLowerCase()} records matrix...`);
 
     let csvContent = "";
     let recordsCount = 0;
 
-    // Standard CSV escape helper wrapper
     const cleanValue = (val) => {
       if (val === undefined || val === null || val === "") return "";
       let str = val.toString().replace(/[\n\r\t]/g, " ").trim();
@@ -887,15 +881,23 @@ async function executeSupervisorExtraction() {
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
-      const q = query(performanceRef, where("submission_date", "==", selectedDateFilter));
+      let q;
+
+      // Fallback: If date input is empty/cleared, bypass query restrictions to scan all histories
+      if (!selectedDateFilter) {
+        q = query(performanceRef); 
+      } else {
+        q = query(performanceRef, where("submission_date", "==", selectedDateFilter));
+      }
+
       const performanceSnapshot = await getDocs(q);
       
       if (performanceSnapshot.empty) {
-        showSystemAlert("Data Void", `No distinct case log submissions found matching target date: [${selectedDateFilter}].`);
+        showSystemAlert("Data Void", `No distinct case log submissions found matching your search configuration.`);
         return;
       }
 
-      // Add actual clean descriptive column names to your CSV header row
+      // Explicit descriptive headers representing actual field designations
       csvContent += "Submission ID,Agent ID,Agent Name,Line of Business,Reference ID,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
 
       performanceSnapshot.forEach((docSnap) => {
@@ -904,28 +906,29 @@ async function executeSupervisorExtraction() {
 
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        // Unpack nested field data properties safely
-        const snap = rawDoc.snapshot || rawDoc.form_data || {};
+        // Route fallback structures to isolate historical sub-objects gracefully
+        const snap = rawDoc.snapshot || rawDoc.form_data || rawDoc || {};
 
+        // Parallel fallback logic checking clean naming conventions first, down to older standard key formats
         const row = [
           cleanValue(docSnap.id),
           cleanValue(rawDoc.agent_id),
           cleanValue(rawDoc.agent_name),
           cleanValue(agentLob),
-          cleanValue(rawDoc.case_id),
-          cleanValue(rawDoc.completed_at),
-          cleanValue(snap.action),
-          cleanValue(snap.wocas),
-          cleanValue(snap.thread),
-          cleanValue(snap.name),
-          cleanValue(snap.concernType),
-          cleanValue(snap.min),
-          cleanValue(snap.datetime),
-          cleanValue(snap.company),
-          cleanValue(snap.email),
-          cleanValue(snap.subj),
-          cleanValue(snap.voc),
-          cleanValue(snap.case)
+          cleanValue(rawDoc.case_id || snap.case || snap.field_case),
+          cleanValue(rawDoc.completed_at || rawDoc.updated_at),
+          cleanValue(snap.action       || snap.field_action),
+          cleanValue(snap.wocas        || snap.field_wocas),
+          cleanValue(snap.thread       || snap.field_thread),
+          cleanValue(snap.name         || snap.field_name),
+          cleanValue(snap.concernType  || snap.field_concernType),
+          cleanValue(snap.min          || snap.field_min),
+          cleanValue(snap.datetime     || snap.field_datetime),
+          cleanValue(snap.company      || snap.field_company),
+          cleanValue(snap.email        || snap.field_email),
+          cleanValue(snap.subj         || snap.field_subj),
+          cleanValue(snap.voc          || snap.field_voc),
+          cleanValue(snap.case         || snap.field_case)
         ];
 
         csvContent += row.join(",") + "\n";
@@ -937,11 +940,14 @@ async function executeSupervisorExtraction() {
        ========================================================================== */
     } else {
       const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
-      const q = query(metricsRef, where("date", "==", selectedDateFilter));
+      let q = selectedDateFilter 
+        ? query(metricsRef, where("date", "==", selectedDateFilter))
+        : query(metricsRef);
+
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        showSystemAlert("Data Void", `No tracking metrics or portal access events logged on date context: [${selectedDateFilter}].`);
+        showSystemAlert("Data Void", `No tracking metrics or portal access events logged.`);
         return;
       }
 
@@ -971,17 +977,18 @@ async function executeSupervisorExtraction() {
     }
 
     if (recordsCount === 0) {
-      showSystemAlert("Zero Results", `No operational records matching your [${selectedLobFilter}] selection filter were tracked on this date.`);
+      showSystemAlert("Zero Results", `No operational records matching your selection filter layers were tracked.`);
       return;
     }
 
-    // Generate standard direct CSV download stream links
+    // Build downloadable spreadsheet blobs 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const filenameLabel = reportType === "CASES" ? "Clean_Cases_Workbook" : "Compliance_Telemetry_Report";
+    const dateLabel = selectedDateFilter || "ALL_TIME";
     
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `${filenameLabel}_${selectedLobFilter}_${selectedDateFilter}.csv`);
+    link.setAttribute("download", `${filenameLabel}_${selectedLobFilter}_${dateLabel}.csv`);
     document.body.appendChild(link);
     
     link.click();
@@ -989,8 +996,8 @@ async function executeSupervisorExtraction() {
     showToast(`Successfully extracted ${recordsCount} formatted items straight to CSV!`);
 
   } catch (error) {
-    console.error("Supervisor clean extraction engine runtime fault:", error);
-    showSystemAlert("Extraction Pipeline Error", "Database rejected custom parameter runtime configurations.");
+    console.error("Supervisor extraction pipeline error:", error);
+    showSystemAlert("Extraction Pipeline Error", "Database rejected custom parameter configurations.");
   }
 }
 
