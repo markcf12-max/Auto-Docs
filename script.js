@@ -416,7 +416,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     voc:         getCleanVal("voc"),
     case:        getCleanVal("case"),
     subj:        getCleanVal("subj"),
-    name:        getCleanVal("name"),
+    name:         getCleanVal("name"),
     min:         getCleanVal("min"),
     company:     getCleanVal("company"),
     email:       getCleanVal("email"),
@@ -841,7 +841,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & EXPLICIT LABELED CLEAN EXPORT ENGINE
+   SUPERVISOR OPERATIONS PORTAL & ADVANCED DEEP-SCAN EXPORT ENGINE
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
@@ -862,7 +862,9 @@ async function executeSupervisorExtraction() {
     const selectedLobFilter = $('adminFilterLob').value;
     const selectedDateFilter = $('adminFilterDate').value; 
 
-    showToast(`Compiling requested ${reportType.toLowerCase()} records matrix...`);
+    showToast(`Deep Scanning database for ${reportType.toLowerCase()}...`);
+    console.log("--- STARTING DEEP SCAN EXTRACTION ---");
+    console.log("Filters applied - LOB:", selectedLobFilter, "Date:", selectedDateFilter || "ALL TIME");
 
     let csvContent = "";
     let recordsCount = 0;
@@ -877,77 +879,109 @@ async function executeSupervisorExtraction() {
     };
 
     /* ==========================================================================
-       BRANCH A: EXTRACT CLEAN LABELED WORKBENCH CASE METRICS
+       BRANCH A: EXTRACT LABELED CASE METRICS WITH DEEP BACKUP SCAN
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
-      let q;
+      let q = query(performanceRef); 
 
-      // Fallback: If date input is empty/cleared, bypass query restrictions to scan all histories
-      if (!selectedDateFilter) {
-        q = query(performanceRef); 
-      } else {
+      if (selectedDateFilter) {
         q = query(performanceRef, where("submission_date", "==", selectedDateFilter));
       }
 
       const performanceSnapshot = await getDocs(q);
+      console.log(`Total documents found in 'cases_performance_metrics': ${performanceSnapshot.size}`);
       
+      // FALLBACK TRAP: If archive is completely empty, scrape raw draft payloads out of case_logs!
       if (performanceSnapshot.empty) {
-        showSystemAlert("Data Void", `No distinct case log submissions found matching your search configuration.`);
-        return;
+        console.warn("History archive is empty! Initiating deep fallback scan into active workspace containers...");
+        const backupRef = collection(firestoreDb, "case_logs");
+        const backupSnap = await getDocs(backupRef);
+        console.log(`Documents found in active workspace backups ('case_logs'): ${backupSnap.size}`);
+        
+        if (backupSnap.empty) {
+          showSystemAlert("Data Void", "No records found across historical archives or active real-time workspaces.");
+          return;
+        }
+        
+        // Structured header layout specifically tailored for raw draft payload visualization
+        csvContent += "Draft Log Doc ID,Agent ID/WinID,Last Active Case Target,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
+        
+        backupSnap.forEach((docSnap) => {
+          const d = docSnap.data();
+          const snap = d.form_data || d || {};
+          
+          // Normalize old structural styles directly out of live active drafts
+          csvContent += [
+            cleanValue(docSnap.id),
+            cleanValue(d.agent_id),
+            cleanValue(d.case_number || snap.case || snap.field_case),
+            cleanValue(snap.action       || snap.field_action),
+            cleanValue(snap.wocas        || snap.field_wocas),
+            cleanValue(snap.thread       || snap.field_thread),
+            cleanValue(snap.name         || snap.field_name),
+            cleanValue(snap.concernType  || snap.field_concernType),
+            cleanValue(snap.min          || snap.field_min),
+            cleanValue(snap.datetime     || snap.field_datetime),
+            cleanValue(snap.company      || snap.field_company),
+            cleanValue(snap.email        || snap.field_email),
+            cleanValue(snap.subj         || snap.field_subj),
+            cleanValue(snap.voc          || snap.field_voc),
+            cleanValue(snap.case         || snap.field_case)
+          ].join(",") + "\n";
+          
+          recordsCount++;
+        });
+      } else {
+        // Build traditional spreadsheet configuration using user-friendly clean metrics layouts
+        csvContent += "Submission ID,Agent ID,Agent Name,Line of Business,Reference ID,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
+
+        performanceSnapshot.forEach((docSnap) => {
+          const rawDoc = docSnap.data();
+          const agentLob = rawDoc.lob || "UNKNOWN";
+
+          if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+
+          // Route properties safely across varying historical schemas
+          const snap = rawDoc.snapshot || rawDoc.form_data || rawDoc || {};
+          console.log(`Processing Record ID: ${docSnap.id}, Keys evaluated:`, Object.keys(snap));
+
+          const row = [
+            cleanValue(docSnap.id),
+            cleanValue(rawDoc.agent_id),
+            cleanValue(rawDoc.agent_name),
+            cleanValue(agentLob),
+            cleanValue(rawDoc.case_id || snap.case || snap.field_case || "N/A"),
+            cleanValue(rawDoc.completed_at || rawDoc.updated_at || "N/A"),
+            cleanValue(snap.action       || snap.field_action       || "N/A"),
+            cleanValue(snap.wocas        || snap.field_wocas        || "N/A"),
+            cleanValue(snap.thread       || snap.field_thread       || "N/A"),
+            cleanValue(snap.name         || snap.field_name         || "N/A"),
+            cleanValue(snap.concernType  || snap.field_concernType  || "N/A"),
+            cleanValue(snap.min          || snap.field_min          || "N/A"),
+            cleanValue(snap.datetime     || snap.field_datetime     || "N/A"),
+            cleanValue(snap.company      || snap.field_company      || "N/A"),
+            cleanValue(snap.email        || snap.field_email        || "N/A"),
+            cleanValue(snap.subj         || snap.field_subj         || "N/A"),
+            cleanValue(snap.voc          || snap.field_voc          || "N/A"),
+            cleanValue(snap.case         || snap.field_case         || "N/A")
+          ];
+
+          csvContent += row.join(",") + "\n";
+          recordsCount++;
+        });
       }
-
-      // Explicit descriptive headers representing actual field designations
-      csvContent += "Submission ID,Agent ID,Agent Name,Line of Business,Reference ID,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
-
-      performanceSnapshot.forEach((docSnap) => {
-        const rawDoc = docSnap.data();
-        const agentLob = rawDoc.lob || "UNKNOWN";
-
-        if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
-
-        // Route fallback structures to isolate historical sub-objects gracefully
-        const snap = rawDoc.snapshot || rawDoc.form_data || rawDoc || {};
-
-        // Parallel fallback logic checking clean naming conventions first, down to older standard key formats
-        const row = [
-          cleanValue(docSnap.id),
-          cleanValue(rawDoc.agent_id),
-          cleanValue(rawDoc.agent_name),
-          cleanValue(agentLob),
-          cleanValue(rawDoc.case_id || snap.case || snap.field_case),
-          cleanValue(rawDoc.completed_at || rawDoc.updated_at),
-          cleanValue(snap.action       || snap.field_action),
-          cleanValue(snap.wocas        || snap.field_wocas),
-          cleanValue(snap.thread       || snap.field_thread),
-          cleanValue(snap.name         || snap.field_name),
-          cleanValue(snap.concernType  || snap.field_concernType),
-          cleanValue(snap.min          || snap.field_min),
-          cleanValue(snap.datetime     || snap.field_datetime),
-          cleanValue(snap.company      || snap.field_company),
-          cleanValue(snap.email        || snap.field_email),
-          cleanValue(snap.subj         || snap.field_subj),
-          cleanValue(snap.voc          || snap.field_voc),
-          cleanValue(snap.case         || snap.field_case)
-        ];
-
-        csvContent += row.join(",") + "\n";
-        recordsCount++;
-      });
 
     /* ==========================================================================
        BRANCH B: COMPLIANCE METRICS EXTRACTION
        ========================================================================== */
     } else {
       const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
-      let q = selectedDateFilter 
-        ? query(metricsRef, where("date", "==", selectedDateFilter))
-        : query(metricsRef);
-
+      let q = selectedDateFilter ? query(metricsRef, where("date", "==", selectedDateFilter)) : query(metricsRef);
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        showSystemAlert("Data Void", `No tracking metrics or portal access events logged.`);
+        showSystemAlert("Data Void", "No metrics or system portal logs exist for this query configuration.");
         return;
       }
 
@@ -977,11 +1011,11 @@ async function executeSupervisorExtraction() {
     }
 
     if (recordsCount === 0) {
-      showSystemAlert("Zero Results", `No operational records matching your selection filter layers were tracked.`);
+      showSystemAlert("Zero Results", "No data matched your filtering parameters.");
       return;
     }
 
-    // Build downloadable spreadsheet blobs 
+    // Build and release downloadable system blob link elements
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const filenameLabel = reportType === "CASES" ? "Clean_Cases_Workbook" : "Compliance_Telemetry_Report";
@@ -993,11 +1027,13 @@ async function executeSupervisorExtraction() {
     
     link.click();
     document.body.removeChild(link);
-    showToast(`Successfully extracted ${recordsCount} formatted items straight to CSV!`);
+    
+    showToast(`Successfully downloaded ${recordsCount} items!`);
+    console.log("--- DEEP SCAN COMPLETE ---");
 
   } catch (error) {
-    console.error("Supervisor extraction pipeline error:", error);
-    showSystemAlert("Extraction Pipeline Error", "Database rejected custom parameter configurations.");
+    console.error("CRITICAL EXTRACTION PIPELINE FAILURE:", error);
+    showSystemAlert("Extraction Error", `Pipeline processing broke: ${error.message}`);
   }
 }
 
@@ -1182,7 +1218,7 @@ function validateCaseField(el) {
 }
 
 function validateMinField(el) {
-  el.classList.remove('val-amber', 'val-crimson');
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
   if (el.value.trim().length > 0) {
     el.classList.add('val-green');
   } else {
