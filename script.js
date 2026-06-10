@@ -841,7 +841,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL & FULLY DYNAMIC DUMP CSV ENGINE
+   SUPERVISOR OPERATIONS PORTAL & EXPLICIT LABELED CLEAN EXPORT ENGINE
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
@@ -869,10 +869,10 @@ async function executeSupervisorExtraction() {
 
     showToast(`Compiling requested ${reportType.toLowerCase()} records matrix...`);
 
-    const recordsArray = [];
-    const allKeysFound = new Set();
+    let csvContent = "";
+    let recordsCount = 0;
 
-    // Helper functions to escape commas and strip carriage breaks
+    // Standard CSV escape helper wrapper
     const cleanValue = (val) => {
       if (val === undefined || val === null || val === "") return "";
       let str = val.toString().replace(/[\n\r\t]/g, " ").trim();
@@ -883,7 +883,7 @@ async function executeSupervisorExtraction() {
     };
 
     /* ==========================================================================
-       BRANCH A: EXTRACT CASE RECORDS DYNAMICALLY
+       BRANCH A: EXTRACT CLEAN LABELED WORKBENCH CASE METRICS
        ========================================================================== */
     if (reportType === "CASES") {
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
@@ -895,31 +895,41 @@ async function executeSupervisorExtraction() {
         return;
       }
 
+      // Add actual clean descriptive column names to your CSV header row
+      csvContent += "Submission ID,Agent ID,Agent Name,Line of Business,Reference ID,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection,Case Input\n";
+
       performanceSnapshot.forEach((docSnap) => {
         const rawDoc = docSnap.data();
         const agentLob = rawDoc.lob || "UNKNOWN";
 
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        // Flatten all elements inside the document automatically
-        const dynamicRow = {};
-        
-        // 1. Core items
-        Object.keys(rawDoc).forEach(k => {
-          if (k !== 'snapshot' && k !== 'form_data') {
-            dynamicRow[k] = rawDoc[k];
-            allKeysFound.add(k);
-          }
-        });
+        // Unpack nested field data properties safely
+        const snap = rawDoc.snapshot || rawDoc.form_data || {};
 
-        // 2. Unpack nested parameters safely if present
-        const insideSnapshot = rawDoc.snapshot || rawDoc.form_data || {};
-        Object.keys(insideSnapshot).forEach(k => {
-          dynamicRow[`field_${k}`] = insideSnapshot[k];
-          allKeysFound.add(`field_${k}`);
-        });
+        const row = [
+          cleanValue(docSnap.id),
+          cleanValue(rawDoc.agent_id),
+          cleanValue(rawDoc.agent_name),
+          cleanValue(agentLob),
+          cleanValue(rawDoc.case_id),
+          cleanValue(rawDoc.completed_at),
+          cleanValue(snap.action),
+          cleanValue(snap.wocas),
+          cleanValue(snap.thread),
+          cleanValue(snap.name),
+          cleanValue(snap.concernType),
+          cleanValue(snap.min),
+          cleanValue(snap.datetime),
+          cleanValue(snap.company),
+          cleanValue(snap.email),
+          cleanValue(snap.subj),
+          cleanValue(snap.voc),
+          cleanValue(snap.case)
+        ];
 
-        recordsArray.push(dynamicRow);
+        csvContent += row.join(",") + "\n";
+        recordsCount++;
       });
 
     /* ==========================================================================
@@ -935,43 +945,40 @@ async function executeSupervisorExtraction() {
         return;
       }
 
+      csvContent += "WinID,Agent Name,Line of Business (LOB),Total Cases Logged,WOCAS Submissions,Shift Login Frequency,Graceful Logouts,Unexpected Drops / System Crashes,Last Activity Log\n";
+
       snapshot.forEach((docSnap) => {
-        const rawDoc = docSnap.data();
-        const agentLob = rawDoc.lob || "UNKNOWN";
+        const data = docSnap.data();
+        const agentLob = data.lob || "UNKNOWN";
 
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        const dynamicRow = {};
-        Object.keys(rawDoc).forEach(k => {
-          dynamicRow[k] = rawDoc[k];
-          allKeysFound.add(k);
-        });
-
-        recordsArray.push(dynamicRow);
+        const row = [
+          cleanValue(data.agent_id),
+          cleanValue(data.agent_name),
+          cleanValue(agentLob),
+          data.cases_logged_count || 0,
+          data.wocas_logged_count || 0,
+          data.login_count || 0,
+          data.logout_count || 0,
+          data.abrupt_disconnect_count || 0,
+          cleanValue(data.last_activity_at ? new Date(data.last_activity_at).toLocaleTimeString() : "N/A")
+        ];
+        
+        csvContent += row.join(",") + "\n";
+        recordsCount++;
       });
     }
 
-    if (recordsArray.length === 0) {
+    if (recordsCount === 0) {
       showSystemAlert("Zero Results", `No operational records matching your [${selectedLobFilter}] selection filter were tracked on this date.`);
       return;
     }
 
-    // Convert Set of keys into an organized index map array 
-    const csvHeadersArray = Array.from(allKeysFound);
-    let csvStringOutput = csvHeadersArray.map(h => cleanValue(h)).join(",") + "\n";
-
-    // Build the dynamic data payload lines
-    recordsArray.forEach(rowItem => {
-      const entryRowLine = csvHeadersArray.map(headerKey => {
-        return cleanValue(rowItem[headerKey]);
-      });
-      csvStringOutput += entryRowLine.join(",") + "\n";
-    });
-
-    // Generate explicit CSV download link pipeline
-    const blob = new Blob([csvStringOutput], { type: "text/csv;charset=utf-8;" });
+    // Generate standard direct CSV download stream links
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    const filenameLabel = reportType === "CASES" ? "Dynamic_Cases_Export" : "Dynamic_Compliance_Export";
+    const filenameLabel = reportType === "CASES" ? "Clean_Cases_Workbook" : "Compliance_Telemetry_Report";
     
     link.href = URL.createObjectURL(blob);
     link.setAttribute("download", `${filenameLabel}_${selectedLobFilter}_${selectedDateFilter}.csv`);
@@ -979,10 +986,10 @@ async function executeSupervisorExtraction() {
     
     link.click();
     document.body.removeChild(link);
-    showToast(`Successfully extracted ${recordsArray.length} complete data rows directly to CSV!`);
+    showToast(`Successfully extracted ${recordsCount} formatted items straight to CSV!`);
 
   } catch (error) {
-    console.error("Supervisor generic dump system error:", error);
+    console.error("Supervisor clean extraction engine runtime fault:", error);
     showSystemAlert("Extraction Pipeline Error", "Database rejected custom parameter runtime configurations.");
   }
 }
