@@ -837,7 +837,6 @@ async function executeSupervisorExtraction() {
     let csvContent = "data:text/csv;charset=utf-8,";
     let recordsCount = 0;
 
-    // Helper function to safely escape text fields so formatting breaks don't fracture Excel layout columns
     const clean = (val) => {
       if (val === undefined || val === null) return '""';
       return `"${val.toString().replace(/"/g, '""').trim()}"`;
@@ -847,6 +846,19 @@ async function executeSupervisorExtraction() {
        BRANCH A: DETAILED CASES WORKBOOK EXTRACTION (FROM ACTIVE WORKSPACES)
        ========================================================================== */
     if (reportType === "CASES") {
+      // 1. Fetch telemetry mapping first to resolve true, official agent profiles
+      const telemetryRef = collection(firestoreDb, "daily_compliance_telemetry");
+      const telemetryQuery = query(telemetryRef, where("date", "==", selectedDateFilter));
+      const telemetrySnapshot = await getDocs(telemetryQuery);
+      
+      const agentLobMap = {};
+      telemetrySnapshot.forEach(docSnap => {
+        const tData = docSnap.data();
+        if (tData.agent_id) {
+          agentLobMap[tData.agent_id] = tData.lob || "UNKNOWN";
+        }
+      });
+
       const logsRef = collection(firestoreDb, "case_logs");
       const snapshot = await getDocs(logsRef);
       
@@ -855,23 +867,27 @@ async function executeSupervisorExtraction() {
         return;
       }
 
-      // Headers matching individual documentation workspace fields entered by agents
-      csvContent += "WinID,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
+      csvContent += "WinID,Assigned LOB,Concern Type,VOC Option,Case/SR Number,Subject,Customer Name,MIN,Company,Email,Thread ID,Date-Time,Action Taken,WOCAS,Last Sync Timestamp\n";
 
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         const formData = data.form_data || {};
+        const targetAgentId = data.agent_id || "N/A";
         
-        // Auto-assign Line of Business based on the agent's chosen primary category path
-        const agentLob = formData.concernType === "Technical" ? "ES" : "EBG";
+        // FIX: Resolve the true historical LOB configuration via map fallback
+        let agentLob = agentLobMap[targetAgentId];
+        if (!agentLob) {
+          agentLob = formData.concernType === "Technical" ? "ES" : "EBG"; 
+        }
+        
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        // Extract internal timestamp format and match to supervisor calendar input
         const lastUpdatedDate = data.updated_at ? new Date(data.updated_at).toISOString().split('T')[0] : "";
         if (lastUpdatedDate !== selectedDateFilter) return;
 
         const row = [
-          clean(data.agent_id || "N/A"),
+          clean(targetAgentId),
+          clean(agentLob),
           clean(formData.concernType),
           clean(formData.voc),
           clean(formData.case),
@@ -892,7 +908,7 @@ async function executeSupervisorExtraction() {
       });
 
     /* ==========================================================================
-       BRANCH B: COMPLIANCE METRICS EXTRACTION (LOGINS, LOGOUTS, UNEXPECTED DROPS)
+       BRANCH B: COMPLIANCE METRICS EXTRACTION
        ========================================================================== */
     } else {
       const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
@@ -904,7 +920,6 @@ async function executeSupervisorExtraction() {
         return;
       }
 
-      // Headers mapping directly to compliance tracking parameters with WinID and Agent Name
       csvContent += "WinID,Agent Name,Line of Business (LOB),Total Cases Logged,WOCAS Submissions,Shift Login Frequency,Graceful Logouts,Unexpected Drops / System Crashes,Last Activity Log\n";
 
       snapshot.forEach((docSnap) => {
@@ -929,6 +944,29 @@ async function executeSupervisorExtraction() {
         recordsCount++;
       });
     }
+
+    if (recordsCount === 0) {
+      showSystemAlert("Zero Results", `No operational records matching your [${selectedLobFilter}] selection filter were tracked on this date.`);
+      return;
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    const filenameLabel = reportType === "CASES" ? "Detailed_Cases_Workbook" : "Compliance_Telemetry_Report";
+    
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${filenameLabel}_[${selectedLobFilter}]_${selectedDateFilter}.csv`);
+    document.body.appendChild(link);
+    
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Successfully exported ${recordsCount} ${reportType.toLowerCase()} rows to Excel!`);
+
+  } catch (error) {
+    console.error("Supervisor data extraction core workspace error:", error);
+    showSystemAlert("Query Interrupted", "Database pipeline rejected structural extraction parameter instructions.");
+  }
+}
 
     /* ==========================================================================
        FILE DISPOSITION GATEWAY (DOWNLOAD PIPELINE TRIGGER)
