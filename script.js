@@ -879,7 +879,15 @@ async function executeSupervisorExtraction() {
         // Inside array callback context, 'return' skips to next item iteration loop cleanly
         if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-        const lastUpdatedDate = data.updated_at ? new Date(data.updated_at).toISOString().split('T')[0] : "";
+        // Local timezone date compiler block to prevent UTC evening shifts
+let lastUpdatedDate = "";
+if (data.updated_at) {
+  const localDate = new Date(data.updated_at);
+  const yyyy = localDate.getFullYear();
+  const mm = String(localDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(localDate.getDate()).padStart(2, '0');
+  lastUpdatedDate = `${yyyy}-${mm}-${dd}`;
+}
         if (lastUpdatedDate !== selectedDateFilter) return;
 
         const row = [
