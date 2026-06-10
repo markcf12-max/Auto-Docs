@@ -915,19 +915,19 @@ async function executeSupervisorExtraction() {
           csvContent += [
             cleanValue(docSnap.id),
             cleanValue(d.agent_id),
-            cleanValue(d.case_number || snap.case || snap.field_case),
-            cleanValue(snap.action       || snap.field_action),
-            cleanValue(snap.wocas        || snap.field_wocas),
-            cleanValue(snap.thread       || snap.field_thread),
-            cleanValue(snap.name         || snap.field_name),
-            cleanValue(snap.concernType  || snap.field_concernType),
-            cleanValue(snap.min          || snap.field_min),
-            cleanValue(snap.datetime     || snap.field_datetime),
-            cleanValue(snap.company      || snap.field_company),
-            cleanValue(snap.email        || snap.field_email),
-            cleanValue(snap.subj         || snap.field_subj),
-            cleanValue(snap.voc          || snap.field_voc),
-            cleanValue(snap.case         || snap.field_case)
+            cleanValue(d.case_number || snap.case || snap.field_case || "BLANK DRAFT"),
+            cleanValue(snap.action       || snap.field_action       || "BLANK DRAFT"),
+            cleanValue(snap.wocas        || snap.field_wocas        || "BLANK DRAFT"),
+            cleanValue(snap.thread       || snap.field_thread       || "BLANK DRAFT"),
+            cleanValue(snap.name         || snap.field_name         || "BLANK DRAFT"),
+            cleanValue(snap.concernType  || snap.field_concernType  || "BLANK DRAFT"),
+            cleanValue(snap.min          || snap.field_min          || "BLANK DRAFT"),
+            cleanValue(snap.datetime     || snap.field_datetime     || "BLANK DRAFT"),
+            cleanValue(snap.company      || snap.field_company      || "BLANK DRAFT"),
+            cleanValue(snap.email        || snap.field_email        || "BLANK DRAFT"),
+            cleanValue(snap.subj         || snap.field_subj         || "BLANK DRAFT"),
+            cleanValue(snap.voc          || snap.field_voc          || "BLANK DRAFT"),
+            cleanValue(snap.case         || snap.field_case         || "BLANK DRAFT")
           ].join(",") + "\n";
           
           recordsCount++;
@@ -942,29 +942,35 @@ async function executeSupervisorExtraction() {
 
           if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-          // Route properties safely across varying historical schemas
+          // Advanced Safe-Mapping: Root, snapshot, or form_data fallback
           const snap = rawDoc.snapshot || rawDoc.form_data || rawDoc || {};
+          
+          // DIAGNOSTIC CHECK: Detect old flat records that don't have form properties in DB
+          const isLegacyFlatRecord = !rawDoc.snapshot && !rawDoc.form_data && !rawDoc.action && !rawDoc.wocas;
+          const fallbackString = isLegacyFlatRecord ? "LEGACY LOG: NO VALUE CAPTURED" : "N/A";
+
           console.log(`Processing Record ID: ${docSnap.id}, Keys evaluated:`, Object.keys(snap));
 
           const row = [
             cleanValue(docSnap.id),
             cleanValue(rawDoc.agent_id),
-            cleanValue(rawDoc.agent_name),
+            cleanValue(rawDoc.agent_name || "LEGACY REGISTER"),
             cleanValue(agentLob),
             cleanValue(rawDoc.case_id || snap.case || snap.field_case || "N/A"),
             cleanValue(rawDoc.completed_at || rawDoc.updated_at || "N/A"),
-            cleanValue(snap.action       || snap.field_action       || "N/A"),
-            cleanValue(snap.wocas        || snap.field_wocas        || "N/A"),
-            cleanValue(snap.thread       || snap.field_thread       || "N/A"),
-            cleanValue(snap.name         || snap.field_name         || "N/A"),
-            cleanValue(snap.concernType  || snap.field_concernType  || "N/A"),
-            cleanValue(snap.min          || snap.field_min          || "N/A"),
-            cleanValue(snap.datetime     || snap.field_datetime     || "N/A"),
-            cleanValue(snap.company      || snap.field_company      || "N/A"),
-            cleanValue(snap.email        || snap.field_email        || "N/A"),
-            cleanValue(snap.subj         || snap.field_subj         || "N/A"),
-            cleanValue(snap.voc          || snap.field_voc          || "N/A"),
-            cleanValue(snap.case         || snap.field_case         || "N/A")
+            cleanValue(snap.action       || snap.field_action       || fallbackString),
+            cleanValue(snap.wocas        || snap.field_wocas        || fallbackString),
+            cleanValue(snap.thread       || snap.field_thread       || fallbackString),
+            cleanValue(snap.name         || snap.field_name         || fallbackString),
+            cleanValue(snap.concernType  || snap.field_concernType  || fallbackString),
+            cleanValue(snap.min          || snap.field_min          || fallbackString),
+            cleanValue(snap.datetime     || snap.field_datetime     || fallbackString),
+            cleanValue(snap.company      || snap.field_company      || fallbackString),
+            cleanValue(snap.email        || snap.field_email        || fallbackString),
+            cleanValue(snap.subj         || snap.field_subj         || fallbackString),
+            cleanValue(snap.voc          || snap.field_voc          || fallbackString),
+            // Smart Fallback mapping: If root has case_id, pull that instead of a blank N/A
+            cleanValue(rawDoc.case_id    || snap.case || snap.field_case || fallbackString)
           ];
 
           csvContent += row.join(",") + "\n";
