@@ -53,9 +53,18 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <!-- Searchable & Reactive VOC Layout Module -->
+      <div class="form-group" id="vocFormGroup">
         <label for="voc">VOC Option Dropdown</label>
-        <input type="text" id="voc" list="vocOptions" placeholder="Type to search VOC (e.g., SIM)..." autocomplete="off">
+        <input 
+          type="text" 
+          id="voc" 
+          list="vocOptions" 
+          placeholder="Choose a Concern Type above first..." 
+          autocomplete="off"
+          onfocus="this.value='';"
+          inputmode="search"
+        >
         <datalist id="vocOptions">
           <option value="SIM Replacement"></option>
           <option value="SIM Activation"></option>
