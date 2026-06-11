@@ -150,23 +150,35 @@ function updateSyncStatusUI(status) {
 
 function updateVocOptions(preserveValue = false) {
   const mainCategory = $("concernType")?.value;
-  const vocSelect = $("voc");
-  if (!vocSelect) return;
+  const vocInput = $("voc");
+  const vocDataList = $("vocOptions");
+  if (!vocInput || !vocDataList) return;
 
-  const currentVocValue = vocSelect.value;
-  vocSelect.innerHTML = '<option value="">Select VOC Option</option>';
+  const currentVocValue = vocInput.value;
+  
+  // Reset datalist stack safely
+  vocDataList.innerHTML = '';
 
-  if (mainCategory && VOC_OPTIONS[mainCategory]) {
+  if (!mainCategory) {
+    vocInput.placeholder = "Choose a Concern Type above first...";
+    if (!preserveValue) vocInput.value = '';
+    return;
+  }
+
+  vocInput.placeholder = "Type to search VOC...";
+
+  if (VOC_OPTIONS[mainCategory]) {
     VOC_OPTIONS[mainCategory].forEach(option => {
       const optEl = document.createElement("option");
       optEl.value = option;
-      optEl.textContent = option;
-      vocSelect.appendChild(optEl);
+      vocDataList.appendChild(optEl);
     });
   }
 
   if (preserveValue && currentVocValue) {
-    vocSelect.value = currentVocValue;
+    vocInput.value = currentVocValue;
+  } else if (!preserveValue) {
+    vocInput.value = '';
   }
 }
 
@@ -205,7 +217,7 @@ function updateSuggestions() {
   const target = $("suggestions");
   if (!target || isResetting) return;
   const concern = $("concernType")?.value;
-  const voc = $("voc")?.value;
+  const voc = $("voc")?.value.trim();
   
   if (!concern) {
     target.innerHTML = "Select Concern & VOC";
@@ -1230,7 +1242,17 @@ document.addEventListener("DOMContentLoaded", () => {
     updateVocOptions(false);
     updateSuggestions();
   });
-  $("voc")?.addEventListener("change", updateSuggestions);
+  
+  // Adjusted to drop down and catch search inputs reliably
+  $("voc")?.addEventListener("input", () => {
+    updateOutput();
+    updateSuggestions();
+  });
+  $("voc")?.addEventListener("change", () => {
+    updateOutput();
+    updateSuggestions();
+    saveData(true);
+  });
 
   $("copyBtn")?.addEventListener("click", copyDoc);
   $("mobileCopyBtn")?.addEventListener("click", copyDoc);
