@@ -44,6 +44,15 @@ const TECH_PROCEDURES = {
   "COVERAGE CONNECTIVITY": [{ text: "Check tower coverage indexes", link: "#" }]
 };
 
+const AFTERSALES_PROCEDURES = {
+  "REPLACEMENT:SIM": [{ text: "Verify proof of ownership, check company/individual IDs, check historical logs, and process request profile via your SIM management engine." }],
+  "ACTIVATION": [{ text: "Examine validation values for the target ICCID block in the inventory console and map activation commands to the network switch." }],
+  "CHANGE OF OWNERSHIP": [{ text: "Review signed Letter of Authorization (LOA), complete verification profiles for both assignees, and write adjustments to corporate ledger account." }],
+  "VOICE CONNECTIVITY: INCOMING": [{ text: "Trace HLR call flags, activate missing service streams (Voice/SMS/Data), and run verification tests on network loops." }],
+  "VOICE CONNECTIVITY: OUTGOING": [{ text: "Trace HLR call flags, activate missing service streams (Voice/SMS/Data), and run verification tests on network loops." }],
+  "DISCONNECTION": [{ text: "Check account age, evaluate open statements or remaining penalties, issue final bill warnings, and flag contract as disconnected." }]
+};
+
 const SHARED_COMMERCIAL_VOC = [
   "APP RELATED", "ACTIVATION", "ADA ENROLLMENT", "APPLICATION REQUIREMENTS", "APPLICATION STATUS", 
   "AVAILMENT OF ADD-ONS", "BALANCE TRANSFER", "BALANCE:ACCOUNT RECONCILIATION", "BALANCE:CLARIFICATION ON BILLED CHARGES", 
@@ -101,11 +110,18 @@ const VOC_OPTIONS = {
 const EMAIL_SPIEL_MATRIX = {
   "Technical": {
     "DATA CONNECTIVITY": "Dear Customer,\n\nThank you for reaching out. We have analyzed your cellular provisioning profile regarding your mobile data connection. Please perform a hard restart of your device to force network re-registration. If connectivity issues persist, reply with your current location coordinates so our field engineers can verify cell tower load vectors.\n\nBest regards,\n[Agent Name]\nEnterprise Technical Support Desk",
-    "VOICE CONNECTIVITY": "Dear Customer,\n\nWe appreciate you bringing your incoming/outgoing voice calling disruptions to our attention. Our team has verified that your core SIM configuration is active. Please toggle Airplane Mode ON for 30 seconds and then OFF to re-align your network configuration profile.\n\nBest regards,\n[Agent Name]\nTechnical Solutions Group"
+    "VOICE CONNECTIVITY": "Dear Customer,\n\nWe appreciate you bringing your incoming/outgoing voice calling disruptions to our attention. Our team has verified that your core SIM configuration is active. Please toggle Airplane Mode ON for 30 seconds and then OFF to re-align your network configuration profile.\n\nBest regards,\n[Agent Name]\nTechnical Solutions Group",
+    "SIM ACTIVATION": "Dear Sir/Madam,\n\nOur engineering team has performed a technical network sync on your line profile. Please restart your handset device to refresh your local tower connection.\n\nBest regards,\n[Agent Name]"
   },
   "Aftersales": {
     "E-SIM": "Dear Customer,\n\nWe have successfully received your request regarding your business E-SIM conversion mapping profile. Attached to this email notification, you will find your localized secure QR registration token along with comprehensive profile download directions.\n\nBest regards,\n[Agent Name]\nAccount Lifecycle Management",
-    "PLAN DOWNGRADE/UPGRADE": "Dear Customer,\n\nThis email confirms that your enterprise subscription tier modification request has been formally processed. Your newly aligned data allotments and commercial pricing variables will take effect on your next structural billing cycle interface.\n\nBest regards,\n[Agent Name]\nCorporate Operations Team"
+    "PLAN DOWNGRADE/UPGRADE": "Dear Customer,\n\nThis email confirms that your enterprise subscription tier modification request has been formally processed. Your newly aligned data allotments and commercial pricing variables will take effect on your next structural billing cycle interface.\n\nBest regards,\n[Agent Name]\nCorporate Operations Team",
+    "REPLACEMENT:SIM": "Dear Sir/Madam,\n\nYour SIM replacement under Case No. [Case Number] has been processed. Delivery is expected within 3–5 business days. Please advise the recipient to keep their line open, as our courier will contact them once delivery is scheduled. As this is the first replacement request, no charges will apply. Future requests will incur a fee of PHP 40 for a regular SIM and PHP 60 for an eSIM.\n\nUpon receipt, insert the SIM into a mobile device and allow up to 4 hours for automatic activation.\n\nWe appreciate your patience and are available should you need further assistance.\n\nBest regards,\n[Agent Name]",
+    "ACTIVATION": "Dear Sir/Madam,\n\nThank you for reaching out. We acknowledge your request regarding the activation of the new ICCID.\n\nWe have processed the SIM activation under Case No. [Case Number]. Please be advised that the turnaround time for this request is within 24 hours.\n\nShould you need further assistance, please do not hesitate to contact us.\n\nBest regards,\n[Agent Name]",
+    "CHANGE OF OWNERSHIP": "Dear Sir/Madam,\n\nThank you for reaching out to us. We are glad to assist you with your request to change the assignee.\n\nWe are pleased to share that a case has been successfully created to update the assignee to Ms. Shaina Ann Mae F. Diaz under Case No. [Case Number], associated with mobile number [Mobile Number]. Kindly allow up to 24 hours for the process to be fully completed.\n\nShould you have any additional questions or require further assistance, please feel free to email us anytime. We are always here and happy to help.\n\nBest regards,\n[Agent Name]",
+    "VOICE CONNECTIVITY: INCOMING": "Dear Sir/Madam,\n\nThank you for reaching out to us. We truly appreciate the opportunity to assist you with your request.\n\nWe have successfully processed the activation/deactivation of outgoing and incoming calls, SMS, and data under Case No. [Case Number]. Kindly note that the turnaround time for this request is within 24 hours.\n\nShould you have any concerns or clarification, please do not hesitate to reach out to us.\n\nBest regards,\n[Agent Name]",
+    "VOICE CONNECTIVITY: OUTGOING": "Dear Sir/Madam,\n\nThank you for reaching out to us. We truly appreciate the opportunity to assist you with your request.\n\nWe have successfully processed the activation/deactivation of outgoing and incoming calls, SMS, and data under Case No. [Case Number]. Kindly note that the turnaround time for this request is within 24 hours.\n\nShould you have any concerns or clarification, please do not hesitate to reach out to us.\n\nBest regards,\n[Agent Name]",
+    "DISCONNECTION": "Dear Sir/Madam,\n\nWe understand that requesting a permanent disconnection can be a difficult decision, and we truly appreciate you taking the time to reach out.\n\nBefore we proceed with your request for permanent termination, we kindly ask for your confirmation to settle the outstanding balances, which will be reflected in the final billing statement.\n\nIf you wish to continue with the termination, please reply with your confirmation so we can process your request accordingly.\n\nBest regards,\n[Agent Name]"
   }
 };
 
@@ -206,6 +222,8 @@ function updateSuggestions() {
 
   if (concern === "Technical" && TECH_PROCEDURES[voc]) {
     html += TECH_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
+  } else if (concern === "Aftersales" && AFTERSALES_PROCEDURES[voc]) {
+    html += AFTERSALES_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
   } else {
     html += `• Follow standard processing vectors designated for ${voc}.`;
   }
@@ -226,16 +244,19 @@ function updatePlaybookSpiel(concern, voc) {
     return;
   }
 
+  const caseNum = $("case")?.value.trim() || "N/A";
+  const mobileNum = $("min")?.value.trim() || "N/A";
+
   let localizedRawTemplate = EMAIL_SPIEL_MATRIX[concern][voc];
-  let fullyCompiledTemplate = localizedRawTemplate.replace("[Agent Name]", currentAgentName);
+  let fullyCompiledTemplate = localizedRawTemplate.replace(/\[Agent Name\]/g, currentAgentName);
+  fullyCompiledTemplate = fullyCompiledTemplate.replace(/\[Case Number\]/g, caseNum !== "" ? caseNum : "[Case Number]");
+  fullyCompiledTemplate = fullyCompiledTemplate.replace(/\[Mobile Number\]/g, mobileNum !== "" ? mobileNum : "[Mobile Number]");
 
   container.innerHTML = `
-    <!-- High-Visibility Supervisor Guardrail Badge -->
     <div style="background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; color: #fbbf24; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 1.4;">
       <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> REMINDER: Customize the sample email if fitted to the concern.
     </div>
 
-    <!-- Live Workspace Template Code Container -->
     <div style="position: relative; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 12px;">
       <pre id="playbookRawSpielText" style="margin: 0; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;">${fullyCompiledTemplate}</pre>
     </div>
@@ -1195,8 +1216,8 @@ document.addEventListener("DOMContentLoaded", () => {
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return; 
-    el.addEventListener("input", () => { updateOutput(); saveData(false); });
-    el.addEventListener("change", () => { updateOutput(); saveData(true); });
+    el.addEventListener("input", () => { updateOutput(); updateSuggestions(); saveData(false); });
+    el.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
     el.addEventListener("blur", () => { saveData(true); });
   });
 
