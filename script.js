@@ -233,7 +233,7 @@ function updateSuggestions() {
 }
 
 /* ==========================================================================
-   PLAYBOOK DYNAMIC SPIEL SYSTEM WITH INTEGRATED GUARDRAILS (COPY BTN REMOVED)
+   PLAYBOOK DYNAMIC SPIEL SYSTEM WITH INTEGRATED GUARDRAILS
    ========================================================================== */
 function updatePlaybookSpiel(concern, voc) {
   const container = $('playbookSpielContainer');
@@ -1206,6 +1206,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
+  $('closeSupervisorBtn')?.addEventListener('click', () => { $('supervisorAdminPanel').style.display = "none"; });
+  $('exitPortalBtn')?.addEventListener('click', () => { $('supervisorAdminPanel').style.display = "none"; listenToSessionState(); });
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
@@ -1231,9 +1233,9 @@ document.addEventListener("DOMContentLoaded", () => {
   $("voc")?.addEventListener("change", updateSuggestions);
 
   $("copyBtn")?.addEventListener("click", copyDoc);
-  $("dockCopyBtn")?.addEventListener("click", copyDoc);
+  $("mobileCopyBtn")?.addEventListener("click", copyDoc);
   $("resetBtn")?.addEventListener("click", resetForm);
-  $("dockResetBtn")?.addEventListener("click", resetForm);
+  $("mobileResetBtn")?.addEventListener("click", resetForm);
   
   $("drawerToggle")?.addEventListener("click", toggleDrawer);
   $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
