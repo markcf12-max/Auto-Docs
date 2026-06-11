@@ -642,7 +642,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
 }
 
 /* ==========================================================================
-   SHIFT HISTORY MANIFEST SYSTEM (TEXT-ONLY EXPORT VIA PROSE)
+   SHIFT HISTORY MANIFEST SYSTEM
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
   if (!currentAgentId) return;
@@ -741,7 +741,7 @@ function updateFloatingBanner() {
 }
 
 /* ==========================================================================
-   AGENT TEXT ONLY SHIFT LOG HISTORY EXPORT
+   AGENT SHIFT LOG HISTORY TEXT FILE (.TXT) EXPORT ROUTINE
    ========================================================================== */
 async function downloadHistoryLog() {
   if (globalShiftHistory.length === 0) {
@@ -751,29 +751,29 @@ async function downloadHistoryLog() {
 
   const rightNow = new Date();
   const options = { year: 'numeric', month: 'short', day: '2-digit' };
-  const currentCalendarDate = rightNow.toLocaleDateString('en-US', options); 
+  const currentCalendarDate = rightNow.toLocaleDateString('en-US', options);
 
-  let textContent = `==========================================================================\n`;
-  textContent += `OFFICIAL AGENT PERFORMANCE WORKSTATION LOG SHIFT MANIFEST\n`;
-  textContent += `==========================================================================\n`;
-  textContent += `EXTRACT DATE : ${currentCalendarDate}\n`;
-  textContent += `AGENT WINID  : ${currentAgentId || 'N/A'}\n`;
-  textContent += `AGENT NAME   : ${currentAgentName}\n`;
-  textContent += `DESIGNATED LOB: ${currentAgentLob}\n`;
-  textContent += `TOTAL VOLUMES: ${globalShiftHistory.length} Transacted System Documentation Blocks\n`;
-  textContent += `==========================================================================\n\n`;
+  // Compile a cleanly structured, human-readable text file block
+  let textContent = `==================================================\n`;
+  textContent += `OFFICIAL AGENT SHIFT HISTORY MANIFEST\n`;
+  textContent += `==================================================\n`;
+  textContent += `Extract Date    : ${currentCalendarDate}\n`;
+  textContent += `Agent ID / WinID: ${currentAgentId || 'N/A'}\n`;
+  textContent += `Agent Name      : ${currentAgentName}\n`;
+  textContent += `Designated LOB  : ${currentAgentLob}\n`;
+  textContent += `Total Records   : ${globalShiftHistory.length}\n`;
+  textContent += `==================================================\n\n`;
 
   globalShiftHistory.forEach((item, idx) => {
-    textContent += `--------------------------------------------------------------------------\n`;
-    textContent += `LOG ITEM #${idx + 1} | [${currentCalendarDate} @ ${item.time}]\n`;
-    textContent += `CASE/SR NUMBER: ${item.id || 'N/A'}\n`;
-    textContent += `--------------------------------------------------------------------------\n`;
-    textContent += `DAW NOTES:\n`;
-    textContent += `${item.text}\n`;
-    textContent += `--------------------------------------------------------------------------\n\n`;
+    textContent += `--------------------------------------------------\n`;
+    textContent += `LOG ITEM #${idx + 1} | TIMESTAMP: ${item.time} | CASE/SR: ${item.id}\n`;
+    textContent += `--------------------------------------------------\n`;
+    textContent += `${item.text}\n\n`;
   });
 
-  textContent += `\n[EOF] End of Compiled Text Audit Track.`;
+  textContent += `==================================================\n`;
+  textContent += `END OF MANIFEST WRAPPER\n`;
+  textContent += `==================================================\n`;
 
   const blob = new Blob([textContent], { type: "text/plain;charset=utf-8;" });
   const link = document.createElement("a");
@@ -784,7 +784,7 @@ async function downloadHistoryLog() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToast("Shift History workbook compiled as plain-text file (.txt) successfully!");
+  showToast("Shift History text report compiled successfully!");
 }
 
 async function clearShiftHistory() {
@@ -907,7 +907,7 @@ function updateThemeIcon(isDark) {
 }
 
 /* ==========================================================================
-   SUPERVISOR OPERATIONS PORTAL WITH DATE RANGE FILTERS
+   SUPERVISOR OPERATIONS PORTAL WITH DATE RANGE FILTERS (.CSV)
    ========================================================================== */
 function showSupervisorPanel() {
   const panel = $('supervisorAdminPanel');
