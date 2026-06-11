@@ -57,6 +57,11 @@
         <label for="voc">VOC Option Dropdown</label>
         <select id="voc">
           <option value="">Select VOC Option</option>
+          <option value="SIM Replacement">SIM Replacement</option>
+          <option value="SIM Activation">SIM Activation</option>
+          <option value="Change of Assignee">Change of Assignee</option>
+          <option value="Feature Activation">Feature Activation</option>
+          <option value="Voluntary Permanent Disconnection">Voluntary Permanent Disconnection</option>
         </select>
       </div>
 
@@ -128,8 +133,7 @@
             <button id="clearHistoryBtn">Flush All</button>
           </div>
         </div>
-        <div id="historyContainer" class="history-box">
-          </div>
+        <div id="historyContainer" class="history-box"></div>
       </div>
     </section>
 
@@ -145,6 +149,18 @@
 
       <div id="suggestions" class="suggestions-content">
         Select Concern & VOC to view matrix playbook options...
+      </div>
+
+      <!-- Integrated Email Section Header -->
+      <div class="panel-header" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+        <h3><i class="fas fa-envelope-open-text"></i> Standardized Sample Email Spiel</h3>
+      </div>
+      
+      <!-- Safe Container Node for Spiel Output Rendering -->
+      <div id="playbookSpielContainer" style="padding: 0 16px 16px 16px;">
+        <div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">
+          The corresponding email spiel template will load automatically upon context verification.
+        </div>
       </div>
     </section>
   </main>
