@@ -362,6 +362,11 @@ async function handleAuthSubmission(e) {
       currentAgentLob = "MANAGEMENT";
       localStorage.setItem("active_agent_session_id", "SUPERVISOR");
       
+      // ERASE CREDENTIALS IMMEDIATELY AFTER VALIDS MET TO SECURE THE GATEWAY SCREEN
+      $('authEmail').value = "";
+      $('authPassword').value = "";
+      if ($('authName')) $('authName').value = "";
+      
       $('authModal').style.display = "none";
       if ($('logoutBtn')) $('logoutBtn').style.display = "block";
       
@@ -397,6 +402,10 @@ async function handleAuthSubmission(e) {
           currentAgentLob = agentSnap.data().lob || "UNKNOWN";
           localStorage.setItem("active_agent_session_id", agentId);
           
+          // ERASE CREDENTIALS IMMEDIATELY ON AGENT LOGIN SUCCESS TO SECURE GATEWAY SCREEN
+          $('authEmail').value = "";
+          $('authPassword').value = "";
+
           await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
             await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
           });
@@ -494,8 +503,11 @@ function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
   
   document.querySelectorAll("input, textarea").forEach(el => {
-    el.value = "";
-    el.classList.remove('val-green', 'val-amber', 'val-crimson');
+    // Prevent wiping authentication fields on initialize state checks
+    if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
+      el.value = "";
+      el.classList.remove('val-green', 'val-amber', 'val-crimson');
+    }
   });
   const select = $("concernType");
   if (select) select.selectedIndex = 0;
@@ -544,6 +556,12 @@ function listenToSessionState() {
 function showLoginGateway(isRegisterMode = false) {
   $('authModal').style.display = "flex";
   if ($('logoutBtn')) $('logoutBtn').style.display = "none";
+  
+  // Clear credential entry containers cleanly on displaying the gateway view
+  $('authEmail').value = "";
+  $('authPassword').value = "";
+  if ($('authName')) $('authName').value = "";
+
   if (isRegisterMode) {
     currentAuthMode = "REGISTER";
     $('authTitle').textContent = "Register Agent Profile";
@@ -574,7 +592,9 @@ async function saveData(forceInstant = false) {
     updateSyncStatusUI('saving');
     const data = {};
     document.querySelectorAll("input, textarea, select").forEach(el => {
-      if (el.id) data[el.id] = el.value;
+      if (el.id && el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
+        data[el.id] = el.value;
+      }
     });
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
@@ -619,7 +639,9 @@ async function pullLiveWorkspace() {
       if (savedFormState) {
         Object.keys(savedFormState).forEach(id => {
           const el = $(id);
-          if (el) el.value = savedFormState[id];
+          if (el && id !== 'authEmail' && id !== 'authPassword' && id !== 'authName') {
+            el.value = savedFormState[id];
+          }
         });
 
         if ($("concernType")?.value) updateVocOptions(true);
@@ -691,7 +713,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     company:     getCleanVal("company"),
     email:       getCleanVal("email"),
     thread:      getCleanVal("thread"),
-    datetime:    getCleanVal("datetime"),
+    datetime:     getCleanVal("datetime"),
     action:      getCleanVal("action"),
     wocas:       getCleanVal("wocas")
   };
@@ -798,6 +820,18 @@ function loadHistoryItem(index) {
   if (!globalShiftHistory[index]) return;
   navigator.clipboard.writeText(globalShiftHistory[index].text);
   showToast(`Recopied Case ID: ${globalShiftHistory[index].id} from History Stack!`);
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark-mode");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.querySelector("#themeToggle i");
+  if (!icon) return;
+  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
 }
 
 function updateFloatingBanner() {
@@ -967,18 +1001,6 @@ function copyDoc() {
   }).catch(err => {
     showToast("Clipboard routine blocked.", true);
   });
-}
-
-function toggleTheme() {
-  const isDark = document.body.classList.toggle("dark-mode");
-  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
-  updateThemeIcon(isDark);
-}
-
-function updateThemeIcon(isDark) {
-  const icon = document.querySelector("#themeToggle i");
-  if (!icon) return;
-  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
 }
 
 /* ==========================================================================
@@ -1164,6 +1186,12 @@ function terminateAgentSession() {
   const cancelBtn = $('confirmLogoutCancelBtn');
   const confirmBtn = $('confirmLogoutSubmitBtn');
 
+  // IF THE CURRENT ACTIVE USER ID IS A SUPERVISOR, CLOSE THE PORTAL IMMEDIATELY WITH NO CONFIRMATION
+  if (currentAgentId === "SUPERVISOR") {
+    executeLogOutRoutine();
+    return;
+  }
+
   if (!logoutModal || !cancelBtn || !confirmBtn) {
     executeLogOutRoutine();
     return;
@@ -1236,8 +1264,10 @@ async function resetForm(event) {
 
   try {
     document.querySelectorAll("input, textarea").forEach(el => {
-      el.value = "";
-      el.classList.remove('val-green', 'val-amber', 'val-crimson');
+      if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
+        el.value = "";
+        el.classList.remove('val-green', 'val-amber', 'val-crimson');
+      }
     });
 
     const select = $("concernType");
@@ -1273,15 +1303,13 @@ document.addEventListener("DOMContentLoaded", () => {
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
   
-  // FIXED SUPERVISOR ACTIONS ROUTING SYSTEM
+  // BYPASS INTERMEDIARY CONFIRMATION DRAWER FLOWS FOR INSTANT PORTAL TEARDOWN
   $('closeSupervisorBtn')?.addEventListener('click', () => { 
-    // Supervisors shouldn't escape to the documentation suite; they must clear their session to close the application.
-    terminateAgentSession();
+    executeLogOutRoutine();
   });
   
   $('exitPortalBtn')?.addEventListener('click', () => { 
-    // Enforces secure session termination when exiting the supervisor layout space
-    terminateAgentSession();
+    executeLogOutRoutine();
   });
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
