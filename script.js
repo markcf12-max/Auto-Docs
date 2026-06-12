@@ -321,7 +321,6 @@ async function handleAuthSubmission(e) {
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
-  // FIX: Supervisor token entry assigned state so system logic down-funnel won't clear preview layouts
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
       currentAgentId = "SUPERVISOR";
@@ -524,7 +523,7 @@ function showLoginGateway(isRegisterMode = false) {
    CORE CLOUD WORKSPACE ENGINE
    ========================================================================= */
 async function saveData(forceInstant = false) {
-  if (isResetting || !currentAgentId) return; 
+  if (isResetting || !currentAgentId || currentAgentId === "SUPERVISOR") return; 
   if (saveTimeout) clearTimeout(saveTimeout);
 
   const executeSave = async () => {
@@ -700,8 +699,8 @@ async function pushToHistory(caseNumber, textContent) {
     if (currentAgentId !== "SUPERVISOR") {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await updateDoc(docRef, { shift_manifest: globalShiftHistory });
+      await logCaseSubmissionToAnalytics(displayId);
     }
-    await logCaseSubmissionToAnalytics(displayId);
   } catch (err) {
     console.error("Error committing shift log token:", err);
   }
@@ -738,7 +737,6 @@ async function renderHistoryView() {
     return;
   }
 
-  // Pure data layout injection (No native inline script strings leak danger)
   container.innerHTML = globalShiftHistory.map((item, index) => `
     <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
       <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
@@ -1215,8 +1213,25 @@ document.addEventListener("DOMContentLoaded", () => {
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
-  $('closeSupervisorBtn')?.addEventListener('click', () => { $('supervisorAdminPanel').style.display = "none"; });
-  $('exitPortalBtn')?.addEventListener('click', () => { $('supervisorAdminPanel').style.display = "none"; listenToSessionState(); });
+  
+  $('closeSupervisorBtn')?.addEventListener('click', () => { 
+    $('supervisorAdminPanel').style.display = "none"; 
+  });
+  
+  // FIX: Handled the Supervisor closing UI loop crash bug
+  $('exitPortalBtn')?.addEventListener('click', () => { 
+    $('supervisorAdminPanel').style.display = "none"; 
+    if (currentAgentId === "SUPERVISOR") {
+      updateSyncStatusUI('online');
+      renderHistoryView();
+      updateFloatingBanner();
+      if ($("output")) {
+        $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
+      }
+    } else {
+      listenToSessionState(); 
+    }
+  });
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
@@ -1232,7 +1247,6 @@ document.addEventListener("DOMContentLoaded", () => {
     el.addEventListener("blur", () => { saveData(true); });
   });
 
-  // FIX: Dynamic event delegation cleanup to avoid listener leaks
   $('historyContainer')?.addEventListener('click', (e) => {
     const button = e.target.closest('button');
     if (!button) return;
@@ -1323,6 +1337,7 @@ function validateMinField(el) {
   }
 }
 
+// Global window event listener tracking clean disconnect vectors 
 function toggleDrawer(e) {
   if(e) e.stopPropagation();
   const drawer = $('playbookPanel');
