@@ -33,6 +33,11 @@ function $(id) {
   return document.getElementById(id);
 }
 
+// Quick helper to get clean ISO date string (YYYY-MM-DD)
+function getSystemDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 /* ==========================================================================
    VOC ENGINE REFERENCE MATRICES (UNIFIED WORKSTATION ARRAYS)
    ========================================================================== */
@@ -106,7 +111,7 @@ const VOC_OPTIONS = {
 };
 
 /* ==========================================================================
-   SUPERVISOR-MANAGED EMAIL SPIEL REPOSITORY (UPDATED WITH CUSTOM SPIELS)
+   SUPERVISOR-MANAGED EMAIL SPIEL REPOSITORY
    ========================================================================== */
 const EMAIL_SPIEL_MATRIX = {
   "Technical": {
@@ -163,8 +168,6 @@ function updateVocOptions(preserveValue = false) {
   if (!vocInput || !vocDataList) return;
 
   const currentVocValue = vocInput.value;
-  
-  // Reset datalist stack safely
   vocDataList.innerHTML = '';
 
   if (!mainCategory) {
@@ -252,9 +255,6 @@ function updateSuggestions() {
   updatePlaybookSpiel(concern, voc);
 }
 
-/* ==========================================================================
-   PLAYBOOK DYNAMIC SPIEL SYSTEM WITH INTEGRATED GUARDRAILS
-   ========================================================================== */
 function updatePlaybookSpiel(concern, voc) {
   const container = $('playbookSpielContainer');
   if (!container) return;
@@ -276,7 +276,6 @@ function updatePlaybookSpiel(concern, voc) {
     <div style="background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; color: #fbbf24; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 1.4;">
       <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> REMINDER: Customize the sample email if fitted to the concern.
     </div>
-
     <div style="position: relative; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 12px;">
       <pre id="playbookRawSpielText" style="margin: 0; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;">${fullyCompiledTemplate}</pre>
     </div>
@@ -320,14 +319,17 @@ async function handleAuthSubmission(e) {
   const password = $('authPassword').value.trim();
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
   const selectedLob = $('authLob')?.value || "";
-  
-  const rightNow = new Date();
-  const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
+  const todayStr = getSystemDateString();
 
-  // SUPERVISOR PORTAL ENTRY BYPASS
+  // FIX: Supervisor token entry assigned state so system logic down-funnel won't clear preview layouts
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
+      currentAgentId = "SUPERVISOR";
+      currentAgentName = "Operations Supervisor";
+      currentAgentLob = "MANAGEMENT";
+      localStorage.setItem("active_agent_session_id", "SUPERVISOR");
       $('authModal').style.display = "none";
+      if ($('logoutBtn')) $('logoutBtn').style.display = "block";
       showSupervisorPanel();
       showToast("Supervisor Matrix Decrypted.");
       return;
@@ -464,6 +466,13 @@ function listenToSessionState() {
 
   if (cachedId) {
     currentAgentId = cachedId;
+    if (cachedId === "SUPERVISOR") {
+      currentAgentName = "Operations Supervisor";
+      currentAgentLob = "MANAGEMENT";
+      handleSessionLoginTransition();
+      showSupervisorPanel();
+      return;
+    }
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
       if(snap.exists()) {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
@@ -551,7 +560,7 @@ async function saveData(forceInstant = false) {
 }
 
 async function pullLiveWorkspace() {
-  if (!currentAgentId) return;
+  if (!currentAgentId || currentAgentId === "SUPERVISOR") return;
 
   try {
     const docRef = doc(firestoreDb, "case_logs", currentAgentId);
@@ -590,13 +599,9 @@ async function pullLiveWorkspace() {
   }
 }
 
-/* ==========================================================================
-   REAL-TIME OPERATIONAL BROADCAST BANNER ENGINE
-   ========================================================================== */
 function listenToOperationalBroadcasts() {
   const banner = $('adminBroadcastBanner');
   const textContainer = $('broadcastMessageText');
-  
   if (!banner || !textContainer) return;
 
   const broadcastRef = doc(firestoreDb, "system_management", "broadcast_alerts");
@@ -604,7 +609,6 @@ function listenToOperationalBroadcasts() {
   onSnapshot(broadcastRef, (docSnap) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
-      
       if (data.active === true && data.message && data.message.trim() !== "") {
         textContainer.textContent = `SYSTEM ALERT: ${data.message.toUpperCase()}`;
         banner.style.display = "flex"; 
@@ -623,14 +627,9 @@ function listenToOperationalBroadcasts() {
    ANALYTICS & OPERATIONAL METRICS COMPILATION ROUTINES
    ========================================================================== */
 async function logCaseSubmissionToAnalytics(caseNumber) {
-  if (!currentAgentId) return;
+  if (!currentAgentId || currentAgentId === "SUPERVISOR") return;
 
-  const rightNow = new Date();
-  const yyyy = rightNow.getFullYear();
-  const mm = String(rightNow.getMonth() + 1).padStart(2, '0');
-  const dd = String(rightNow.getDate()).padStart(2, '0');
-  const dateString = `${yyyy}-${mm}-${dd}`;
-  
+  const dateString = getSystemDateString();
   const metricDocId = `${currentAgentId}-${Date.now()}`;
   const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
 
@@ -644,7 +643,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
     voc:         getCleanVal("voc"),
     case:        getCleanVal("case"),
     subj:        getCleanVal("subj"),
-    name:         getCleanVal("name"),
+    name:        getCleanVal("name"),
     min:         getCleanVal("min"),
     company:     getCleanVal("company"),
     email:       getCleanVal("email"),
@@ -660,7 +659,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
       agent_name: currentAgentName,
       lob: currentAgentLob, 
       case_id: caseNumber || getCleanVal("case") || "N/A",
-      completed_at: rightNow.toISOString(),
+      completed_at: new Date().toISOString(),
       submission_date: dateString,
       snapshot: snapshotData
     });
@@ -694,18 +693,15 @@ async function pushToHistory(caseNumber, textContent) {
   if (globalShiftHistory.length > 0 && globalShiftHistory[0].text === textContent) return;
 
   const newLog = { id: displayId, time: timestamp, text: textContent };
-  
   globalShiftHistory.unshift(newLog);
   if (globalShiftHistory.length > 50) globalShiftHistory.pop(); 
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-    await updateDoc(docRef, {
-      shift_manifest: globalShiftHistory
-    });
-
+    if (currentAgentId !== "SUPERVISOR") {
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      await updateDoc(docRef, { shift_manifest: globalShiftHistory });
+    }
     await logCaseSubmissionToAnalytics(displayId);
-
   } catch (err) {
     console.error("Error committing shift log token:", err);
   }
@@ -714,17 +710,16 @@ async function pushToHistory(caseNumber, textContent) {
   updateFloatingBanner();
 }
 
-async function deleteHistoryItem(index, e) {
-  if (e) e.stopPropagation();
+async function deleteHistoryItem(index) {
   if (!currentAgentId) return;
 
   globalShiftHistory.splice(index, 1);
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-    await updateDoc(docRef, {
-      shift_manifest: globalShiftHistory
-    });
+    if (currentAgentId !== "SUPERVISOR") {
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      await updateDoc(docRef, { shift_manifest: globalShiftHistory });
+    }
     showToast("Selected log deleted from your cloud history container.");
   } catch(err) {
     console.error(err);
@@ -743,26 +738,22 @@ async function renderHistoryView() {
     return;
   }
 
+  // Pure data layout injection (No native inline script strings leak danger)
   container.innerHTML = globalShiftHistory.map((item, index) => `
     <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
       <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
         <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
       </span>
       <div style="display: flex; gap: 4px;">
-        <button type="button" id="recopy-${index}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
+        <button type="button" data-action="recopy" data-index="${index}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
           Recopy
         </button>
-        <button type="button" id="delete-hist-${index}" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer; transition: 0.2s;">
-          <i class="fas fa-trash-alt"></i>
+        <button type="button" data-action="delete" data-index="${index}" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">
+          <i class="fas fa-trash-alt" style="pointer-events: none;"></i>
         </button>
       </div>
     </div>
   `).join("");
-
-  globalShiftHistory.forEach((item, index) => {
-    $(`recopy-${index}`)?.addEventListener('click', () => loadHistoryItem(index));
-    $(`delete-hist-${index}`)?.addEventListener('click', (e) => deleteHistoryItem(index, e));
-  });
 }
 
 function loadHistoryItem(index) {
@@ -794,7 +785,6 @@ async function downloadHistoryLog() {
   const options = { year: 'numeric', month: 'short', day: '2-digit' };
   const currentCalendarDate = rightNow.toLocaleDateString('en-US', options);
 
-  // Compile a cleanly structured, human-readable text file block
   let textContent = `==================================================\n`;
   textContent += `OFFICIAL AGENT SHIFT HISTORY MANIFEST\n`;
   textContent += `==================================================\n`;
@@ -843,8 +833,10 @@ async function clearShiftHistory() {
   const structuralOverride = async () => {
     globalShiftHistory = [];
     try {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-      await updateDoc(docRef, { shift_manifest: [] });
+      if (currentAgentId !== "SUPERVISOR") {
+        const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+        await updateDoc(docRef, { shift_manifest: [] });
+      }
       showToast("Shift summary manifest history flushed completely.");
     } catch (e) {
       console.error(e);
@@ -958,8 +950,7 @@ function showSupervisorPanel() {
   const endDateEl = $('adminFilterEndDate');
   
   if (startDateEl && endDateEl) {
-    const rightNow = new Date();
-    const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
+    const todayStr = getSystemDateString();
     startDateEl.value = todayStr;
     endDateEl.value = todayStr;
   }
@@ -1158,10 +1149,8 @@ function terminateAgentSession() {
 async function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
   
-  if (currentAgentId) {
-    const rightNow = new Date();
-    const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
-    
+  if (currentAgentId && currentAgentId !== "SUPERVISOR") {
+    const todayStr = getSystemDateString();
     try {
       const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
       await setDoc(metricDayRef, {
@@ -1203,7 +1192,7 @@ async function resetForm(event) {
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
 
-    if (currentAgentId) {
+    if (currentAgentId && currentAgentId !== "SUPERVISOR") {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await setDoc(docRef, { form_data: {} }, { merge: true });
     }
@@ -1241,6 +1230,20 @@ document.addEventListener("DOMContentLoaded", () => {
     el.addEventListener("input", () => { updateOutput(); updateSuggestions(); saveData(false); });
     el.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
     el.addEventListener("blur", () => { saveData(true); });
+  });
+
+  // FIX: Dynamic event delegation cleanup to avoid listener leaks
+  $('historyContainer')?.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    const action = button.getAttribute('data-action');
+    const index = parseInt(button.getAttribute('data-index'), 10);
+    
+    if (action === 'recopy') {
+      loadHistoryItem(index);
+    } else if (action === 'delete') {
+      deleteHistoryItem(index);
+    }
   });
 
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
@@ -1343,11 +1346,9 @@ function toggleDrawer(e) {
    ========================================================================== */
 window.addEventListener('beforeunload', () => {
   const cachedAgentId = localStorage.getItem("active_agent_session_id");
-  if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor") return;
+  if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor" || cachedAgentId === "SUPERVISOR") return;
 
-  const rightNow = new Date();
-  const todayStr = `${rightNow.getFullYear()}-${String(rightNow.getMonth() + 1).padStart(2, '0')}-${String(rightNow.getDate()).padStart(2, '0')}`;
-  
+  const todayStr = getSystemDateString();
   const trackingPayload = {
     agent_id: cachedAgentId,
     date: todayStr,
