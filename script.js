@@ -294,17 +294,24 @@ function isolateWorkspaceUI(role) {
   const mainWorkspaceLayout = document.querySelector('.layout');
   const viewPlaybooksDrawerBtn = $('drawerToggle');
   const mobileActionDock = document.querySelector('.floating-action-dock');
+  const supervisorAdminPanel = $('supervisorAdminPanel');
 
   if (role === "SUPERVISOR") {
-    // Hide standard documentation system layout and drawers from managers completely
+    // Hide standard agent documentation layout blocks from supervisors completely
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "none";
     if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "none";
     if (mobileActionDock) mobileActionDock.style.display = "none";
+    
+    // Explicitly make sure the Supervisor Dashboard is visible in full layout space
+    if (supervisorAdminPanel) supervisorAdminPanel.style.display = "flex";
   } else {
-    // Unhide layout blocks for standard agents
+    // Standard Agent routing logic layout initialization
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
     if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "flex";
+    
+    // Hide Supervisor dashboard panel from agents completely
+    if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
   }
 }
 
@@ -347,20 +354,21 @@ async function handleAuthSubmission(e) {
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
-  // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH LAYOUT LOCKDOWN
+  // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
       currentAgentId = "SUPERVISOR";
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
       localStorage.setItem("active_agent_session_id", "SUPERVISOR");
+      
       $('authModal').style.display = "none";
       if ($('logoutBtn')) $('logoutBtn').style.display = "block";
       
-      // Hide documentation and surface the Extraction Tool strictly
+      // Directly Route layout to the Extraction Dashboard, avoiding documentation suite
       isolateWorkspaceUI("SUPERVISOR");
       showSupervisorPanel();
-      showToast("Supervisor Matrix Decrypted. Extraction Mode Engaged.");
+      showToast("Supervisor Portal Engaged.");
       return;
     } else {
       showSystemAlert("Access Denied", "Invalid administrative supervisor master token.");
@@ -1196,12 +1204,25 @@ async function executeLogOutRoutine() {
     }
   }
 
-  // Restore documentation interfaces for the next normal Agent login session
-  isolateWorkspaceUI("AGENT");
-  if ($('supervisorAdminPanel')) $('supervisorAdminPanel').style.display = "none";
-  
+  // Restore regular UI states default values safely
   localStorage.removeItem("active_agent_session_id");
-  listenToSessionState();
+  
+  currentAgentId = null;
+  currentAgentName = "Unknown Agent";
+  currentAgentLob = "UNKNOWN";
+  
+  // Enforce rigid layout isolation rules to clean up workbench states entirely
+  isolateWorkspaceUI("AGENT"); 
+  
+  // Fall straight back down into initial unauthorized state system prompt loops
+  showLoginGateway(false);
+  updateOutput();
+  
+  if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+  const spielPanel = $('playbookSpielContainer');
+  if (spielPanel) spielPanel.innerHTML = "";
+  
+  renderHistoryView();
   showToast("Session closed safely. Workspace locked.");
 }
 
@@ -1252,20 +1273,15 @@ document.addEventListener("DOMContentLoaded", () => {
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
   
+  // FIXED SUPERVISOR ACTIONS ROUTING SYSTEM
   $('closeSupervisorBtn')?.addEventListener('click', () => { 
-    $('supervisorAdminPanel').style.display = "none"; 
+    // Supervisors shouldn't escape to the documentation suite; they must clear their session to close the application.
+    terminateAgentSession();
   });
   
   $('exitPortalBtn')?.addEventListener('click', () => { 
-    $('supervisorAdminPanel').style.display = "none"; 
-    if (currentAgentId === "SUPERVISOR") {
-      updateSyncStatusUI('online');
-      renderHistoryView();
-      updateFloatingBanner();
-      updateOutput();
-    } else {
-      listenToSessionState(); 
-    }
+    // Enforces secure session termination when exiting the supervisor layout space
+    terminateAgentSession();
   });
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
