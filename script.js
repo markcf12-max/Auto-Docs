@@ -94,7 +94,7 @@ const SHARED_COMMERCIAL_VOC = [
   "UNSUCCESSFUL MNP (PREPAID)–UNDECIDED", "DISPUTE: DEVICE AMORTIZATION", "VOLTE/VOWIFI ISSUE", "GENERAL INQUIRY", 
   "INTERNATIONAL ROAMING- ACTIVATION", "INTERNATIONAL ROAMING- DEACTIVATION", "SIM REGISTRATION", "SIM REG: SIM VALIDITY EXTENSION", 
   "SIM REG: EXERCISE OF RIGHTS", "SIM REG: BARRING DUE TO LOST/STOLEN SIM", "SIM REG: LIFTING DUE TO FOUND SIM", 
-  "SIM REG: BARRING DUE TO DEATH OF OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER", 
+  "SIM REG: BARRING DUE TO DEATH of OWNER", "SIM REG: TRANSFER OF OWNERSHIP", "SIM REG: DEACTIVATION DUE TO DEATH of OWNER", 
   "SIM REG: PERMANENT DEACTIVATION", "SIM REG: UPDATE NAME", "SIM REG: UPDATE ADDRESS", "SIM REG: UPDATE BIRTHDATE", 
   "SIM REG: UPDATE ID", "SIM REG: LIFTING OF BARRING DUE TO TRANSFER OF OWNERSHIP", "SIM REG: LIFTING OF BARRING DUE TO SIM REPLACEMENT", 
   "SIM REG: REGULATORY TEMPO DISCON", "SIM REG: RECONNECTION FROM TEMPO DISCON", "DATA CONNECTIVITY- 5G ENHANCEMENT RELATIONED", 
@@ -194,7 +194,12 @@ function updateVocOptions(preserveValue = false) {
 }
 
 function updateOutput() {
-  if (!$("output") || isResetting || !currentAgentId) return;
+  if (!$("output") || isResetting) return;
+  
+  if (!currentAgentId || currentAgentId === "SUPERVISOR") {
+    $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
+    return;
+  }
   
   const caseVal = $("case")?.value.trim() || "";
   let ticketHeaderTag = "CASE/SR VALUE";
@@ -283,6 +288,27 @@ function updatePlaybookSpiel(concern, voc) {
 }
 
 /* ==========================================================================
+   STRICT WORKSPACE MANAGEMENT & ISOLATION HOOKS
+   ========================================================================== */
+function isolateWorkspaceUI(role) {
+  const mainWorkspaceLayout = document.querySelector('.layout');
+  const viewPlaybooksDrawerBtn = $('drawerToggle');
+  const mobileActionDock = document.querySelector('.floating-action-dock');
+
+  if (role === "SUPERVISOR") {
+    // Hide standard documentation system layout and drawers from managers completely
+    if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "none";
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "none";
+    if (mobileActionDock) mobileActionDock.style.display = "none";
+  } else {
+    // Unhide layout blocks for standard agents
+    if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
+    if (mobileActionDock) mobileActionDock.style.display = "flex";
+  }
+}
+
+/* ==========================================================================
    PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW
    ========================================================================== */
 function toggleAuthMode(e) {
@@ -321,6 +347,7 @@ async function handleAuthSubmission(e) {
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
+  // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH LAYOUT LOCKDOWN
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
       currentAgentId = "SUPERVISOR";
@@ -329,8 +356,11 @@ async function handleAuthSubmission(e) {
       localStorage.setItem("active_agent_session_id", "SUPERVISOR");
       $('authModal').style.display = "none";
       if ($('logoutBtn')) $('logoutBtn').style.display = "block";
+      
+      // Hide documentation and surface the Extraction Tool strictly
+      isolateWorkspaceUI("SUPERVISOR");
       showSupervisorPanel();
-      showToast("Supervisor Matrix Decrypted.");
+      showToast("Supervisor Matrix Decrypted. Extraction Mode Engaged.");
       return;
     } else {
       showSystemAlert("Access Denied", "Invalid administrative supervisor master token.");
@@ -373,6 +403,7 @@ async function handleAuthSubmission(e) {
             last_activity_at: Date.now()
           }, { merge: true });
 
+          isolateWorkspaceUI("AGENT");
           handleSessionLoginTransition();
           showToast(`Identity verified. ${currentAgentLob} Session Clear!`);
         } else {
@@ -426,7 +457,7 @@ async function handleAuthSubmission(e) {
       });
       
       showToast("Registration successful! Account provisioned.");
-      currentAuthMode = "REGISTER"; 
+      currentAuthMode = "LOGIN"; 
       toggleAuthMode();
       
       $('authEmail').value = agentId;
@@ -468,10 +499,16 @@ function listenToSessionState() {
     if (cachedId === "SUPERVISOR") {
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
-      handleSessionLoginTransition();
+      
+      isolateWorkspaceUI("SUPERVISOR");
+      if ($('authModal')) $('authModal').style.display = "none";
+      if ($('logoutBtn')) $('logoutBtn').style.display = "block";
+      
       showSupervisorPanel();
       return;
     }
+    
+    isolateWorkspaceUI("AGENT");
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
       if(snap.exists()) {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
@@ -486,10 +523,9 @@ function listenToSessionState() {
     currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
+    isolateWorkspaceUI("AGENT");
     showLoginGateway(false);
-    if ($("output")) {
-      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
-    }
+    updateOutput();
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
@@ -684,7 +720,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
    SHIFT HISTORY MANIFEST SYSTEM
    ========================================================================== */
 async function pushToHistory(caseNumber, textContent) {
-  if (!currentAgentId) return;
+  if (!currentAgentId || currentAgentId === "SUPERVISOR") return;
 
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const displayId = caseNumber ? caseNumber.trim().toUpperCase() : "N/A";
@@ -696,11 +732,9 @@ async function pushToHistory(caseNumber, textContent) {
   if (globalShiftHistory.length > 50) globalShiftHistory.pop(); 
 
   try {
-    if (currentAgentId !== "SUPERVISOR") {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-      await updateDoc(docRef, { shift_manifest: globalShiftHistory });
-      await logCaseSubmissionToAnalytics(displayId);
-    }
+    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+    await updateDoc(docRef, { shift_manifest: globalShiftHistory });
+    await logCaseSubmissionToAnalytics(displayId);
   } catch (err) {
     console.error("Error committing shift log token:", err);
   }
@@ -710,15 +744,13 @@ async function pushToHistory(caseNumber, textContent) {
 }
 
 async function deleteHistoryItem(index) {
-  if (!currentAgentId) return;
+  if (!currentAgentId || currentAgentId === "SUPERVISOR") return;
 
   globalShiftHistory.splice(index, 1);
 
   try {
-    if (currentAgentId !== "SUPERVISOR") {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-      await updateDoc(docRef, { shift_manifest: globalShiftHistory });
-    }
+    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+    await updateDoc(docRef, { shift_manifest: globalShiftHistory });
     showToast("Selected log deleted from your cloud history container.");
   } catch(err) {
     console.error(err);
@@ -765,9 +797,15 @@ function updateFloatingBanner() {
   if (!banner) return;
   const historyCount = globalShiftHistory.length;
   
-  banner.style.background = "#fbbf24"; 
-  banner.style.color = "#1e293b";
-  banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> LIVE OPERATIONS CHANNEL | ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: (${historyCount})`;
+  if (currentAgentId === "SUPERVISOR") {
+    banner.style.background = "#3b82f6"; 
+    banner.style.color = "#ffffff";
+    banner.innerHTML = `<i class="fas fa-user-shield"></i> SUPERVISOR PORTAL INSTANCE ACTIVE | SECTOR LINK COMPLETED`;
+  } else {
+    banner.style.background = "#fbbf24"; 
+    banner.style.color = "#1e293b";
+    banner.innerHTML = `<i class="fas fa-exclamation-triangle"></i> LIVE OPERATIONS CHANNEL | ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: (${historyCount})`;
+  }
 }
 
 /* ==========================================================================
@@ -816,8 +854,8 @@ async function downloadHistoryLog() {
   showToast("Shift History text report compiled successfully!");
 }
 
-async function clearShiftHistory() {
-  if (!currentAgentId) return;
+function clearShiftHistory() {
+  if (!currentAgentId || currentAgentId === "SUPERVISOR") return;
 
   showSystemAlert(
     "Flush History Confirmation", 
@@ -831,10 +869,8 @@ async function clearShiftHistory() {
   const structuralOverride = async () => {
     globalShiftHistory = [];
     try {
-      if (currentAgentId !== "SUPERVISOR") {
-        const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-        await updateDoc(docRef, { shift_manifest: [] });
-      }
+      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      await updateDoc(docRef, { shift_manifest: [] });
       showToast("Shift summary manifest history flushed completely.");
     } catch (e) {
       console.error(e);
@@ -1159,6 +1195,10 @@ async function executeLogOutRoutine() {
       console.warn("Could not log exit telemetry payload:", e);
     }
   }
+
+  // Restore documentation interfaces for the next normal Agent login session
+  isolateWorkspaceUI("AGENT");
+  if ($('supervisorAdminPanel')) $('supervisorAdminPanel').style.display = "none";
   
   localStorage.removeItem("active_agent_session_id");
   listenToSessionState();
@@ -1183,9 +1223,7 @@ async function resetForm(event) {
     if (select) select.selectedIndex = 0;
     updateVocOptions(false);
     
-    if ($("output")) {
-      $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
-    }
+    updateOutput();
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
@@ -1218,16 +1256,13 @@ document.addEventListener("DOMContentLoaded", () => {
     $('supervisorAdminPanel').style.display = "none"; 
   });
   
-  // FIX: Handled the Supervisor closing UI loop crash bug
   $('exitPortalBtn')?.addEventListener('click', () => { 
     $('supervisorAdminPanel').style.display = "none"; 
     if (currentAgentId === "SUPERVISOR") {
       updateSyncStatusUI('online');
       renderHistoryView();
       updateFloatingBanner();
-      if ($("output")) {
-        $("output").textContent = `CASE/SR VALUE: N/A\nCONCERN TYPE: \nVOC: \n\nSUBJ: \n\nNAME: \nMIN: \nCOMPANY: \nEMAIL: \nTHREAD: \nDATE/TIME: \n\nACTION:\n\n\nWOCAS:\n`;
-      }
+      updateOutput();
     } else {
       listenToSessionState(); 
     }
@@ -1337,7 +1372,6 @@ function validateMinField(el) {
   }
 }
 
-// Global window event listener tracking clean disconnect vectors 
 function toggleDrawer(e) {
   if(e) e.stopPropagation();
   const drawer = $('playbookPanel');
@@ -1355,44 +1389,3 @@ function toggleDrawer(e) {
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
-
-/* ==========================================================================
-   UNGRACEFUL STABILITY MONITORING
-   ========================================================================== */
-window.addEventListener('beforeunload', () => {
-  const cachedAgentId = localStorage.getItem("active_agent_session_id");
-  if (!cachedAgentId || cachedAgentId.toLowerCase() === "admin" || cachedAgentId.toLowerCase() === "supervisor" || cachedAgentId === "SUPERVISOR") return;
-
-  const todayStr = getSystemDateString();
-  const trackingPayload = {
-    agent_id: cachedAgentId,
-    date: todayStr,
-    event: "ABRUPT_DISCONNECT",
-    timestamp: Date.now()
-  };
-
-  const existingDropsQueue = JSON.parse(localStorage.getItem("auto_docs_dropped_sessions") || "[]");
-  existingDropsQueue.push(trackingPayload);
-  localStorage.setItem("auto_docs_dropped_sessions", JSON.stringify(existingDropsQueue));
-});
-
-(async function processPendingAbruptDrops() {
-  const dropsQueue = JSON.parse(localStorage.getItem("auto_docs_dropped_sessions") || "[]");
-  if (dropsQueue.length === 0) return;
-
-  localStorage.removeItem("auto_docs_dropped_sessions");
-
-  for (const drop of dropsQueue) {
-    try {
-      const targetDocRef = doc(firestoreDb, "daily_compliance_telemetry", `${drop.agent_id}_${drop.date}`);
-      await setDoc(targetDocRef, {
-        agent_id: drop.agent_id,
-        date: drop.date,
-        abrupt_disconnect_count: increment(1),
-        last_activity_at: drop.timestamp
-      }, { merge: true });
-    } catch (err) {
-      console.warn("Failed to flush background drop telemetry metric:", err);
-    }
-  }
-})();
