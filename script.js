@@ -1717,54 +1717,6 @@ function toggleDrawer(e) {
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
-/* ==========================================================================
-   VALIDATORS & DRAWERS
-   ========================================================================== */
-function validateCaseField(el) {
-  if (!el) return;
-  const val = el.value.trim().toUpperCase();
-  el.classList.remove('val-amber', 'val-green', 'val-crimson');
-  
-  if (val.length === 0) return; 
-  if (val === "NA" || val === "N/A") {
-    el.classList.add('val-green');
-    return;
-  }
-  
-  if (val.length === 8 || val.length === 10) {
-    el.classList.add('val-green');
-  } else if (val.length > 10) {
-    el.classList.add('val-crimson');
-  } else {
-    el.classList.add('val-amber');
-  }
-}
-
-function validateMinField(el) {
-  if (!el) return;
-  el.classList.remove('val-amber', 'val-green', 'val-crimson');
-  if (el.value.trim().length > 0) {
-    el.classList.add('val-green');
-  }
-}
-
-function toggleDrawer(e) {
-  if(e) e.stopPropagation();
-  const drawer = $('playbookPanel');
-  if(!drawer) return;
-  
-  drawer.classList.toggle('drawer-open');
-  const btnText = $('drawerToggle')?.querySelector('span');
-  const btnIcon = $('drawerToggle')?.querySelector('i');
-  
-  if(drawer.classList.contains('drawer-open')) {
-    if (btnText) btnText.textContent = "Close Playbooks";
-    if (btnIcon) btnIcon.className = "fas fa-times";
-  } else {
-    if (btnText) btnText.textContent = "View Playbooks";
-    if (btnIcon) btnIcon.className = "fas fa-book-open";
-  }
-}
 // ==========================================================================
 // 🚀 ONE-TIME AUTOMATION BULK UPLOADER (Delete this after running!)
 // ==========================================================================
