@@ -520,6 +520,9 @@ WOCAS:
 ${$("wocas")?.value || ""}`;
 }
 
+/* ==========================================================================
+   DYNAMIC CLOUD PLAYBOOK DISPATCH ENGINE (LIVE DECOUPLED VERSION)
+   ========================================================================= */
 async function updateSuggestions() {
   const target = $("suggestions");
   if (!target || isResetting) return;
@@ -540,35 +543,66 @@ async function updateSuggestions() {
     return;
   }
 
-  // 1. Show immediate visual feedback that the cloud database is syncing
   target.innerHTML = html + `<div style="color: var(--text-muted); font-style: italic;"><i class="fas fa-spinner fa-spin"></i> Syncing playbook from cloud...</div>`;
 
+  // Safely map slash paths to database document rules
+  const cleanDocId = voc.replace(/\//g, "-");
+
   try {
-    // 2. Fetch the document directly from Firestore using the VOC as the Document ID
-    const docRef = doc(firestoreDb, "playbooks", voc);
+    const docRef = doc(firestoreDb, "playbooks", cleanDocId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      // 3. Instead of parsing arrays with .map(), inject the HTML text directly from the database!
-      target.innerHTML = docSnap.data().htmlContent;
+      const cloudData = docSnap.data();
       
-      // Optional: Flash the panel to guide the agent's eye
+      // 1. Render the structured workspace guidelines advice
+      target.innerHTML = cloudData.htmlContent;
+      
+      // 2. Fetch the template directly from the database snapshot record
+      const databaseTemplateText = cloudData.rawSpielText || "";
+      updatePlaybookSpiel(concern, voc, databaseTemplateText);
+      
       const panel = $('playbookPanel');
       if (panel) {
         panel.classList.add('panel-flash-active');
         setTimeout(() => panel.classList.remove('panel-flash-active'), 600);
       }
     } else {
-      // Fallback if the specific VOC document hasn't been created in Firebase yet
       target.innerHTML = html + `• Follow standard processing vectors designated for ${voc}.<br><br><i style="color: var(--text-muted);">Note: Detailed cloud playbook sheet not yet compiled for this row.</i>`;
+      updatePlaybookSpiel(concern, voc, ""); // Pass blank if missing
     }
   } catch (error) {
     console.error("Playbook cloud fetch drop:", error);
     target.innerHTML = html + `❌ <span style="color: #ef4444;">Database sync failure. Using offline standard fallback protocols for ${voc}.</span>`;
   }
+}
 
-  // 4. Run your companion email template function
-  updatePlaybookSpiel(concern, voc);
+function updatePlaybookSpiel(concern, voc, cloudTemplateString) {
+  const container = $('playbookSpielContainer');
+  if (!container) return;
+
+  // If there is no cloud text template registered for this specific selection
+  if (!cloudTemplateString || cloudTemplateString.trim() === "") {
+    container.innerHTML = `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">No standard sample email spiel registered for the selected ${concern || 'N/A'} ➔ ${voc || 'N/A'} vector context.</div>`;
+    return;
+  }
+
+  const caseNum = $("case")?.value.trim() || "000000";
+  const mobileNum = $("min")?.value.trim() || "(MIN)";
+
+  // Parse fields on the dynamic string extracted directly from Firestore
+  let fullyCompiledTemplate = cloudTemplateString.replace(/\[Agent Name\]/g, currentAgentName);
+  fullyCompiledTemplate = fullyCompiledTemplate.replace(/\[Case Number\]/g, caseNum !== "" ? caseNum : "000000");
+  fullyCompiledTemplate = fullyCompiledTemplate.replace(/\[Mobile Number\]/g, mobileNum !== "" ? mobileNum : "(MIN)");
+
+  container.innerHTML = `
+    <div style="background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; color: #f59e0b; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 1.4;">
+      <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> REMINDER: Customize the sample email if fitted to the concern.
+    </div>
+    <div style="position: relative; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 12px;">
+      <pre id="playbookRawSpielText" style="margin: 0; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: var(--text-main); line-height: 1.5;">${fullyCompiledTemplate}</pre>
+    </div>
+  `;
 }
 
 /* ==========================================================================
@@ -1718,26 +1752,27 @@ function toggleDrawer(e) {
   }
 }
 // ==========================================================================
-// 🚀 SMART 200+ VOC PLAYBOOK MASTER BULK MIGRATION LOOP
+// 🚀 UNIFIED PLAYBOOK & EMAIL SPIEL MASTER BULK UPLOADER
 // ==========================================================================
 async function uploadAllPlaybooksBulk() {
-  console.log("🚀 Initializing deep matrix compilation for 200+ VOC profiles...");
+  console.log("🚀 Initializing master data compilation (Advice + Email Spiels)...");
   
-  // 1. Gather every unique VOC across your system
   const allUniqueVocs = new Set([
     ...Object.keys(TECH_PROCEDURES),
     ...Object.keys(AFTERSALES_PROCEDURES),
     ...SHARED_COMMERCIAL_VOC
   ]);
 
-  console.log(`📦 Found ${allUniqueVocs.size} distinct VOC keys to cross-examine.`);
+  console.log(`📦 Compiling ${allUniqueVocs.size} total operational matrix rows.`);
 
-  // 2. Loop through every single VOC string one by one
   for (let vocName of allUniqueVocs) {
     vocName = vocName.trim();
     if (!vocName) continue;
 
-    // A. Extract Operational Procedures Advice (Bullet points)
+    // A. Safely clean forward slashes for database compatibility
+    const cleanDocId = vocName.replace(/\//g, "-");
+
+    // B. Extract the Bullet Point Advice text
     let procedureHtml = "";
     if (TECH_PROCEDURES[vocName]) {
       procedureHtml = TECH_PROCEDURES[vocName].map(p => `• ${p.text}`).join("<br>");
@@ -1747,7 +1782,15 @@ async function uploadAllPlaybooksBulk() {
       procedureHtml = `• Follow standard processing vectors designated for ${vocName}.`;
     }
 
-    // B. Build a beautiful unified display layout
+    // C. Extract the raw Email Spiel Text template from your nested categories
+    let explicitSpielText = "";
+    if (EMAIL_SPIEL_MATRIX["Technical"] && EMAIL_SPIEL_MATRIX["Technical"][vocName]) {
+      explicitSpielText = EMAIL_SPIEL_MATRIX["Technical"][vocName];
+    } else if (EMAIL_SPIEL_MATRIX["Aftersales"] && EMAIL_SPIEL_MATRIX["Aftersales"][vocName]) {
+      explicitSpielText = EMAIL_SPIEL_MATRIX["Aftersales"][vocName];
+    }
+
+    // D. Assemble a robust, combined HTML layout to be saved to the cloud
     const finalHtmlTemplate = `
       <div style="color: #60a5fa; margin-bottom: 8px;"><strong>Operational Matrix Advice:</strong></div>
       <div style="margin-bottom: 12px; line-height: 1.5; color: #e2e8f0;">
@@ -1756,19 +1799,20 @@ async function uploadAllPlaybooksBulk() {
     `.trim();
 
     try {
-      // C. Blast it directly to Firestore using the VOC as the Document ID
-      const docRef = doc(firestoreDb, "playbooks", vocName);
+      // E. Save both the layout advice AND the template string directly into the document
+      const docRef = doc(firestoreDb, "playbooks", cleanDocId);
       await setDoc(docRef, {
-        htmlContent: finalHtmlTemplate
+        htmlContent: finalHtmlTemplate,
+        rawSpielText: explicitSpielText // 💾 Saving your email template here!
       });
-      console.log(`✅ Uploaded: "${vocName}"`);
+      console.log(`✅ Fully Synchronized: "${vocName}"`);
     } catch (err) {
       console.error(`❌ Error uploading "${vocName}":`, err);
     }
   }
 
-  console.log("🎉 SUCCESS! All 200+ VOC items have been completely migrated to Firestore.");
+  console.log("🎉 MASTER SUCCESS! Advice and email template records are live in Firestore.");
 }
 
-// UNCOMMENT THE LINE BELOW TO EXECUTE ON REFRESH
+// UNCOMMENT TO EXECUTE ONE FINAL TIME ON PAGE REFRESH
 window.addEventListener('DOMContentLoaded', uploadAllPlaybooksBulk);
