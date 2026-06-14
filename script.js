@@ -520,9 +520,10 @@ WOCAS:
 ${$("wocas")?.value || ""}`;
 }
 
-function updateSuggestions() {
+async function updateSuggestions() {
   const target = $("suggestions");
   if (!target || isResetting) return;
+  
   const concern = $("concernType")?.value;
   const voc = $("voc")?.value.trim();
   
@@ -539,43 +540,35 @@ function updateSuggestions() {
     return;
   }
 
-  if (concern === "Technical" && TECH_PROCEDURES[voc]) {
-    html += TECH_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
-  } else if (concern === "Aftersales" && AFTERSALES_PROCEDURES[voc]) {
-    html += AFTERSALES_PROCEDURES[voc].map(p => `• ${p.text}`).join("<br>");
-  } else {
-    html += `• Follow standard processing vectors designated for ${voc}.`;
+  // 1. Show immediate visual feedback that the cloud database is syncing
+  target.innerHTML = html + `<div style="color: var(--text-muted); font-style: italic;"><i class="fas fa-spinner fa-spin"></i> Syncing playbook from cloud...</div>`;
+
+  try {
+    // 2. Fetch the document directly from Firestore using the VOC as the Document ID
+    const docRef = doc(firestoreDb, "playbooks", voc);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      // 3. Instead of parsing arrays with .map(), inject the HTML text directly from the database!
+      target.innerHTML = docSnap.data().htmlContent;
+      
+      // Optional: Flash the panel to guide the agent's eye
+      const panel = $('playbookPanel');
+      if (panel) {
+        panel.classList.add('panel-flash-active');
+        setTimeout(() => panel.classList.remove('panel-flash-active'), 600);
+      }
+    } else {
+      // Fallback if the specific VOC document hasn't been created in Firebase yet
+      target.innerHTML = html + `• Follow standard processing vectors designated for ${voc}.<br><br><i style="color: var(--text-muted);">Note: Detailed cloud playbook sheet not yet compiled for this row.</i>`;
+    }
+  } catch (error) {
+    console.error("Playbook cloud fetch drop:", error);
+    target.innerHTML = html + `❌ <span style="color: #ef4444;">Database sync failure. Using offline standard fallback protocols for ${voc}.</span>`;
   }
 
-  target.innerHTML = html;
+  // 4. Run your companion email template function
   updatePlaybookSpiel(concern, voc);
-}
-
-function updatePlaybookSpiel(concern, voc) {
-  const container = $('playbookSpielContainer');
-  if (!container) return;
-
-  if (!concern || !voc || !EMAIL_SPIEL_MATRIX[concern] || !EMAIL_SPIEL_MATRIX[concern][voc]) {
-    container.innerHTML = `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">No standard sample email spiel registered for the selected ${concern || 'N/A'} ➔ ${voc || 'N/A'} vector context.</div>`;
-    return;
-  }
-
-  const caseNum = $("case")?.value.trim() || "000000";
-  const mobileNum = $("min")?.value.trim() || "(MIN)";
-
-  let localizedRawTemplate = EMAIL_SPIEL_MATRIX[concern][voc];
-  let fullyCompiledTemplate = localizedRawTemplate.replace(/\[Agent Name\]/g, currentAgentName);
-  fullyCompiledTemplate = fullyCompiledTemplate.replace(/\[Case Number\]/g, caseNum !== "" ? caseNum : "000000");
-  fullyCompiledTemplate = fullyCompiledTemplate.replace(/\[Mobile Number\]/g, mobileNum !== "" ? mobileNum : "(MIN)");
-
-  container.innerHTML = `
-    <div style="background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; color: #fbbf24; padding: 10px; margin-bottom: 12px; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 1.4;">
-      <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> REMINDER: Customize the sample email if fitted to the concern.
-    </div>
-    <div style="position: relative; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 12px;">
-      <pre id="playbookRawSpielText" style="margin: 0; white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #e2e8f0; line-height: 1.5;">${fullyCompiledTemplate}</pre>
-    </div>
-  `;
 }
 
 /* ==========================================================================
@@ -1724,3 +1717,96 @@ function toggleDrawer(e) {
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
+/* ==========================================================================
+   VALIDATORS & DRAWERS
+   ========================================================================== */
+function validateCaseField(el) {
+  if (!el) return;
+  const val = el.value.trim().toUpperCase();
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
+  
+  if (val.length === 0) return; 
+  if (val === "NA" || val === "N/A") {
+    el.classList.add('val-green');
+    return;
+  }
+  
+  if (val.length === 8 || val.length === 10) {
+    el.classList.add('val-green');
+  } else if (val.length > 10) {
+    el.classList.add('val-crimson');
+  } else {
+    el.classList.add('val-amber');
+  }
+}
+
+function validateMinField(el) {
+  if (!el) return;
+  el.classList.remove('val-amber', 'val-green', 'val-crimson');
+  if (el.value.trim().length > 0) {
+    el.classList.add('val-green');
+  }
+}
+
+function toggleDrawer(e) {
+  if(e) e.stopPropagation();
+  const drawer = $('playbookPanel');
+  if(!drawer) return;
+  
+  drawer.classList.toggle('drawer-open');
+  const btnText = $('drawerToggle')?.querySelector('span');
+  const btnIcon = $('drawerToggle')?.querySelector('i');
+  
+  if(drawer.classList.contains('drawer-open')) {
+    if (btnText) btnText.textContent = "Close Playbooks";
+    if (btnIcon) btnIcon.className = "fas fa-times";
+  } else {
+    if (btnText) btnText.textContent = "View Playbooks";
+    if (btnIcon) btnIcon.className = "fas fa-book-open";
+  }
+}
+// ==========================================================================
+// 🚀 ONE-TIME AUTOMATION BULK UPLOADER (Delete this after running!)
+// ==========================================================================
+async function uploadAllPlaybooksBulk() {
+  console.log("🚀 Initializing bulk playbook transmission stream...");
+  
+  // 1. Combine your existing hardcoded code arrays into one master tracking map
+  const masterSource = {};
+
+  // Parse your old Tech arrays into clean HTML strings automatically
+  if (typeof TECH_PROCEDURES !== 'undefined') {
+    for (const [vocName, stepsArray] of Object.entries(TECH_PROCEDURES)) {
+      masterSource[vocName] = stepsArray.map(p => `• ${p.text}`).join("<br>");
+    }
+  }
+
+  // Parse your old Aftersales arrays into clean HTML strings automatically
+  if (typeof AFTERSALES_PROCEDURES !== 'undefined') {
+    for (const [vocName, stepsArray] of Object.entries(AFTERSALES_PROCEDURES)) {
+      masterSource[vocName] = stepsArray.map(p => `• ${p.text}`).join("<br>");
+    }
+  }
+
+  // 2. Loop through all 200 items and blast them directly into Firestore
+  for (const [vocName, htmlString] of Object.entries(masterSource)) {
+    const cleanDocId = vocName.trim();
+    if (!cleanDocId) continue;
+
+    try {
+      // Direct document path reference matching your layout
+      const docRef = doc(firestoreDb, "playbooks", cleanDocId);
+      await setDoc(docRef, {
+        htmlContent: `<div style="color: #60a5fa; margin-bottom: 8px;"><strong>Operational Matrix Advice:</strong></div>` + htmlString
+      });
+      console.log(`✅ Successfully uploaded: "${cleanDocId}"`);
+    } catch (err) {
+      console.error(`❌ Failed to upload "${cleanDocId}":`, err);
+    }
+  }
+
+  console.log("🎉 Bulk upload complete! All playbooks are now securely stored in Firestore.");
+}
+
+// Trigger it automatically ONCE on page load to push your local arrays to the cloud
+ window.addEventListener('DOMContentLoaded', uploadAllPlaybooksBulk);
