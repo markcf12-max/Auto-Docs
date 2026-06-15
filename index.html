@@ -16,10 +16,6 @@
     </div>
   </div>
 
-  <div id="floatingShiftBanner" class="floating-banner">
-    <i class="fas fa-exclamation-triangle"></i> LIVE OPERATIONS CHANNEL | ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: (0)
-  </div>
-
   <header class="app-header">
     <h1>Agent Documentation Suite <span class="version-tag">v2.4</span></h1>
     <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
@@ -32,6 +28,20 @@
       <button id="logoutBtn" class="btn-logout-init">Log Out</button>
     </div>
   </header>
+
+  <!-- 🌟 MODERNIZED GLASSMORPHIC FLOATING PILL STATUS ASSEMBLY -->
+  <div style="display: flex; justify-content: center; width: 100%; margin-bottom: 4px;">
+    <div id="floatingShiftBanner" class="floating-banner-pill">
+      <div class="banner-status-indicator">
+        <span class="pulse-dot"></span>
+        <span class="banner-track-label">LIVE OPERATIONS CHANNEL</span>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="banner-metrics">
+        ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: <strong id="manifestCount">(0)</strong>
+      </div>
+    </div>
+  </div>
 
   <main class="layout">
     
@@ -176,17 +186,14 @@
           <i class="fas fa-user-shield"></i> Supervisor Master Matrix Content Portal
         </h3>
         <div style="display: flex; gap: 8px; align-items: center;">
-          
           <button type="button" onclick="document.getElementById('supervisorAdminPanel').style.display='flex'" style="background: #334155; color: #f8fafc; border: 1px solid #475569; font-size: 11px; padding: 5px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; font-family: inherit;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
             <i class="fas fa-file-excel" style="color: #10b981;"></i> Open Telemetry Reports
           </button>
-          
           <span id="authBadge" style="background: #ef4444; color: #fff; font-size: 11px; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s;" onclick="unlockSupervisorPortal()">LOCKED</span>
         </div>
       </div>
 
       <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
-        
         <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
           <h4 style="margin: 0 0 8px 0; color: #ef4444; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
             <i class="fas fa-bullhorn animate-pulse"></i> Live Operational Broadcast Center
