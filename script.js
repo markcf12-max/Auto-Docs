@@ -353,7 +353,7 @@ async function handleAuthSubmission(e) {
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
-  // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
+// STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
       currentAgentId = "SUPERVISOR";
@@ -371,6 +371,12 @@ async function handleAuthSubmission(e) {
       
       // Directly Route layout to the Extraction Dashboard, avoiding documentation suite
       isolateWorkspaceUI("SUPERVISOR");
+      
+      // 🎯 THE FIX: Instantly unlock the metrics, turn the badge green, and compile the options!
+      if (typeof bypassLockForAuthenticatedSupervisor === "function") {
+        bypassLockForAuthenticatedSupervisor();
+      }
+      
       // showSupervisorPanel(); // Commenting this out prevents it from popping up automatically
       showToast("Supervisor Portal Engaged.");
       return;
