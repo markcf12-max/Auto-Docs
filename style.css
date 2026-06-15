@@ -41,13 +41,13 @@ body {
   background-color: var(--bg-app);
   color: var(--text-main);
   padding: 20px;
-  padding-top: 55px; /* Offset spacing context for global tracking header */
+  padding-top: 55px; /* Spacing context offsets for fixed broadcast tracking banner */
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ==========================================================================
-   3. SYSTEM HEADERS & FLOATING ALERTS COMPONENT LAYOUTS
+   3. SYSTEM HEADERS & FLOATING ALERTS
    ========================================================================== */
 .broadcast-banner {
   background: linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c);
@@ -81,22 +81,6 @@ body {
 }
 .animate-bounce {
   animation: bounce 1s infinite;
-}
-
-.floating-banner {
-  position: relative;
-  width: 100%;
-  padding: 8px 16px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-align: center;
-  margin-bottom: 16px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  background: #fbbf24;
-  color: #1e293b;
-  transition: background 0.3s, color 0.3s;
 }
 
 .toast-notification {
@@ -134,13 +118,6 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: auto;
-  margin-right: 16px;
-}
-.sync-status-badge {
-  font-size: 12px;
-  font-weight: 700;
-  transition: color 0.2s ease;
 }
 
 #themeToggle {
@@ -153,7 +130,10 @@ body {
   transition: background 0.2s, color 0.2s;
 }
 #themeToggle:hover {
-  background: var(--bg-app);
+  background: rgba(0,0,0,0.05);
+}
+.dark-mode #themeToggle:hover {
+  background: rgba(255,255,255,0.05);
 }
 
 .btn-logout-init {
@@ -172,7 +152,7 @@ body {
 }
 
 /* ==========================================================================
-   4. APPS THREE-PANEL CSS GRID HUB ARCHITECTURE
+   4. THREE-PANEL HUB LAYOUT MATRIX
    ========================================================================== */
 .layout {
   display: grid;
@@ -191,7 +171,7 @@ body {
 }
 
 /* ==========================================================================
-   5. INPUT CONTROL COMPONENT DESIGN STYLES
+   5. CONTROL FIELD DESIGN SYSTEM
    ========================================================================== */
 .form-group {
   margin-bottom: 12px;
@@ -224,22 +204,6 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.tri-grid {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-.val-green {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
-}
-.val-amber {
-  border-color: #f59e0b !important;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15) !important;
-}
-.val-crimson {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
-}
 
 .buttons {
   display: grid;
@@ -269,7 +233,7 @@ body {
 .btn-secondary:hover { background: var(--secondary-hover); }
 
 /* ==========================================================================
-   6. OUTPUT PREVIEW & COPIED TRACK HISTORY SHEETS
+   6. OUTPUT COMPILATION SCREEN PREVIEWS
    ========================================================================== */
 .panel-header {
   margin-bottom: 12px;
@@ -294,17 +258,6 @@ body {
   line-height: 1.4;
   border: 1px dashed var(--border-color);
   min-height: 250px;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-@break-keys
-@keyframes panelFlashAnimation {
-  0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.6); }
-  50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0); }
-}
-.panel-flash-active {
-  animation: panelFlashAnimation 0.6s ease-out;
 }
 
 .history-section {
@@ -332,18 +285,7 @@ body {
 }
 
 /* ==========================================================================
-   7. PLAYBOOK INTERFACE STRUCTURE LAYOUTS
-   ========================================================================== */
-.suggestions-content {
-  font-size: 13px;
-  line-height: 1.6;
-}
-.drawer-internal-header {
-  display: none;
-}
-
-/* ==========================================================================
-   8. SECURE SYSTEM MODALS & PORTAL BLOCKS (LOGIN INTERFACE & OVERLAYS)
+   7. SECURE MODAL PORTALS
    ========================================================================== */
 .modal-overlay {
   position: fixed;
@@ -357,80 +299,24 @@ body {
   justify-content: center;
   align-items: center;
 }
-
 .modal-container {
   background: #1e293b;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   padding: 24px;
   color: #ffffff;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
   width: 420px;
 }
+.modal-header-block { text-align: center; margin-bottom: 20px; }
+.modal-header-block h2 { color: #38bdf8; margin-bottom: 6px; font-size: 22px; }
+.modal-header-block p { color: #94a3b8; font-size: 13px; }
+.modal-form-group { display: flex; flex-direction: column; margin-bottom: 14px; }
+.modal-form-group label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }
+.modal-form-group input, .modal-form-group select { background: #0f172a; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); padding: 10px; border-radius: 4px; font-size: 13px; }
+.modal-submit-btn { width: 100%; background: #2563eb; color: #ffffff; border: none; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 14px; margin-bottom: 14px; cursor: pointer; }
+.modal-toggle-link { text-align: center; display: block; color: #38bdf8; font-size: 12px; text-decoration: none; }
 
-.modal-header-block {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.modal-header-block h2 {
-  margin-bottom: 6px;
-  font-size: 22px;
-  color: #38bdf8;
-}
-.modal-header-block p {
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-.modal-form-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 14px;
-}
-.modal-form-group label {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-.modal-form-group input, .modal-form-group select {
-  background: #0f172a;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 13px;
-  outline: none;
-}
-.modal-form-group input:focus, .modal-form-group select:focus {
-  border-color: #38bdf8;
-}
-
-.modal-submit-btn {
-  width: 100%;
-  background: #2563eb;
-  color: #ffffff;
-  border: none;
-  padding: 12px;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 14px;
-  margin-bottom: 14px;
-  transition: background 0.2s;
-}
-.modal-submit-btn:hover { background: #1d4ed8; }
-
-.modal-toggle-link {
-  text-align: center;
-  display: block;
-  color: #38bdf8;
-  font-size: 12px;
-  text-decoration: none;
-}
-.modal-toggle-link:hover { text-decoration: underline; }
-
-/* Supervisor Data Portal Adaptations */
+/* Supervisor Adaptations */
 .supervisor-overlay { background: rgba(15, 23, 42, 0.95); }
 .supervisor-container { width: 500px; }
 .supervisor-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; margin-bottom: 20px; }
@@ -438,19 +324,18 @@ body {
 .btn-close-modal { background: transparent; color: #94a3b8; border: none; font-size: 22px; cursor: pointer; }
 .supervisor-desc { font-size: 13px; color: #94a3b8; margin-bottom: 16px; line-height: 1.4; }
 .supervisor-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-.supervisor-footer button { padding: 10px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; border: none; }
-.btn-exit-portal { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
-.btn-download-excel { background: #2563eb; color: #fff; }
+.btn-exit-portal { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px 16px; border-radius: 4px; cursor: pointer; }
+.btn-download-excel { background: #2563eb; color: #fff; padding: 10px 16px; border-radius: 4px; cursor: pointer; border: none; }
 
-/* Alert Dialog Core Structures */
+/* Alerts */
 .alert-box { text-align: center; max-width: 380px; }
 .alert-icon-container { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 24px; }
 .alert-title { margin-bottom: 10px; font-size: 18px; }
 .alert-msg { margin-bottom: 20px; font-size: 13px; color: #94a3b8; }
-.btn-alert-dismiss { width: 100%; border: none; color: white; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+.btn-alert-dismiss { width: 100%; border: none; color: white; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; background: #2563eb; }
 
 /* ==========================================================================
-   9. MOBILE ACTION DOCK & RESPONSIVE VIEWPORT ENGINE
+   8. CLEAN VIEWPORT ENGINE & STICKY FOOTER CONTROLS
    ========================================================================== */
 .drawer-toggle-btn {
   display: none;
@@ -464,46 +349,32 @@ body {
   padding: 12px 18px;
   border-radius: 50px;
   font-weight: bold;
-  font-size: 14px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   cursor: pointer;
   align-items: center;
   gap: 8px;
 }
 
+/* Base state: Hidden on normal desktop monitors */
 .floating-action-dock {
-  display: none; /* Hidden on normal wide desktops */
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-color);
-  z-index: 1000;
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-  padding: 10px;
+  display: none !important;
 }
 
-/* 📱 CORE VIEWPORT RESPONSIVE RULES (< 1024px) */
+/* 📱 ADAPTIVE MOBILE VIEWPORTS (TRANSITION HOOK AT < 1024px) */
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;
-    margin-bottom: 80px; /* Leaves breathing space for sticky footer bar */
+    margin-bottom: 80px; /* Prevents sticky footer overlay blocking the content */
   }
   
   .app-header {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
   }
   .header-sync-engine {
-    order: 3;
     width: 100%;
-    margin: 4px 0 0 0;
-    justify-content: space-between;
-    background: rgba(0,0,0,0.02);
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
+    justify-content: flex-end;
+    margin-top: 4px;
   }
   
   .suggestionPanel {
@@ -519,27 +390,19 @@ body {
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
   }
-  
   .suggestionPanel.drawer-open {
     right: 0 !important;
   }
   
-  .playbook-desktop-title {
-    display: none !important;
-  }
-  
+  .playbook-desktop-title { display: none !important; }
   .drawer-internal-header {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    margin-top: 40px; 
+    margin-top: 20px; 
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
-  }
-  .drawer-internal-header h3 {
-    font-size: 16px;
-    font-weight: 700;
   }
   .btn-drawer-close {
     background: rgba(239, 68, 68, 0.15);
@@ -547,85 +410,50 @@ body {
     border: 1px solid rgba(239, 68, 68, 0.3);
     padding: 6px 12px;
     border-radius: 6px;
-    font-weight: bold;
     cursor: pointer;
-    margin-top: 4px;
-    display: inline-block;
   }
   
-  .drawer-toggle-btn {
-    display: flex !important;
+  .drawer-toggle-btn { display: flex !important; }
+
+  /* 🛠️ HIDES EMBEDDED FORM BUTTONS TO ELIMINATE DUPLICATION */
+  .inputPanel .buttons {
+    display: none !important;
   }
 
-  /* Structural stabilization for sticky action tray elements */
+  /* 🛠️ DISPLAYS STICKY FOOTER TRAY FOR EASY MOBILE INTERACTION */
   .floating-action-dock {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: var(--bg-panel);
-    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-color);
+    z-index: 1000;
+    padding: 12px 20px;
+    gap: 12px;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
   }
-
   .floating-action-dock button {
     width: 100% !important;
     padding: 14px !important;
-    font-size: 14px !important;
-    font-weight: bold !important;
-    border-radius: 8px !important;
-    cursor: pointer;
-    box-shadow: none !important;
+    font-size: 13px !important;
+    font-weight: bold;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
   }
-  
-  .inputPanel .buttons {
-    display: none !important;
-  }
 }
 
 /* ==========================================================================
-   🏢 CORPORATE BRANDING ENGINE & LOGO ALIGNMENT
+   🏢 CORPORATE BRANDING STYLES
    ========================================================================== */
-.logo-branding-container {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.dual-logo-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand-logo-img {
-  height: 28px;        /* Keeps header tidy and professional */
-  width: auto;         /* Preserves aspect-ratio proportions */
-  object-fit: contain; /* Prevents edge clipping or distortion */
-  display: block;
-  
-  /* Stabilization pipeline for sharp animation renders */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}
-
-.logo-divider {
-  width: 1px;
-  height: 18px;
-  background-color: var(--border-color);
-  display: inline-block;
-  opacity: 0.5;
-}
-
-.version-tag {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 6px;
-  vertical-align: middle;
-}
+.logo-branding-container { display: flex; align-items: center; gap: 16px; }
+.dual-logo-wrapper { display: flex; align-items: center; gap: 10px; }
+.brand-logo-img { height: 28px; width: auto; object-fit: contain; display: block; }
+.logo-divider { width: 1px; height: 18px; background-color: var(--border-color); display: inline-block; opacity: 0.5; }
+.version-tag { font-size: 11px; font-weight: 400; color: var(--text-muted); background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+.dark-mode .version-tag { background: rgba(255,255,255,0.05); }
