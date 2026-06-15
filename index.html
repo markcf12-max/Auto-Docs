@@ -186,6 +186,37 @@
       </div>
 
       <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
+        
+        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
+          <h4 style="margin: 0 0 8px 0; color: #ef4444; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-bullhorn animate-pulse"></i> Live Operational Broadcast Center
+          </h4>
+          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Deploy instant emergency notifications, queue spikes, or process updates directly to all active agent banner arrays.</p>
+          
+          <div style="margin-bottom: 12px;">
+            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here... (Will automatically shift to uppercase style on terminal screens)" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
+          </div>
+          
+          <div style="display: flex; gap: 16px; align-items: flex-end;">
+            <div style="flex: 1;">
+              <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Alert Severity Level</label>
+              <select id="broadcastSeveritySelect" style="width: 100%; padding: 9px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px;">
+                <option value="info">🔵 Info (Blue - General System Update)</option>
+                <option value="warning">🟡 Warning (Amber - Process Reminder Alerts)</option>
+                <option value="critical">🔴 Critical (Red - Priority Emergency / Outage)</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 8px; width: 300px;">
+              <button id="publishBroadcastBtn" style="flex: 2; background: #10b981; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                <i class="fas fa-paper-plane"></i> Broadcast Live
+              </button>
+              <button id="clearBroadcastBtn" style="flex: 1; background: #ef4444; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" title="Terminate Active Announcement">
+                <i class="fas fa-trash-alt"></i> Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
             <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
