@@ -212,17 +212,30 @@ async function updateSuggestions() {
   // Safely map slash paths to database document rules
   const cleanDocId = voc.replace(/\//g, "-");
 
-  try {
+try {
     const docRef = doc(firestoreDb, "playbooks", cleanDocId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
       const cloudData = docSnap.data();
       
-      // 1. Render the structured workspace guidelines advice
-      target.innerHTML = cloudData.htmlContent;
+      // 1. Render the structured workspace guidelines advice + interactive knowledge maps
+      let htmlContent = cloudData.htmlContent || "• Follow standard processing vectors designated for this row.";
       
-      // 2. Fetch the template directly from the database snapshot record
+      // If a supervisor attached a hyperlink, append it nicely underneath the advice map
+      if (cloudData.hyperlinkUrl && cloudData.hyperlinkUrl.trim() !== "") {
+        const label = cloudData.hyperlinkLabel || "Open Related KB Reference / Link";
+        htmlContent += `
+          <div class="playbook-link-block" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+            <a href="${cloudData.hyperlinkUrl}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+              <i class="fas fa-external-link-alt"></i> ${label}
+            </a>
+          </div>`;
+      }
+      
+      target.innerHTML = htmlContent;
+      
+      // 2. Fetch the template directly from the database snapshot record and inject with the warning sign
       const databaseTemplateText = cloudData.rawSpielText || "";
       updatePlaybookSpiel(concern, voc, databaseTemplateText);
       
@@ -232,6 +245,10 @@ async function updateSuggestions() {
         setTimeout(() => panel.classList.remove('panel-flash-active'), 600);
       }
     } else {
+      target.innerHTML = html + `• Follow standard processing vectors designated for ${voc}.<br><br><i style="color: var(--text-muted);">Note: Detailed cloud playbook sheet not yet compiled for this row.</i>`;
+      updatePlaybookSpiel(concern, voc, ""); // Pass blank if missing to clear the old layout
+    }
+  } {
       target.innerHTML = html + `• Follow standard processing vectors designated for ${voc}.<br><br><i style="color: var(--text-muted);">Note: Detailed cloud playbook sheet not yet compiled for this row.</i>`;
       updatePlaybookSpiel(concern, voc, ""); // Pass blank if missing
     }
@@ -1743,14 +1760,13 @@ document.addEventListener("DOMContentLoaded", () => {
     saveData(true);
   });
   
-  // 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
+// 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
   $("voc")?.addEventListener("input", () => {
     updateOutput();
     
-    // Fire the matrix query the exact millisecond a valid VOC choice is typed or selected
+    // Fire the unified matrix compiler the exact millisecond a valid VOC choice is input
     if ($("concernType")?.value && $("voc")?.value) {
-      updateSuggestions();
-      loadCurrentVocMasterDataForAgent(); 
+      updateSuggestions(); // ◄ Let this single function handle the data pull & formatting
     }
   });
 
@@ -1758,10 +1774,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateOutput();
     saveData(true);
     
-    // Safety check execution to ensure the matrix loads on direct mouse clicks
+    // Safety check execution to ensure the matrix loads on direct mouse clicks/datalist selections
     if ($("concernType")?.value && $("voc")?.value) {
-      updateSuggestions();
-      loadCurrentVocMasterDataForAgent(); 
+      updateSuggestions(); // ◄ Let this single function handle the data pull & formatting
     }
   });
 
