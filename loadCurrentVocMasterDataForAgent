@@ -615,24 +615,17 @@ function syncSupervisorVocDropdown() {
   loadCurrentVocMasterData();
 }
 
+// ==========================================
+// CHANNEL A: SYSTEM MASTER SUPERVISOR INPUTS ONLY
+// ==========================================
 async function loadCurrentVocMasterData() {
-  // 1. 🧠 SMART SELECTOR: Fallback to Agent input 'voc' if Supervisor 'supeVoc' isn't available
-  const supeVocEl = document.getElementById("supeVoc");
-  const agentVocEl = document.getElementById("voc"); // Make sure this matches your agent input's ID
-  
-  let targetVoc = "";
-  if (supeVocEl && supeVocEl.value) {
-    targetVoc = supeVocEl.value;
-  } else if (agentVocEl && agentVocEl.value) {
-    targetVoc = agentVocEl.value;
-  }
-  
+  // Directly point ONLY to supervisor editor fields
+  const targetVoc = document.getElementById("supeVoc")?.value;
   const htmlInput = document.getElementById("supeHtmlContent");
   const urlInput = document.getElementById("supeUrl");
   const labelInput = document.getElementById("supeLabel");
   const spielInput = document.getElementById("supeSpielText");
   
-  // 🎯 Grab the Agent UI containers to push live views into
   const suggestionsContainer = document.getElementById("suggestions");
   const spielContainer = document.getElementById("playbookSpielContainer");
   
@@ -647,67 +640,99 @@ async function loadCurrentVocMasterData() {
     if (snap.exists()) {
       const data = snap.data();
       
-      // 2. Populate the Supervisor Editor fields (only if they are on screen)
+      // 1. Populate Supervisor Edit Panel
       if(htmlInput) htmlInput.value = data.htmlContent || "";
       if(urlInput) urlInput.value = data.hyperlinkUrl || "";
       if(labelInput) labelInput.value = data.hyperlinkLabel || "";
       if(spielInput) spielInput.value = data.rawSpielText || "";
 
-      // 3. 🎯 LIVE RENDER: Inject the Advice AND the Link into the Agent View Panel (#suggestions)
+      // 2. Mirror live view layout to the drawer preview cards simultaneously
       if (suggestionsContainer) {
         const advice = data.htmlContent || "No operational advice available for this item.";
         const url = data.hyperlinkUrl || "";
         const label = data.hyperlinkLabel || "Open Related KB Reference / Link";
 
-        let htmlContent = `
-          <div class="playbook-advice-block">
-            <p style="line-height: 1.5; white-space: pre-line; color: #f8fafc; margin: 0;">${advice}</p>
-          </div>
-        `;
-
-        // ✨ If a URL exists in the database record, render it beautifully here:
+        let htmlContent = `<div class="playbook-advice-block"><p style="line-height: 1.5; white-space: pre-line; color: #f8fafc; margin: 0;">${advice}</p></div>`;
         if (url && url.trim() !== "") {
           htmlContent += `
             <div class="playbook-link-block" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
               <a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
                 <i class="fas fa-external-link-alt"></i> ${label}
               </a>
-            </div>
-          `;
+            </div>`;
         }
         suggestionsContainer.innerHTML = htmlContent;
       }
 
-// 4. 🎯 LIVE RENDER: Inject the Canned Email Template cleanly (No redundant buttons!)
       if (spielContainer) {
         const templateText = data.rawSpielText || "";
-
-        if (templateText && templateText.trim() !== "") {
-          spielContainer.innerHTML = `
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-top: 8px;">
-              <pre id="spielTextElement" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 12px; color: #cbd5e1; max-height: 200px; overflow-y: auto; line-height: 1.4;">${templateText}</pre>
-            </div>
-          `;
-        } else {
-          spielContainer.innerHTML = `
-            <div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">
-              The corresponding email spiel template will load automatically upon context verification.
-            </div>
-          `;
-        }
+        spielContainer.innerHTML = templateText && templateText.trim() !== "" ? `
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-top: 8px;">
+            <pre id="spielTextElement" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 12px; color: #cbd5e1; max-height: 200px; overflow-y: auto; line-height: 1.4;">${templateText}</pre>
+          </div>` : `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">The corresponding email spiel template will load automatically upon context verification.</div>`;
       }
-
     } else {
-      // Document does not exist yet -> Reset everything safely
       if(htmlInput) htmlInput.value = "";
       if(urlInput) urlInput.value = "";
       if(labelInput) labelInput.value = "";
       if(spielInput) spielInput.value = "";
-      if(suggestionsContainer) suggestionsContainer.innerHTML = "No configuration found for this VOC. Create one above!";
-      if(spielContainer) spielContainer.innerHTML = `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center;">No template found.</div>`;
     }
   } catch (err) {
-    console.error("Supervisor master data read fail:", err);
+    console.error("Supervisor data pull exception:", err);
+  }
+}
+
+// ==========================================
+// CHANNEL B: ISOLATED LIVE AGENT PLAYBOOK READER
+// ==========================================
+async function loadCurrentVocMasterDataForAgent() {
+  // Completely ignore supervisor elements to prevent background locks!
+  const agentVoc = document.getElementById("voc")?.value || $('voc')?.value;
+  const suggestionsContainer = document.getElementById("suggestions");
+  const spielContainer = document.getElementById("playbookSpielContainer");
+  
+  if (!agentVoc || agentVoc.trim() === "") return;
+
+  const cleanDocId = agentVoc.replace(/\//g, "-");
+  
+  try {
+    const docRef = doc(firestoreDb, "playbooks", cleanDocId);
+    const snap = await getDoc(docRef);
+    
+    if (snap.exists()) {
+      const data = snap.data();
+      
+      // Update Agent Drawer UI View ONLY
+      if (suggestionsContainer) {
+        const advice = data.htmlContent || "No operational advice available for this item.";
+        const url = data.hyperlinkUrl || "";
+        const label = data.hyperlinkLabel || "Open Related KB Reference / Link";
+
+        let htmlContent = `<div class="playbook-advice-block"><p style="line-height: 1.5; white-space: pre-line; color: #f8fafc; margin: 0;">${advice}</p></div>`;
+        if (url && url.trim() !== "") {
+          htmlContent += `
+            <div class="playbook-link-block" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+              <a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                <i class="fas fa-external-link-alt"></i> ${label}
+              </a>
+            </div>`;
+        }
+        suggestionsContainer.innerHTML = htmlContent;
+      }
+
+      if (spielContainer) {
+        const templateText = data.rawSpielText || "";
+        spielContainer.innerHTML = templateText && templateText.trim() !== "" ? `
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-top: 8px;">
+            <pre id="spielTextElement" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 12px; color: #cbd5e1; max-height: 200px; overflow-y: auto; line-height: 1.4;">${templateText}</pre>
+          </div>` : `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">The corresponding email spiel template will load automatically upon context verification.</div>`;
+      }
+    } else {
+      if (suggestionsContainer) suggestionsContainer.innerHTML = "No configuration found for this tracking element.";
+      if (spielContainer) spielContainer.innerHTML = "";
+    }
+  } catch (err) {
+    console.error("Agent playbook background read failed silently:", err);
   }
 }
 
@@ -1607,24 +1632,24 @@ document.addEventListener("DOMContentLoaded", () => {
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-  // 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
+// 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
   $("concernType")?.addEventListener("change", () => {
     updateVocOptions(false);
     updateSuggestions();
-    loadCurrentVocMasterData(); // 🚀 Pulls matrix data when category changes
+    loadCurrentVocMasterDataForAgent(); // 🚀 SWAPPED: Dedicated Agent-Only Flow
   });
   
   // 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
   $("voc")?.addEventListener("input", () => {
     updateOutput();
     updateSuggestions();
-    loadCurrentVocMasterData(); // 🚀 Pulls matrix data live as they type
+    loadCurrentVocMasterDataForAgent(); // 🚀 SWAPPED: Dedicated Agent-Only Flow
   });
   $("voc")?.addEventListener("change", () => {
     updateOutput();
     updateSuggestions();
     saveData(true);
-    loadCurrentVocMasterData(); // 🚀 Pulls matrix data on final selection change
+    loadCurrentVocMasterDataForAgent(); // 🚀 SWAPPED: Dedicated Agent-Only Flow
   });
 
   $("copyBtn")?.addEventListener("click", copyDoc);
