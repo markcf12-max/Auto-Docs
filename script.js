@@ -275,24 +275,29 @@ function isolateWorkspaceUI(role) {
   const mainWorkspaceLayout = document.querySelector('.layout');
   const viewPlaybooksDrawerBtn = $('drawerToggle');
   const mobileActionDock = document.querySelector('.floating-action-dock');
-  const supervisorAdminPanel = $('supervisorAdminPanel');
+  const supervisorAdminPanel = $('supervisorAdminPanel'); // Telemetry Report Overlay
+  const supervisorPanel = $('supervisorPanel');           // Our New CMS Portal Panel
 
   if (role === "SUPERVISOR") {
-    // Hide standard agent documentation layout blocks from supervisors completely
-    if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "none";
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "none";
+    // Keep layout structure open so they can interact with options, but hide mobile floating docks
+    if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid"; 
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "none";
     
-    // Explicitly make sure the Supervisor Dashboard is visible in full layout space
-    if (supervisorAdminPanel) supervisorAdminPanel.style.display = "flex";
+    // Auto-reveal and bypass the locking mechanics on our new content portal
+    if (supervisorPanel) {
+      supervisorPanel.style.display = "block";
+      bypassLockForAuthenticatedSupervisor();
+    }
   } else {
-    // Standard Agent routing logic layout initialization
+    // Standard Agent initialization routing
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
     if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "flex";
     
-    // Hide Supervisor dashboard panel from agents completely
+    // Hide all administrative capabilities from agents
     if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
+    if (supervisorPanel) supervisorPanel.style.display = "none";
   }
 }
 
@@ -495,19 +500,22 @@ function listenToSessionState() {
   updateVocOptions(false);
   globalShiftHistory = [];
 
-  if (cachedId) {
-    currentAgentId = cachedId;
-    if (cachedId === "SUPERVISOR") {
-      currentAgentName = "Operations Supervisor";
-      currentAgentLob = "MANAGEMENT";
-      
-      isolateWorkspaceUI("SUPERVISOR");
-      if ($('authModal')) $('authModal').style.display = "none";
-      if ($('logoutBtn')) $('logoutBtn').style.display = "block";
-      
-      showSupervisorPanel();
-      return;
+if (cachedId) {
+  currentAgentId = cachedId;
+  if (cachedId === "SUPERVISOR") {
+    currentAgentName = "Operations Supervisor";
+    currentAgentLob = "MANAGEMENT";
+    
+    isolateWorkspaceUI("SUPERVISOR");
+    if ($('authModal')) $('authModal').style.display = "none";
+    if ($('logoutBtn')) $('logoutBtn').style.display = "block";
+    
+    // Automatically fill out our CMS options right when they open the page
+    if (typeof initializeSupervisorDropdowns === "function") {
+      initializeSupervisorDropdowns();
     }
+    return;
+  }
     
     isolateWorkspaceUI("AGENT");
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
@@ -1413,4 +1421,18 @@ function toggleDrawer(e) {
     if (btnText) btnText.textContent = "View Playbooks";
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
+}
+function bypassLockForAuthenticatedSupervisor() {
+  isSupervisorAuthenticated = true;
+  const badge = document.getElementById("authBadge");
+  if (badge) {
+    badge.innerText = "SYSTEM ADMIN ACTIVE";
+    badge.style.background = "#10b981";
+  }
+  const container = document.getElementById("supervisorContent");
+  if (container) {
+    container.style.display = "block";
+    container.style.opacity = "1";
+  }
+  initializeSupervisorDropdowns();
 }
