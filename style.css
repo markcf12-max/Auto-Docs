@@ -598,3 +598,49 @@ body {
 .dual-logo-wrapper { display: flex; align-items: center; gap: 10px; }
 .brand-logo-img { height: 28px; width: auto; object-fit: contain; display: block; }
 .logo-divider { width: 1px; height: 18px; background-color: var(--border-color); display: inline-block; opacity: 0.5; }
+
+/* ==========================================================================
+   🌟 STEP 2: SCORCHED-EARTH DUPLICATE "X" BLOCKER
+   ========================================================================== */
+.btn-drawer-close {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  
+  /* Forces strict flex centering with absolutely zero space for text wrapping */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  
+  cursor: pointer !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+  font-size: 14px !important;
+  
+  /* 🎯 THE MAGIC FIX: If there is a rogue "X" hiding in JavaScript text content, 
+     this line pushes it completely off the screen while keeping the icon safe */
+  text-indent: -9999px !important; 
+  overflow: hidden !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Forces the Font Awesome icon to display normally despite the text-offset trick */
+.btn-drawer-close i {
+  text-indent: 0 !important;
+  display: inline-block !important;
+}
+
+/* Completely obliterates any legacy CSS "×" pseudo-element injections */
+.btn-drawer-close::before,
+.btn-drawer-close::after {
+  display: none !important;
+  content: "" !important;
+}
+
+.btn-drawer-close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  transform: rotate(90deg) !important;
+}
