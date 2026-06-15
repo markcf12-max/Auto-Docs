@@ -9,6 +9,7 @@
 </head>
 <body>
 
+  <!-- URGENT BROADCAST DISPLAY LAYER -->
   <div id="adminBroadcastBanner" class="broadcast-banner" style="display: none;">
     <div class="broadcast-content">
       <i class="fas fa-bullhorn animate-bounce"></i> 
@@ -16,11 +17,31 @@
     </div>
   </div>
 
+  <!-- 🌟 SYSTEM HEADER & UTILITY CONTROL CENTER -->
   <header class="app-header">
-    <h1>Agent Documentation Suite <span class="version-tag">v2.4</span></h1>
-    <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+    <div class="header-brand-block">
+      <div class="header-title-wrapper">
+        <i class="fas fa-cubes-stacked header-brand-icon"></i>
+        <h1>Agent Documentation Suite</h1>
+      </div>
+      <span class="version-tag">SYSTEM v2.4</span>
+    </div>
+
+    <!-- 🌟 GLASSMORPHIC PILL STATUS ASSEMBLY -->
+    <div id="floatingShiftBanner" class="floating-banner-pill">
+      <div class="banner-status-indicator">
+        <span class="pulse-dot"></span>
+        <span class="banner-track-label">LIVE OPERATIONS CHANNEL</span>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="banner-metrics">
+        ACTIVE MANIFEST ITEMS: <strong id="manifestCount">(0)</strong>
+      </div>
+    </div>
+
+    <div class="header-actions">
       <div class="header-sync-engine">
-        <span id="syncStatus" class="sync-status-badge">● Synchronizing with cloud modules...</span>
+        <span id="syncStatus" class="sync-status-badge">● Cloud Sync Live</span>
       </div>
       <button id="themeToggle" title="Toggle System Contrast Mode">
         <i class="fas fa-moon"></i>
@@ -29,22 +50,10 @@
     </div>
   </header>
 
-  <!-- 🌟 MODERNIZED GLASSMORPHIC FLOATING PILL STATUS ASSEMBLY -->
-  <div style="display: flex; justify-content: center; width: 100%; margin-bottom: 4px;">
-    <div id="floatingShiftBanner" class="floating-banner-pill">
-      <div class="banner-status-indicator">
-        <span class="pulse-dot"></span>
-        <span class="banner-track-label">LIVE OPERATIONS CHANNEL</span>
-      </div>
-      <div class="banner-divider"></div>
-      <div class="banner-metrics">
-        ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: <strong id="manifestCount">(0)</strong>
-      </div>
-    </div>
-  </div>
-
+  <!-- MAIN WORKSPACE COMPONENTS Layout -->
   <main class="layout">
     
+    <!-- LEFT COLUMN: INPUT DATA ENGINE -->
     <section class="inputPanel">
       <div class="form-grid">
         <div class="form-group">
@@ -135,6 +144,7 @@
       </div>
     </section>
 
+    <!-- CENTER COLUMN: OUTPUT PREVIEW ELEMENTS -->
     <section class="outputPanel">
       <div class="panel-header">
         <h3>Live Compilation Summary Output</h3>
@@ -153,6 +163,7 @@
       </div>
     </section>
 
+    <!-- RIGHT COLUMN: INTERACTIVE MATRIX PLAYBOOKS -->
     <section id="playbookPanel" class="suggestionPanel">
       <div class="panel-header playbook-desktop-title">
         <h3><i class="fas fa-book"></i> Interactive Knowledge Maps</h3>
@@ -167,18 +178,19 @@
         Select Concern & VOC to view matrix playbook options...
       </div>
 
-      <div class="panel-header" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+      <div class="panel-header" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
         <h3><i class="fas fa-envelope-open-text"></i> Standardized Sample Email Spiel</h3>
       </div>
       
-      <div id="playbookSpielContainer" style="padding: 0 16px 16px 16px;">
-        <div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">
+      <div id="playbookSpielContainer" style="padding: 0 0 16px 0;">
+        <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
           The corresponding email spiel template will load automatically upon context verification.
         </div>
       </div>
     </section>
   </main>
 
+  <!-- BOTTOM LEVEL CONTAINER: SUPERVISOR BROADCAST CONTROLS -->
   <div style="max-width: 1400px; margin: 0 auto 40px auto; padding: 0 20px; box-sizing: border-box;">
     <div id="supervisorPanel" style="background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(8px); border: 1px solid rgba(96, 165, 250, 0.2); border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
@@ -263,6 +275,7 @@
     </div>
   </div>
 
+  <!-- FIXED FLOATING ACTION CONTROLS FOR MOBILE DRAWER INTERACTION -->
   <button id="drawerToggle" class="drawer-toggle-btn">
     <i class="fas fa-book-open"></i> <span>View Playbooks</span>
   </button>
@@ -272,6 +285,7 @@
     <button id="mobileResetBtn" class="btn-secondary" onclick="document.getElementById('resetBtn').click();"><i class="fas fa-undo"></i> Wipe Form</button>
   </div>
 
+  <!-- SECURITY MODALS CONTAINER LAYER -->
   <div id="authModal" class="modal-overlay" style="display: none;">
     <div class="modal-container">
       <div class="modal-header-block">
@@ -305,6 +319,7 @@
     </div>
   </div>
 
+  <!-- SUPERVISOR SYSTEM CONTROL GATE MODAL -->
   <div id="supervisorAdminPanel" class="modal-overlay supervisor-overlay" style="display: none;">
     <div class="modal-container supervisor-container">
       <div class="supervisor-header-row">
@@ -347,6 +362,7 @@
     </div>
   </div>
 
+  <!-- GENERIC RUNTIME SYSTEM ALERT MODAL -->
   <div id="alertModal" class="modal-overlay" style="display: none;">
     <div class="modal-container alert-box">
       <div id="alertModalIconContainer" class="alert-icon-container">
@@ -358,6 +374,7 @@
     </div>
   </div>
 
+  <!-- SECURE SYSTEM LOGOUT VERIFICATION DIALOG -->
   <div id="logoutModal" class="modal-overlay" style="display: none;">
     <div class="modal-container alert-box">
       <div style="color: #f59e0b; font-size: 32px; margin-bottom: 12px;"><i class="fas fa-sign-out-alt"></i></div>
