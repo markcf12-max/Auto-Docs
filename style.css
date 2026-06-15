@@ -522,11 +522,15 @@ body {
   
   .playbook-desktop-title { display: none !important; }
   
+/* 📱 FINETUNED MOBILE DRAWER COMPONENT LAYOUT */
   .drawer-internal-header {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    margin-top: 20px; 
+    
+    /* 🌟 INCREASED MARGIN: Pushes button/title safely down beneath the banner */
+    margin-top: 55px; 
+    
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
