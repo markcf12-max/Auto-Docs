@@ -1586,21 +1586,23 @@ async function resetForm(event) {
 
 /* ==========================================================================
    INITIALIZATION ENGINE & LOOPS
-   ========================================================================== */
+/* ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
-  
-  // BYPASS INTERMEDIARY CONFIRMATION DRAWER FLOWS FOR INSTANT PORTAL TEARDOWN
-  $('closeSupervisorBtn')?.addEventListener('click', () => { 
-    executeLogOutRoutine();
+
+  // 🎯 FIXED: Sitting safely inside the initialization flow!
+  $('closeTelemetryBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const telemetryContainer = document.getElementById("telemetryPanel") || $('telemetryContainer');
+    if (telemetryContainer) {
+      telemetryContainer.style.display = "none";
+    }
   });
-  
-  $('exitPortalBtn')?.addEventListener('click', () => { 
-    executeLogOutRoutine();
-  });
+
+  // 🌟 NO EARLY CLOSING BLOCK HERE ANYMORE! 🌟
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
@@ -1632,7 +1634,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-// 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
+  // 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
   $("concernType")?.addEventListener("change", () => {
     updateVocOptions(false);
     updateSuggestions();
@@ -1678,8 +1680,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   listenToOperationalBroadcasts();
   listenToSessionState();
-});
-
+}); // <--- 🌟 THIS is where it actually belongs! Right at the very end of everything!
 /* ==========================================================================
    VALIDATORS & DRAWERS
    ========================================================================== */
