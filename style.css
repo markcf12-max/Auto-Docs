@@ -46,7 +46,7 @@ body {
 }
 
 /* ==========================================================================
-   3. SYSTEM HEADERS & FLOATING ALERTS (RE-ENGINEERED HUB)
+   3. SYSTEM HEADERS & FLOATING ALERTS
    ========================================================================== */
 .broadcast-banner {
   background: linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c);
@@ -82,7 +82,6 @@ body {
   animation: bounce 1s infinite;
 }
 
-/* HIGH TECH CONTROL TRAY HEADER */
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -183,7 +182,6 @@ body {
   background: rgba(239, 68, 68, 0.2);
 }
 
-/* GLASSMORPHIC PILL STATUS ASSEMBLY */
 .floating-banner-pill {
   display: inline-flex;
   align-items: center;
@@ -203,7 +201,6 @@ body {
   background: rgba(30, 41, 59, 0.45);
   border-color: rgba(96, 165, 250, 0.15);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .banner-status-indicator {
@@ -251,7 +248,6 @@ body {
   font-weight: 700;
 }
 
-/* TOAST CONTROLS */
 .toast-notification {
   position: fixed;
   top: -100px;
@@ -288,6 +284,11 @@ body {
   transition: background-color 0.3s, border-color 0.3s;
 }
 
+/* 🎯 DESKTOP SAFETY RULE: Explicitly hide mobile elements on normal monitors */
+.drawer-internal-header {
+  display: none !important;
+}
+
 /* ==========================================================================
    5. CONTROL FIELD DESIGN SYSTEM
    ========================================================================== */
@@ -311,7 +312,6 @@ body {
   font-family: inherit;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s, background-color 0.3s, color 0.3s;
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   border-color: var(--primary);
@@ -340,10 +340,6 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: background 0.2s, transform 0.1s;
-}
-.buttons button:active, .history-actions button:active {
-  transform: scale(0.98);
 }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-hover); }
@@ -434,7 +430,6 @@ body {
 .modal-submit-btn { width: 100%; background: #2563eb; color: #ffffff; border: none; padding: 12px; border-radius: 4px; font-weight: bold; font-size: 14px; margin-bottom: 14px; cursor: pointer; }
 .modal-toggle-link { text-align: center; display: block; color: #38bdf8; font-size: 12px; text-decoration: none; }
 
-/* Supervisor Adaptations */
 .supervisor-overlay { background: rgba(15, 23, 42, 0.95); }
 .supervisor-container { width: 500px; }
 .supervisor-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; margin-bottom: 20px; }
@@ -445,7 +440,6 @@ body {
 .btn-exit-portal { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px 16px; border-radius: 4px; cursor: pointer; }
 .btn-download-excel { background: #2563eb; color: #fff; padding: 10px 16px; border-radius: 4px; cursor: pointer; border: none; }
 
-/* Alerts */
 .alert-box { text-align: center; max-width: 380px; }
 .alert-icon-container { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 24px; }
 .alert-title { margin-bottom: 10px; font-size: 18px; }
@@ -473,7 +467,6 @@ body {
   gap: 8px;
 }
 
-/* Base state: Hidden on normal desktop monitors */
 .floating-action-dock {
   display: none !important;
 }
@@ -522,48 +515,44 @@ body {
   
   .playbook-desktop-title { display: none !important; }
   
-/* 📱 FINETUNED MOBILE DRAWER COMPONENT LAYOUT */
+  /* 🌟 SHOWS MOBILE DRAWER TITLE ONLY IN WRAPPED ECOSYSTEM */
   .drawer-internal-header {
     display: flex !important;
     justify-content: space-between;
     align-items: center;
-    
-    /* 🌟 INCREASED MARGIN: Pushes button/title safely down beneath the banner */
     margin-top: 55px; 
-    
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
   }
 
-  /* ICON DRAWER CLOSE BUTTON */
+  /* MODERN RADIAL ICON DRAWER CLOSE BUTTON */
   .btn-drawer-close {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    padding: 0 !important;
+    line-height: 0 !important;
+    text-indent: 0 !important; /* Strips any historical displacement rules */
+    overflow: hidden !important;
     transition: all 0.2s ease;
   }
   .btn-drawer-close:hover {
-    background: rgba(239, 68, 68, 0.2);
-    transform: rotate(90deg);
+    background: rgba(239, 68, 68, 0.2) !important;
+    transform: rotate(90deg) !important;
   }
   
   .drawer-toggle-btn { display: flex !important; }
+  .inputPanel .buttons { display: none !important; }
 
-  /* HIDES EMBEDDED FORM BUTTONS TO ELIMINATE DUPLICATION */
-  .inputPanel .buttons {
-    display: none !important;
-  }
-
-  /* DISPLAYS STICKY FOOTER TRAY FOR EASY MOBILE INTERACTION */
   .floating-action-dock {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
@@ -592,55 +581,9 @@ body {
 }
 
 /* ==========================================================================
-   🏢 CORPORATE BRANDING STYLES
+   9. CORPORATE BRANDING STYLES
    ========================================================================== */
 .logo-branding-container { display: flex; align-items: center; gap: 16px; }
 .dual-logo-wrapper { display: flex; align-items: center; gap: 10px; }
 .brand-logo-img { height: 28px; width: auto; object-fit: contain; display: block; }
 .logo-divider { width: 1px; height: 18px; background-color: var(--border-color); display: inline-block; opacity: 0.5; }
-
-/* ==========================================================================
-   🌟 STEP 2: SCORCHED-EARTH DUPLICATE "X" BLOCKER
-   ========================================================================== */
-.btn-drawer-close {
-  background: rgba(239, 68, 68, 0.1) !important;
-  color: #ef4444 !important;
-  border: 1px solid rgba(239, 68, 68, 0.2) !important;
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 50% !important;
-  
-  /* Forces strict flex centering with absolutely zero space for text wrapping */
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  
-  cursor: pointer !important;
-  padding: 0 !important;
-  line-height: 0 !important;
-  font-size: 14px !important;
-  
-  /* 🎯 THE MAGIC FIX: If there is a rogue "X" hiding in JavaScript text content, 
-     this line pushes it completely off the screen while keeping the icon safe */
-  text-indent: -9999px !important; 
-  overflow: hidden !important;
-  transition: all 0.2s ease !important;
-}
-
-/* Forces the Font Awesome icon to display normally despite the text-offset trick */
-.btn-drawer-close i {
-  text-indent: 0 !important;
-  display: inline-block !important;
-}
-
-/* Completely obliterates any legacy CSS "×" pseudo-element injections */
-.btn-drawer-close::before,
-.btn-drawer-close::after {
-  display: none !important;
-  content: "" !important;
-}
-
-.btn-drawer-close:hover {
-  background: rgba(239, 68, 68, 0.2) !important;
-  transform: rotate(90deg) !important;
-}
