@@ -279,27 +279,32 @@ function isolateWorkspaceUI(role) {
   const supervisorAdminPanel = $('supervisorAdminPanel'); // Extraction Report Modal
   const supervisorPanel = $('supervisorPanel');           // CMS Portal Panel
   const outputPanel = document.querySelector('.outputPanel'); // Agent Note Output/History Panel
+  const playbookPanel = $('playbookPanel');                 // The Interactive Knowledge Map Section
 
   if (role === "SUPERVISOR") {
     // 1. Keep the workspace layout grid fully visible so the supervisor can view & choose options
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid"; 
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
     
-    // 2. Hide agent-specific functional panels that supervisors don't need
+    // 2. Clear paths for interactive playbooks to reveal on command
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; // Changed from block to flex
+    if (playbookPanel) playbookPanel.style.display = "block";
+    
+    // 3. Hide agent-specific functional panels that supervisors don't need
     if (mobileActionDock) mobileActionDock.style.display = "none";
     if (outputPanel) outputPanel.style.display = "none"; // Supervisors don't log cases or copy logs
     
-    // 3. Keep the telemetry extraction overlay hidden until explicitly summoned
+    // 4. Keep the telemetry extraction overlay hidden until explicitly summoned
     if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
 
-    // 4. Reveal our integrated CMS Editor panel
+    // 5. Reveal our integrated CMS Editor panel
     if (supervisorPanel) {
       supervisorPanel.style.display = "block";
     }
   } else {
     // Standard Agent routing logic
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; // Changed from block to flex
+    if (playbookPanel) playbookPanel.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "flex";
     if (outputPanel) outputPanel.style.display = "block";
     
