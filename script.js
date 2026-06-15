@@ -1823,3 +1823,40 @@ document.addEventListener("DOMContentLoaded", () => {
     exitPortalBtn.addEventListener('click', hideExtractionModal);
   }
 });
+// 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE
+function listenToOperationalBroadcasts() {
+  const banner = $('adminBroadcastBanner');
+  const textContainer = $('broadcastMessageText');
+  if (!banner || !textContainer) return;
+
+  const broadcastRef = doc(firestoreDb, "system_management", "broadcast_alerts");
+
+  onSnapshot(broadcastRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.active === true && data.message && data.message.trim() !== "") {
+        textContainer.textContent = `SYSTEM ALERT: ${data.message.toUpperCase()}`;
+        banner.style.display = "flex"; 
+
+        // 🎨 DYNAMIC SEVERITY COLOR ENGINE
+        if (data.severity === "critical") {
+          banner.style.backgroundColor = "#ef4444"; // Vivid Emergency Red
+          banner.style.color = "#ffffff";
+        } else if (data.severity === "warning") {
+          banner.style.backgroundColor = "#f59e0b"; // Alert Amber
+          banner.style.color = "#000000";          // Dark text for readability
+        } else {
+          banner.style.backgroundColor = "#3b82f6"; // General Info Blue
+          banner.style.color = "#ffffff";
+        }
+
+      } else {
+        banner.style.display = "none";  
+      }
+    } else {
+      banner.style.display = "none";
+    }
+  }, (error) => {
+    console.warn("Broadcast listener network drop:", error);
+  });
+}
