@@ -366,7 +366,7 @@ async function handleAuthSubmission(e) {
       
       // Directly Route layout to the Extraction Dashboard, avoiding documentation suite
       isolateWorkspaceUI("SUPERVISOR");
-      showSupervisorPanel();
+      // showSupervisorPanel(); // Commenting this out prevents it from popping up automatically
       showToast("Supervisor Portal Engaged.");
       return;
     } else {
@@ -1597,4 +1597,26 @@ function toggleDrawer(e) {
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
+/* ==========================================================================
+   📊 SUPERVISOR TELEMETRY MODAL CONTROLS
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  const closeSupervisorBtn = document.getElementById('closeSupervisorBtn');
+  const exitPortalBtn = document.getElementById('exitPortalBtn');
+  const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
 
+  const hideExtractionModal = () => {
+    if (supervisorAdminPanel) {
+      supervisorAdminPanel.style.display = 'none';
+    }
+  };
+
+  // Attach click listeners to both close buttons in the HTML layout
+  if (closeSupervisorBtn) {
+    closeSupervisorBtn.addEventListener('click', hideExtractionModal);
+  }
+  
+  if (exitPortalBtn) {
+    exitPortalBtn.addEventListener('click', hideExtractionModal);
+  }
+});
