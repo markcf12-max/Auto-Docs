@@ -1823,7 +1823,7 @@ document.addEventListener("DOMContentLoaded", () => {
     exitPortalBtn.addEventListener('click', hideExtractionModal);
   }
 });
-// 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE
+// 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE (WITH FORCE-COLOR SEVERITY)
 function listenToOperationalBroadcasts() {
   const banner = $('adminBroadcastBanner');
   const textContainer = $('broadcastMessageText');
@@ -1834,23 +1834,32 @@ function listenToOperationalBroadcasts() {
   onSnapshot(broadcastRef, (docSnap) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
+      
       if (data.active === true && data.message && data.message.trim() !== "") {
+        // 1. Force the layout display open and inject the message uppercase
         textContainer.textContent = `SYSTEM ALERT: ${data.message.toUpperCase()}`;
         banner.style.display = "flex"; 
 
-        // 🎨 DYNAMIC SEVERITY COLOR ENGINE
+        // 🎨 FORCE BACKGROUND COLORS BASED ON SUPERVISOR SEVERITY DROPDOWN
         if (data.severity === "critical") {
-          banner.style.backgroundColor = "#ef4444"; // Vivid Emergency Red
-          banner.style.color = "#ffffff";
+          // 🔴 CRITICAL ALERT: Vivid Emergency Red
+          banner.style.setProperty("background-color", "#ef4444", "important");
+          banner.style.setProperty("background", "#ef4444", "important");
+          banner.style.setProperty("color", "#ffffff", "important");
         } else if (data.severity === "warning") {
-          banner.style.backgroundColor = "#f59e0b"; // Alert Amber
-          banner.style.color = "#000000";          // Dark text for readability
+          // 🟡 WARNING ALERT: Intense Safety Amber
+          banner.style.setProperty("background-color", "#f59e0b", "important");
+          banner.style.setProperty("background", "#f59e0b", "important");
+          banner.style.setProperty("color", "#000000", "important"); // Dark text for readability contrast
         } else {
-          banner.style.backgroundColor = "#3b82f6"; // General Info Blue
-          banner.style.color = "#ffffff";
+          // 🔵 INFO ALERT: Operational Blue
+          banner.style.setProperty("background-color", "#3b82f6", "important");
+          banner.style.setProperty("background", "#3b82f6", "important");
+          banner.style.setProperty("color", "#ffffff", "important");
         }
 
       } else {
+        // 🧼 Auto-hide banner if supervisor clears it or flags it inactive
         banner.style.display = "none";  
       }
     } else {
