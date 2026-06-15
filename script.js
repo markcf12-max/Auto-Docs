@@ -275,27 +275,34 @@ function isolateWorkspaceUI(role) {
   const mainWorkspaceLayout = document.querySelector('.layout');
   const viewPlaybooksDrawerBtn = $('drawerToggle');
   const mobileActionDock = document.querySelector('.floating-action-dock');
-  const supervisorAdminPanel = $('supervisorAdminPanel'); // Telemetry Report Overlay
-  const supervisorPanel = $('supervisorPanel');           // Our New CMS Portal Panel
+  const supervisorAdminPanel = $('supervisorAdminPanel'); // Extraction Report Modal
+  const supervisorPanel = $('supervisorPanel');           // CMS Portal Panel
+  const outputPanel = document.querySelector('.outputPanel'); // Agent Note Output/History Panel
 
   if (role === "SUPERVISOR") {
-    // Keep layout structure open so they can interact with options, but hide mobile floating docks
+    // 1. Keep the workspace layout grid fully visible so the supervisor can view & choose options
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid"; 
     if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
-    if (mobileActionDock) mobileActionDock.style.display = "none";
     
-    // Auto-reveal and bypass the locking mechanics on our new content portal
+    // 2. Hide agent-specific functional panels that supervisors don't need
+    if (mobileActionDock) mobileActionDock.style.display = "none";
+    if (outputPanel) outputPanel.style.display = "none"; // Supervisors don't log cases or copy logs
+    
+    // 3. Keep the telemetry extraction overlay hidden until explicitly summoned
+    if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
+
+    // 4. Reveal our integrated CMS Editor panel
     if (supervisorPanel) {
       supervisorPanel.style.display = "block";
-      bypassLockForAuthenticatedSupervisor();
     }
   } else {
-    // Standard Agent initialization routing
+    // Standard Agent routing logic
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
     if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "flex";
+    if (outputPanel) outputPanel.style.display = "block";
     
-    // Hide all administrative capabilities from agents
+    // Ensure all admin/supervisor controls are completely hidden from agents
     if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
     if (supervisorPanel) supervisorPanel.style.display = "none";
   }
@@ -501,21 +508,26 @@ function listenToSessionState() {
   globalShiftHistory = [];
 
 if (cachedId) {
-  currentAgentId = cachedId;
-  if (cachedId === "SUPERVISOR") {
-    currentAgentName = "Operations Supervisor";
-    currentAgentLob = "MANAGEMENT";
-    
-    isolateWorkspaceUI("SUPERVISOR");
-    if ($('authModal')) $('authModal').style.display = "none";
-    if ($('logoutBtn')) $('logoutBtn').style.display = "block";
-    
-    // Automatically fill out our CMS options right when they open the page
-    if (typeof initializeSupervisorDropdowns === "function") {
-      initializeSupervisorDropdowns();
+    currentAgentId = cachedId;
+    if (cachedId === "SUPERVISOR") {
+      currentAgentName = "Operations Supervisor";
+      currentAgentLob = "MANAGEMENT";
+      
+      // 1. Configure the workspace views for supervisor actions
+      isolateWorkspaceUI("SUPERVISOR");
+      
+      if ($('authModal')) $('authModal').style.display = "none";
+      if ($('logoutBtn')) $('logoutBtn').style.display = "block";
+      
+      // 2. Instantly unlock the Matrix Editor panel and sync UI parameters
+      bypassLockForAuthenticatedSupervisor();
+      
+      // Update system status badge to show online
+      if (typeof updateSyncStatusUI === "function") {
+        updateSyncStatusUI('online');
+      }
+      return;
     }
-    return;
-  }
     
     isolateWorkspaceUI("AGENT");
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
@@ -1424,15 +1436,31 @@ function toggleDrawer(e) {
 }
 function bypassLockForAuthenticatedSupervisor() {
   isSupervisorAuthenticated = true;
+  
   const badge = document.getElementById("authBadge");
   if (badge) {
     badge.innerText = "SYSTEM ADMIN ACTIVE";
     badge.style.background = "#10b981";
   }
+  
   const container = document.getElementById("supervisorContent");
   if (container) {
     container.style.display = "block";
     container.style.opacity = "1";
   }
+  
+  // 1. Run the dropdown generation loop
   initializeSupervisorDropdowns();
+  
+  // 2. Link the primary screen's Concern Type change event to update the supervisor panel automatically
+  const primaryConcernDropdown = $("concernType");
+  if (primaryConcernDropdown) {
+    primaryConcernDropdown.addEventListener("change", (e) => {
+      const supeConcern = document.getElementById("supeConcern");
+      if (supeConcern) {
+        supeConcern.value = e.target.value;
+        syncSupervisorVocDropdown();
+      }
+    });
+  }
 }
