@@ -527,9 +527,7 @@ function bypassLockForAuthenticatedSupervisor() {
   // 3. 🎯 LINK THE CATEGORY CHANGE EVENT SECURELY IN JAVASCRIPT
   if (supeConcernDropdown) {
     supeConcernDropdown.addEventListener("change", () => {
-      // Rebuilds the VOC options list immediately when Concern Type is modified
       syncSupervisorVocDropdown();
-      // Force-trigger data loading for the initial active option in the newly generated list
       loadCurrentVocMasterData();
     });
   }
@@ -537,7 +535,6 @@ function bypassLockForAuthenticatedSupervisor() {
   // 4. 🎯 LINK THE VOC RECONCILIATION SELECTION STRAIGHT TO FIRESTORE READ ENGINE
   if (supeVocDropdown) {
     supeVocDropdown.addEventListener("change", () => {
-      // Automatically downloads the advice, link, and blueprint email spiel!
       loadCurrentVocMasterData();
     });
   }
@@ -549,7 +546,6 @@ function bypassLockForAuthenticatedSupervisor() {
       if (supeConcernDropdown) {
         supeConcernDropdown.value = e.target.value;
         syncSupervisorVocDropdown();
-        // Fire data extraction explicitly so the spiel updates automatically alongside the category match!
         loadCurrentVocMasterData();
       }
     });
@@ -562,7 +558,6 @@ function bypassLockForAuthenticatedSupervisor() {
       const selectedVocValue = e.target.value.trim();
       if (!supeVocDropdown) return;
 
-      // Ensure the supervisor concern context matches what the agent is actively looking at
       const primaryConcernVal = primaryConcernDropdown ? primaryConcernDropdown.value : "";
       if (primaryConcernVal && supeConcernDropdown && supeConcernDropdown.value !== primaryConcernVal) {
         supeConcernDropdown.value = primaryConcernVal;
@@ -574,6 +569,14 @@ function bypassLockForAuthenticatedSupervisor() {
         supeVocDropdown.value = selectedVocValue;
         loadCurrentVocMasterData();
       }
+    });
+  }
+
+  // 7. 🚀 LINK THE PUBLISH BUTTON SECURELY TO THE FIRESTORE WRITE ENGINE
+  const supePublishBtn = document.getElementById("supePublishBtn");
+  if (supePublishBtn) {
+    supePublishBtn.addEventListener("click", () => {
+      saveMasterPlaybookConfiguration();
     });
   }
 }
