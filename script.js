@@ -611,7 +611,17 @@ function syncSupervisorVocDropdown() {
 }
 
 async function loadCurrentVocMasterData() {
-  const targetVoc = document.getElementById("supeVoc").value;
+  // 1. 🧠 SMART SELECTOR: Fallback to Agent input 'voc' if Supervisor 'supeVoc' isn't available
+  const supeVocEl = document.getElementById("supeVoc");
+  const agentVocEl = document.getElementById("voc"); // Make sure this matches your agent input's ID
+  
+  let targetVoc = "";
+  if (supeVocEl && supeVocEl.value) {
+    targetVoc = supeVocEl.value;
+  } else if (agentVocEl && agentVocEl.value) {
+    targetVoc = agentVocEl.value;
+  }
+  
   const htmlInput = document.getElementById("supeHtmlContent");
   const urlInput = document.getElementById("supeUrl");
   const labelInput = document.getElementById("supeLabel");
@@ -632,13 +642,13 @@ async function loadCurrentVocMasterData() {
     if (snap.exists()) {
       const data = snap.data();
       
-      // 1. Populate the Supervisor Editor fields
+      // 2. Populate the Supervisor Editor fields (only if they are on screen)
       if(htmlInput) htmlInput.value = data.htmlContent || "";
       if(urlInput) urlInput.value = data.hyperlinkUrl || "";
       if(labelInput) labelInput.value = data.hyperlinkLabel || "";
       if(spielInput) spielInput.value = data.rawSpielText || "";
 
-      // 2. 🎯 LIVE RENDER: Inject the Advice AND the Link into the Agent View Panel (#suggestions)
+      // 3. 🎯 LIVE RENDER: Inject the Advice AND the Link into the Agent View Panel (#suggestions)
       if (suggestionsContainer) {
         const advice = data.htmlContent || "No operational advice available for this item.";
         const url = data.hyperlinkUrl || "";
@@ -663,7 +673,7 @@ async function loadCurrentVocMasterData() {
         suggestionsContainer.innerHTML = htmlContent;
       }
 
-      // 3. 🎯 LIVE RENDER: Inject the Canned Email Template below the advice
+      // 4. 🎯 LIVE RENDER: Inject the Canned Email Template below the advice
       if (spielContainer) {
         const templateText = data.rawSpielText || "";
 
@@ -1605,19 +1615,24 @@ document.addEventListener("DOMContentLoaded", () => {
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
+  // 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
   $("concernType")?.addEventListener("change", () => {
     updateVocOptions(false);
     updateSuggestions();
+    loadCurrentVocMasterData(); // 🚀 Pulls matrix data when category changes
   });
   
+  // 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
   $("voc")?.addEventListener("input", () => {
     updateOutput();
     updateSuggestions();
+    loadCurrentVocMasterData(); // 🚀 Pulls matrix data live as they type
   });
   $("voc")?.addEventListener("change", () => {
     updateOutput();
     updateSuggestions();
     saveData(true);
+    loadCurrentVocMasterData(); // 🚀 Pulls matrix data on final selection change
   });
 
   $("copyBtn")?.addEventListener("click", copyDoc);
