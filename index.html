@@ -4,37 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Documentation Suite</title>
-  
-  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div id="broadcastBanner" class="broadcast-banner" style="display: none;">
+  <div id="adminBroadcastBanner" class="broadcast-banner" style="display: none;">
     <div class="broadcast-content">
-      <i class="fas fa-bullhorn animate-bounce"></i>
-      <span id="broadcastBannerText">SYSTEM BROADCAST INJECT ACTIVE</span>
+      <i class="fas fa-bullhorn animate-bounce"></i> 
+      <span id="broadcastMessageText"></span>
     </div>
   </div>
 
-  <header class="app-header">
-    <div class="logo-branding-container">
-      <div class="dual-logo-wrapper">
-        <img src="company-logo.gif" alt="Company Animation" class="brand-logo-img">
-        <span class="logo-divider"></span>
-        <img src="brand-logo.gif" alt="Brand Animation" class="brand-logo-img">
-      </div>
-      <h1 class="app-title">Agent Documentation Suite <span class="version-tag">v2.4</span></h1>
-    </div>
+  <div id="floatingShiftBanner" class="floating-banner">
+    <i class="fas fa-exclamation-triangle"></i> LIVE OPERATIONS CHANNEL | ACTIVE MANIFEST ITEMS TRACKED IN CLOUD: (0)
+  </div>
 
-    <div class="header-sync-engine">
-      <button id="themeToggle" title="Toggle Interface Color Matrix">
+  <header class="app-header">
+    <h1>Agent Documentation Suite <span class="version-tag">v2.4</span></h1>
+    <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+      <div class="header-sync-engine">
+        <span id="syncStatus" class="sync-status-badge">● Synchronizing with cloud modules...</span>
+      </div>
+      <button id="themeToggle" title="Toggle System Contrast Mode">
         <i class="fas fa-moon"></i>
       </button>
-      <button id="logoutBtn" class="btn-logout-init">
-        <i class="fas fa-sign-out-alt"></i> Log Out
-      </button>
+      <button id="logoutBtn" class="btn-logout-init">Log Out</button>
     </div>
   </header>
 
@@ -181,38 +176,41 @@
           <i class="fas fa-user-shield"></i> Supervisor Master Matrix Content Portal
         </h3>
         <div style="display: flex; gap: 8px; align-items: center;">
+          
           <button type="button" onclick="document.getElementById('supervisorAdminPanel').style.display='flex'" style="background: #334155; color: #f8fafc; border: 1px solid #475569; font-size: 11px; padding: 5px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; font-family: inherit;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
             <i class="fas fa-file-excel" style="color: #10b981;"></i> Open Telemetry Reports
           </button>
+          
           <span id="authBadge" style="background: #ef4444; color: #fff; font-size: 11px; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s;" onclick="unlockSupervisorPortal()">LOCKED</span>
         </div>
       </div>
 
       <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
+        
         <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
           <h4 style="margin: 0 0 8px 0; color: #ef4444; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
             <i class="fas fa-bullhorn animate-pulse"></i> Live Operational Broadcast Center
           </h4>
-          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Deploy instant emergency notifications directly to all active agent banner arrays.</p>
+          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Deploy instant emergency notifications, queue spikes, or process updates directly to all active agent banner arrays.</p>
           
           <div style="margin-bottom: 12px;">
-            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
+            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here... (Will automatically shift to uppercase style on terminal screens)" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
           </div>
           
           <div style="display: flex; gap: 16px; align-items: flex-end;">
             <div style="flex: 1;">
               <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Alert Severity Level</label>
               <select id="broadcastSeveritySelect" style="width: 100%; padding: 9px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px;">
-                <option value="info">🔵 Info (Blue - General Update)</option>
-                <option value="warning">🟡 Warning (Amber - Process Reminder)</option>
-                <option value="critical">🔴 Critical (Red - Outage Emergency)</option>
+                <option value="info">🔵 Info (Blue - General System Update)</option>
+                <option value="warning">🟡 Warning (Amber - Process Reminder Alerts)</option>
+                <option value="critical">🔴 Critical (Red - Priority Emergency / Outage)</option>
               </select>
             </div>
             <div style="display: flex; gap: 8px; width: 300px;">
-              <button id="publishBroadcastBtn" style="flex: 2; background: #10b981; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit;">
+              <button id="publishBroadcastBtn" style="flex: 2; background: #10b981; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                 <i class="fas fa-paper-plane"></i> Broadcast Live
               </button>
-              <button id="clearBroadcastBtn" style="flex: 1; background: #ef4444; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit;">
+              <button id="clearBroadcastBtn" style="flex: 1; background: #ef4444; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" title="Terminate Active Announcement">
                 <i class="fas fa-trash-alt"></i> Clear
               </button>
             </div>
@@ -231,27 +229,27 @@
         </div>
 
         <div style="margin-bottom: 16px;">
-          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Operational Matrix Advice</label>
-          <textarea id="supeHtmlContent" rows="3" placeholder="• Step 1 advice..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical;"></textarea>
+          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Operational Matrix Advice (Use HTML markup like &lt;br&gt; for line splits)</label>
+          <textarea id="supeHtmlContent" rows="3" placeholder="• Step 1 advice...<br>• Step 2 advice..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
-            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Hyperlink Destination URL</label>
-            <input type="url" id="supeUrl" placeholder="https://kb.example.com/" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; box-sizing: border-box;">
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Hyperlink Destination URL (Knowledge Base Reference)</label>
+            <input type="url" id="supeUrl" placeholder="https://kb.example.com/operational-guide" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; box-sizing: border-box;">
           </div>
           <div>
-            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Custom Anchor Label Text</label>
-            <input type="text" id="supeLabel" placeholder="👉 Open Portal" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; box-sizing: border-box;">
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Custom Anchor Label Text Display</label>
+            <input type="text" id="supeLabel" placeholder="👉 Open Core Activation KB Portal" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; box-sizing: border-box;">
           </div>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <label style="color: #f59e0b; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Email Spiel Blueprint Draft Template</label>
-          <textarea id="supeSpielText" rows="6" placeholder="Dear Customer,\n\nYour case number is..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical;"></textarea>
+          <label style="color: #f59e0b; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Email Spiel Blueprint Draft Template (Supports systemic data flags like [Agent Name], [Case Number])</label>
+          <textarea id="supeSpielText" rows="6" placeholder="Dear Customer,\n\nYour case number is [Case Number]..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
         </div>
 
-        <button id="supePublishBtn" style="background: #1d4ed8; color: #fff; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-family: inherit;">
+        <button id="supePublishBtn" style="background: #1d4ed8; color: #fff; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: background 0.2s; font-family: inherit;" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1d4ed8'">
           <i class="fas fa-cloud-upload-alt"></i> Publish Master Matrix Updates Live
         </button>
       </div>
@@ -271,7 +269,7 @@
     <div class="modal-container">
       <div class="modal-header-block">
         <h2 id="authTitle">Agent Workbench Sign In</h2>
-        <p id="authSubtitle">Enter credentials to clear network gateway</p>
+        <p id="authSubtitle">Enter your credentials to clear network gateway</p>
       </div>
       <form id="authForm">
         <div class="modal-form-group">
@@ -283,7 +281,7 @@
           <input type="text" id="authName" placeholder="FIRST NAME ONLY" autocomplete="name">
         </div>
         <div id="authLobContainer" class="modal-form-group" style="display: none;">
-          <label for="authLob">Line of Business Target (LOB)</label>
+          <label for="authLob">Line of Business Account Target (LOB)</label>
           <select id="authLob">
             <option value="">Select LOB Channel</option>
             <option value="ES">ES (Enterprise Support)</option>
@@ -295,7 +293,7 @@
           <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
         </div>
         <button type="submit" id="authSubmitBtn" class="modal-submit-btn">Authorize Session</button>
-        <a href="#" id="authToggleAnchor" class="modal-toggle-link">Need a new profile? Register here</a>
+        <a href="#" id="authToggleAnchor" class="modal-toggle-link">Need a new operational profile? Register here</a>
       </form>
     </div>
   </div>
@@ -306,13 +304,13 @@
         <h3><i class="fas fa-user-shield"></i> Supervisor Telemetry Portal</h3>
         <button id="closeTelemetryBtn" class="btn-close-modal" aria-label="Close Supervisor Portal">&times;</button>
       </div>
-      <p class="supervisor-desc">Extract raw daily agent output metrics directly from the data modules.</p>
+      <p class="supervisor-desc">Compile and extract raw daily agent output metrics directly from the cloud backend data modules.</p>
       
       <div class="modal-form-group">
         <label for="adminFilterDataType">Target Report Profile Variant</label>
         <select id="adminFilterDataType">
-          <option value="CASES" selected>Detailed Case Records Workbook</option>
-          <option value="TELEMETRY">Agent Shift Metrics Tracking</option>
+          <option value="CASES" selected>Detailed Case Records Workbook (Full Form Fields Data)</option>
+          <option value="TELEMETRY">Agent Shift Metrics Tracking (Logins / Logouts / Drop Crashes)</option>
         </select>
       </div>
 
@@ -320,18 +318,18 @@
         <label for="adminFilterLob">Filter Line of Business (LOB)</label>
         <select id="adminFilterLob">
           <option value="ALL">Extract ALL Operations (ES & EBG)</option>
-          <option value="ES">ES Only</option>
-          <option value="EBG">EBG Only</option>
+          <option value="ES">ES (Enterprise Solutions) Only</option>
+          <option value="EBG">EBG (Enterprise Business Group) Only</option>
         </select>
       </div>
 
       <div class="admin-date-picker-group" style="display: flex; gap: 12px; margin-bottom: 20px;">
         <div style="flex: 1;">
-          <label for="adminFilterStartDate" style="display: block; font-size: 11px; margin-bottom: 6px; color: #94a3b8; font-weight: 600;">Start Date Boundary</label>
+          <label for="adminFilterStartDate" style="display: block; font-size: 11px; margin-bottom: 6px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Start Date Boundary</label>
           <input type="date" id="adminFilterStartDate" style="width: 100%; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px; border-radius: 4px; font-family: inherit;">
         </div>
         <div style="flex: 1;">
-          <label for="adminFilterEndDate" style="display: block; font-size: 11px; margin-bottom: 6px; color: #94a3b8; font-weight: 600;">End Date Boundary</label>
+          <label for="adminFilterEndDate" style="display: block; font-size: 11px; margin-bottom: 6px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">End Date Boundary</label>
           <input type="date" id="adminFilterEndDate" style="width: 100%; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px; border-radius: 4px; font-family: inherit;">
         </div>
       </div>
@@ -357,7 +355,7 @@
     <div class="modal-container alert-box">
       <div style="color: #f59e0b; font-size: 32px; margin-bottom: 12px;"><i class="fas fa-sign-out-alt"></i></div>
       <h3 class="alert-title">Close Operations Session?</h3>
-      <p class="alert-msg">Unsaved fast keystrokes will remain indexed to your workspace node profile.</p>
+      <p class="alert-msg">Unsaved fast keystrokes will remain indexed to your cloud active workspace node profile.</p>
       <div class="supervisor-footer" style="margin-top:0; justify-content:center;">
         <button id="confirmLogoutCancelBtn" class="btn-exit-portal" style="flex:1;">Stay Active</button>
         <button id="confirmLogoutSubmitBtn" class="btn-primary" style="flex:1; background:#ef4444;">Log Out</button>
