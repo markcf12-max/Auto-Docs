@@ -1603,8 +1603,20 @@ async function resetForm(event) {
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
-  $('logoutBtn')?.addEventListener('click', terminateAgentSession);
+  
+  // 🎯 FIXED LOGOUT BINDING: Run the comprehensive master router instead of just the agent side!
+  $('logoutBtn')?.addEventListener('click', executeLogOutRoutine);
+  
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
+
+  // 🎯 ADD THIS: Connects manual badge clicks straight to your auth modal trigger!
+  $('authBadge')?.addEventListener('click', () => {
+    // If it's locked, show the standard modal so supervisors can enter codes
+    if (currentAgentId !== "SUPERVISOR") {
+      const loginModal = $('authModal');
+      if (loginModal) loginModal.style.display = "flex";
+    }
+  });
 
   // 🎯 FIXED TELEMETRY CLOSE ACTION: Targets the correct supervisor panel container!
   $('closeTelemetryBtn')?.addEventListener('click', (e) => {
