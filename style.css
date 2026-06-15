@@ -183,7 +183,7 @@ body {
   background: rgba(239, 68, 68, 0.2);
 }
 
-/* 🌟 GLASSMORPHIC PILL STATUS ASSEMBLY */
+/* GLASSMORPHIC PILL STATUS ASSEMBLY */
 .floating-banner-pill {
   display: inline-flex;
   align-items: center;
@@ -251,7 +251,7 @@ body {
   font-weight: 700;
 }
 
-/* TOAST TOPOI DESIGN */
+/* TOAST CONTROLS */
 .toast-notification {
   position: fixed;
   top: -100px;
@@ -521,6 +521,7 @@ body {
   }
   
   .playbook-desktop-title { display: none !important; }
+  
   .drawer-internal-header {
     display: flex !important;
     justify-content: space-between;
@@ -530,13 +531,25 @@ body {
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
   }
+
+  /* ICON DRAWER CLOSE BUTTON */
   .btn-drawer-close {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    padding: 6px 12px;
-    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+  .btn-drawer-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: rotate(90deg);
   }
   
   .drawer-toggle-btn { display: flex !important; }
