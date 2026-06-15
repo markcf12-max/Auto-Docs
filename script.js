@@ -1673,14 +1673,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🌟 NO EARLY CLOSING BLOCK HERE ANYMORE! 🌟
-
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   }
 
-  const trackingFields = ["case", "concernType", "voc", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
+  // 🌟 FIXED: Removed 'concernType' and 'voc' from this loop to prevent event listener clashing!
+  const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return; 
@@ -1705,35 +1704,52 @@ document.addEventListener("DOMContentLoaded", () => {
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-// 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
+  // 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
   $("concernType")?.addEventListener("change", () => {
+    // 1. Instantly clear out the old VOC value so it doesn't pollute the new query
+    const vocInput = $("voc");
+    if (vocInput) vocInput.value = ""; 
+
+    // 2. Refresh the datalist options for the newly selected concern type
     updateVocOptions(false);
     updateOutput();
     
-    // Only attempt to pull backend master data if a VOC value is already active
-    if ($("voc")?.value) {
-      updateSuggestions();
-      loadCurrentVocMasterDataForAgent();
+    // 3. Reset the playbook panels to a clean waiting state
+    const suggestionsBox = document.getElementById('suggestions');
+    if (suggestionsBox) {
+      suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
     }
+    
+    const spielContainer = document.getElementById('playbookSpielContainer');
+    if (spielContainer) {
+      spielContainer.innerHTML = `
+        <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
+          The corresponding email spiel template will load automatically upon context verification.
+        </div>`;
+    }
+
+    saveData(true);
   });
   
   // 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
   $("voc")?.addEventListener("input", () => {
     updateOutput();
-    // Fire instantly only when both fields have text content to match
+    
+    // Fire the matrix query the exact millisecond a valid VOC choice is typed or selected
     if ($("concernType")?.value && $("voc")?.value) {
       updateSuggestions();
-      loadCurrentVocMasterDataForAgent();
+      loadCurrentVocMasterDataForAgent(); 
     }
   });
 
   $("voc")?.addEventListener("change", () => {
     updateOutput();
     saveData(true);
-    // Fire instantly only when both fields have text content to match
+    
+    // Safety check execution to ensure the matrix loads on direct mouse clicks
     if ($("concernType")?.value && $("voc")?.value) {
       updateSuggestions();
-      loadCurrentVocMasterDataForAgent();
+      loadCurrentVocMasterDataForAgent(); 
     }
   });
 
@@ -1763,7 +1779,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   listenToOperationalBroadcasts();
   listenToSessionState();
-}); // <--- 🌟 THIS is where it actually belongs! Right at the very end of everything!
+});
 /* ==========================================================================
    VALIDATORS & DRAWERS
    ========================================================================== */
