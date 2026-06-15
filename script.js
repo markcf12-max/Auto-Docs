@@ -1705,24 +1705,36 @@ document.addEventListener("DOMContentLoaded", () => {
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-  // 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
+// 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
   $("concernType")?.addEventListener("change", () => {
     updateVocOptions(false);
-    updateSuggestions();
-    loadCurrentVocMasterDataForAgent(); // 🚀 SWAPPED: Dedicated Agent-Only Flow
+    updateOutput();
+    
+    // Only attempt to pull backend master data if a VOC value is already active
+    if ($("voc")?.value) {
+      updateSuggestions();
+      loadCurrentVocMasterDataForAgent();
+    }
   });
   
   // 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
   $("voc")?.addEventListener("input", () => {
     updateOutput();
-    updateSuggestions();
-    loadCurrentVocMasterDataForAgent(); // 🚀 SWAPPED: Dedicated Agent-Only Flow
+    // Fire instantly only when both fields have text content to match
+    if ($("concernType")?.value && $("voc")?.value) {
+      updateSuggestions();
+      loadCurrentVocMasterDataForAgent();
+    }
   });
+
   $("voc")?.addEventListener("change", () => {
     updateOutput();
-    updateSuggestions();
     saveData(true);
-    loadCurrentVocMasterDataForAgent(); // 🚀 SWAPPED: Dedicated Agent-Only Flow
+    // Fire instantly only when both fields have text content to match
+    if ($("concernType")?.value && $("voc")?.value) {
+      updateSuggestions();
+      loadCurrentVocMasterDataForAgent();
+    }
   });
 
   $("copyBtn")?.addEventListener("click", copyDoc);
