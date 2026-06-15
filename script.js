@@ -579,6 +579,11 @@ function bypassLockForAuthenticatedSupervisor() {
       saveMasterPlaybookConfiguration();
     });
   }
+
+  // 8. ⚡ INSTANT UNLOCK: Force the options and live active data to populate immediately 
+  // so the supervisor doesn't have to hit refresh to see the portal contents!
+  syncSupervisorVocDropdown();
+  loadCurrentVocMasterData();
 }
 function initializeSupervisorDropdowns() {
   const supeConcern = document.getElementById("supeConcern");
@@ -673,29 +678,16 @@ async function loadCurrentVocMasterData() {
         suggestionsContainer.innerHTML = htmlContent;
       }
 
-      // 4. 🎯 LIVE RENDER: Inject the Canned Email Template below the advice
+// 4. 🎯 LIVE RENDER: Inject the Canned Email Template cleanly (No redundant buttons!)
       if (spielContainer) {
         const templateText = data.rawSpielText || "";
 
         if (templateText && templateText.trim() !== "") {
           spielContainer.innerHTML = `
-            <div style="position: relative; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-top: 8px;">
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-top: 8px;">
               <pre id="spielTextElement" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 12px; color: #cbd5e1; max-height: 200px; overflow-y: auto; line-height: 1.4;">${templateText}</pre>
-              <button type="button" id="copySpielInlineBtn" style="position: absolute; top: 8px; right: 8px; background: #334155; border: none; color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
-                <i class="fas fa-copy"></i> Copy Spiel
-              </button>
             </div>
           `;
-          
-          // Secure modular clipboard binding for the new dynamic button
-          const copyBtn = document.getElementById("copySpielInlineBtn");
-          if (copyBtn) {
-            copyBtn.addEventListener("click", () => {
-              const text = document.getElementById("spielTextElement").innerText;
-              navigator.clipboard.writeText(text);
-              alert("📋 Canned Spiel copied to workspace clipboard!");
-            });
-          }
         } else {
           spielContainer.innerHTML = `
             <div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">
