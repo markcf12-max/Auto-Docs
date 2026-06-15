@@ -785,18 +785,22 @@ function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
   
   document.querySelectorAll("input, textarea").forEach(el => {
-    // Prevent wiping authentication fields on initialize state checks
-    if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
+    // 🎯 FIXED: Explicitly protect authentication AND supervisor configuration fields from being wiped!
+    const isAuthField = el.id === 'authEmail' || el.id === 'authPassword' || el.id === 'authName';
+    const isSupeField = el.id === 'supeHtmlContent' || el.id === 'supeUrl' || el.id === 'supeLabel' || el.id === 'supeSpielText';
+
+    if (!isAuthField && !isSupeField) {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
     }
   });
+
   const select = $("concernType");
   if (select) select.selectedIndex = 0;
   updateVocOptions(false);
   globalShiftHistory = [];
 
-if (cachedId) {
+  if (cachedId) {
     currentAgentId = cachedId;
     if (cachedId === "SUPERVISOR") {
       currentAgentName = "Operations Supervisor";
