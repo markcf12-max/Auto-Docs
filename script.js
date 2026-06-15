@@ -493,6 +493,168 @@ async function handleSessionLoginTransition() {
   await pullLiveWorkspace();
 }
 
+/* ==========================================================================
+   👑 SUPERVISOR MATRIX MANAGER MODULE FUNCTIONS
+   ========================================================================== */
+
+function bypassLockForAuthenticatedSupervisor() {
+  // Directly set the global variable without re-declaring it with 'let'
+  isSupervisorAuthenticated = true;
+  
+  const badge = document.getElementById("authBadge");
+  if (badge) {
+    badge.innerText = "SYSTEM ADMIN ACTIVE";
+    badge.style.background = "#10b981";
+  }
+  
+  const container = document.getElementById("supervisorContent");
+  if (container) {
+    container.style.display = "block";
+    container.style.opacity = "1";
+  }
+  
+  // 1. Run the dropdown generation loop
+  initializeSupervisorDropdowns();
+  
+  // 2. Link the primary screen's Concern Type change event to update the supervisor panel automatically
+  const primaryConcernDropdown = $("concernType");
+  if (primaryConcernDropdown) {
+    primaryConcernDropdown.addEventListener("change", (e) => {
+      const supeConcern = document.getElementById("supeConcern");
+      if (supeConcern) {
+        supeConcern.value = e.target.value;
+        syncSupervisorVocDropdown();
+      }
+    });
+  }
+
+  // 3. ✨ LINK AGENT VOC DISCOVERY INPUT STRAIGHT TO CMS PANEL
+  // When an option is selected on the agent form, this tells the supervisor module to fetch it instantly.
+  const primaryVocInput = $("voc");
+  if (primaryVocInput) {
+    primaryVocInput.addEventListener("input", (e) => {
+      const selectedVocValue = e.target.value.trim();
+      const supeVocDropdown = document.getElementById("supeVoc");
+      
+      if (!supeVocDropdown) return;
+
+      // Scan supervisor dropdown options to see if the chosen VOC matches
+      const optionExists = Array.from(supeVocDropdown.options).some(opt => opt.value === selectedVocValue);
+      
+      if (optionExists && selectedVocValue !== "") {
+        supeVocDropdown.value = selectedVocValue;
+        
+        // Execute the Firestore retrieval engine automatically!
+        loadCurrentVocMasterData();
+      }
+    });
+  }
+}
+
+function initializeSupervisorDropdowns() {
+  const supeConcern = document.getElementById("supeConcern");
+  if (!supeConcern) return;
+  
+  supeConcern.innerHTML = `
+    <option value="">-- Choose Category --</option>
+    <option value="Technical">Technical</option>
+    <option value="Aftersales">Aftersales</option>
+    <option value="Inquiry">Inquiry</option>
+    <option value="Complaint">Complaint</option>
+  `;
+}
+
+function syncSupervisorVocDropdown() {
+  const concernVal = document.getElementById("supeConcern").value;
+  const supeVoc = document.getElementById("supeVoc");
+  if (!supeVoc) return;
+
+  // Make sure your global VOC_OPTIONS constant dictionary exists and is accessible
+  if (!concernVal || !VOC_OPTIONS || !VOC_OPTIONS[concernVal]) {
+    supeVoc.innerHTML = '<option value="">-- Select Concern First --</option>';
+    return;
+  }
+
+  const optionsList = VOC_OPTIONS[concernVal];
+  supeVoc.innerHTML = optionsList.map(v => `<option value="${v}">${v}</option>`).join("");
+  
+  loadCurrentVocMasterData();
+}
+
+async function loadCurrentVocMasterData() {
+  const targetVoc = document.getElementById("supeVoc").value;
+  const htmlInput = document.getElementById("supeHtmlContent");
+  const urlInput = document.getElementById("supeUrl");
+  const labelInput = document.getElementById("supeLabel");
+  const spielInput = document.getElementById("supeSpielText");
+  
+  if (!targetVoc) return;
+
+  const cleanDocId = targetVoc.replace(/\//g, "-");
+  
+  try {
+    const docRef = doc(firestoreDb, "playbooks", cleanDocId);
+    const snap = await getDoc(docRef);
+    
+    if (snap.exists()) {
+      const data = snap.data();
+      if(htmlInput) htmlInput.value = data.htmlContent || "";
+      if(urlInput) urlInput.value = data.hyperlinkUrl || "";
+      if(labelInput) labelInput.value = data.hyperlinkLabel || "";
+      if(spielInput) spielInput.value = data.rawSpielText || "";
+    } else {
+      if(htmlInput) htmlInput.value = "";
+      if(urlInput) urlInput.value = "";
+      if(labelInput) labelInput.value = "";
+      if(spielInput) spielInput.value = "";
+    }
+  } catch (err) {
+    console.error("Supervisor master data read fail:", err);
+  }
+}
+
+async function saveMasterPlaybookConfiguration() {
+  if (!isSupervisorAuthenticated) return;
+
+  const targetVoc = document.getElementById("supeVoc").value;
+  const targetHtml = document.getElementById("supeHtmlContent")?.value.trim();
+  const targetUrl = document.getElementById("supeUrl")?.value.trim();
+  const targetLabel = document.getElementById("supeLabel")?.value.trim();
+  const targetSpiel = document.getElementById("supeSpielText")?.value;
+
+  if (!targetVoc) {
+    alert("❌ Please select a valid target VOC matrix path profile.");
+    return;
+  }
+  if (!targetHtml) {
+    alert("❌ Operational Matrix Advice guidelines cannot remain blank.");
+    return;
+  }
+
+  const cleanDocId = targetVoc.replace(/\//g, "-");
+  
+  try {
+    const docRef = doc(firestoreDb, "playbooks", cleanDocId);
+    
+    const updateData = {
+      htmlContent: targetHtml,
+      rawSpielText: targetSpiel,
+      hyperlinkUrl: targetUrl,
+      hyperlinkLabel: targetUrl !== "" && targetLabel === "" ? "Open Related KB Reference / Link" : targetLabel
+    };
+
+    await setDoc(docRef, updateData, { merge: true });
+    alert(`🎉 Success! Master playbook entry for "${targetVoc}" updated globally.`);
+    
+    if (typeof updateSuggestions === "function") {
+      updateSuggestions();
+    }
+  } catch (err) {
+    console.error("Firestore database master layout write block:", err);
+    alert("❌ Database Write Failure: Ensure write permissions are granted.");
+  }
+}
+
 function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
   
@@ -1435,33 +1597,4 @@ function toggleDrawer(e) {
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
-function bypassLockForAuthenticatedSupervisor() {
-  isSupervisorAuthenticated = true;
-  
-  const badge = document.getElementById("authBadge");
-  if (badge) {
-    badge.innerText = "SYSTEM ADMIN ACTIVE";
-    badge.style.background = "#10b981";
-  }
-  
-  const container = document.getElementById("supervisorContent");
-  if (container) {
-    container.style.display = "block";
-    container.style.opacity = "1";
-  }
-  
-  // 1. Run the dropdown generation loop
-  initializeSupervisorDropdowns();
-  
-  // 2. Link the primary screen's Concern Type change event to update the supervisor panel automatically
-  const primaryConcernDropdown = $("concernType");
-  if (primaryConcernDropdown) {
-    primaryConcernDropdown.addEventListener("change", (e) => {
-      const supeConcern = document.getElementById("supeConcern");
-      if (supeConcern) {
-        supeConcern.value = e.target.value;
-        syncSupervisorVocDropdown();
-      }
-    });
-  }
-}
+
