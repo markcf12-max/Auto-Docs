@@ -25,6 +25,7 @@ let currentAuthMode = "LOGIN";
 let globalShiftHistory = []; 
 
 // Session Management State variables for Numeric Database Routing
+let isSupervisorAuthenticated = false;
 let currentAgentId = null; 
 let currentAgentName = "Unknown Agent"; 
 let currentAgentLob = "UNKNOWN";        
