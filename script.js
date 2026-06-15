@@ -503,7 +503,7 @@ async function handleSessionLoginTransition() {
    ========================================================================== */
 
 function bypassLockForAuthenticatedSupervisor() {
-  // Directly set the global variable without re-declaring it with 'let'
+  // 1. Establish permission verification variable state
   isSupervisorAuthenticated = true;
   
   const badge = document.getElementById("authBadge");
@@ -518,44 +518,65 @@ function bypassLockForAuthenticatedSupervisor() {
     container.style.opacity = "1";
   }
   
-  // 1. Run the dropdown generation loop
+  // 2. Build the structural categories list into the first dropdown
   initializeSupervisorDropdowns();
   
-  // 2. Link the primary screen's Concern Type change event to update the supervisor panel automatically
+  const supeConcernDropdown = document.getElementById("supeConcern");
+  const supeVocDropdown = document.getElementById("supeVoc");
+
+  // 3. 🎯 LINK THE CATEGORY CHANGE EVENT SECURELY IN JAVASCRIPT
+  if (supeConcernDropdown) {
+    supeConcernDropdown.addEventListener("change", () => {
+      // Rebuilds the VOC options list immediately when Concern Type is modified
+      syncSupervisorVocDropdown();
+      // Force-trigger data loading for the initial active option in the newly generated list
+      loadCurrentVocMasterData();
+    });
+  }
+
+  // 4. 🎯 LINK THE VOC RECONCILIATION SELECTION STRAIGHT TO FIRESTORE READ ENGINE
+  if (supeVocDropdown) {
+    supeVocDropdown.addEventListener("change", () => {
+      // Automatically downloads the advice, link, and blueprint email spiel!
+      loadCurrentVocMasterData();
+    });
+  }
+  
+  // 5. Connect primary agent Concern Type choices to reflect in CMS dashboard row automatically
   const primaryConcernDropdown = $("concernType");
   if (primaryConcernDropdown) {
     primaryConcernDropdown.addEventListener("change", (e) => {
-      const supeConcern = document.getElementById("supeConcern");
-      if (supeConcern) {
-        supeConcern.value = e.target.value;
+      if (supeConcernDropdown) {
+        supeConcernDropdown.value = e.target.value;
         syncSupervisorVocDropdown();
+        // Fire data extraction explicitly so the spiel updates automatically alongside the category match!
+        loadCurrentVocMasterData();
       }
     });
   }
 
-  // 3. ✨ LINK AGENT VOC DISCOVERY INPUT STRAIGHT TO CMS PANEL
-  // When an option is selected on the agent form, this tells the supervisor module to fetch it instantly.
+  // 6. Connect primary agent VOC manual selections to reflect in CMS inputs
   const primaryVocInput = $("voc");
   if (primaryVocInput) {
     primaryVocInput.addEventListener("input", (e) => {
       const selectedVocValue = e.target.value.trim();
-      const supeVocDropdown = document.getElementById("supeVoc");
-      
       if (!supeVocDropdown) return;
 
-      // Scan supervisor dropdown options to see if the chosen VOC matches
+      // Ensure the supervisor concern context matches what the agent is actively looking at
+      const primaryConcernVal = primaryConcernDropdown ? primaryConcernDropdown.value : "";
+      if (primaryConcernVal && supeConcernDropdown && supeConcernDropdown.value !== primaryConcernVal) {
+        supeConcernDropdown.value = primaryConcernVal;
+        syncSupervisorVocDropdown();
+      }
+
       const optionExists = Array.from(supeVocDropdown.options).some(opt => opt.value === selectedVocValue);
-      
       if (optionExists && selectedVocValue !== "") {
         supeVocDropdown.value = selectedVocValue;
-        
-        // Execute the Firestore retrieval engine automatically!
         loadCurrentVocMasterData();
       }
     });
   }
 }
-
 function initializeSupervisorDropdowns() {
   const supeConcern = document.getElementById("supeConcern");
   if (!supeConcern) return;
