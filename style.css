@@ -616,3 +616,51 @@ body {
     display: flex !important;
   }
 }
+/* ==========================================================================
+   🏢 CORPORATE BRANDING ENGINE & LOGO ALIGNMENT
+   ========================================================================== */
+
+/* 🛰️ HEADER FLEX BRANDING CONTAINER */
+.logo-branding-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dual-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 🖼️ IMAGE HANDLER FOR FLUSH WEB RENDER */
+.brand-logo-img {
+  height: 28px;        /* Keeps the header clean and professional */
+  width: auto;         /* Preserves original horizontal scale proportions */
+  object-fit: contain; /* Prevents edge clipping or accidental stretching */
+  display: block;
+  
+  /* ⚡ STABILIZATION PIPELINE FOR MOVING GIF PIXELS */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* ➖ MINIMALIST GRAPHIC DIVIDER LINE */
+.logo-divider {
+  width: 1px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.15);
+  display: inline-block;
+}
+
+/* 🏷️ VERSION TAG ALIGNMENT REFINEMENT */
+.version-tag {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
