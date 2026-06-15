@@ -212,7 +212,7 @@ async function updateSuggestions() {
   // Safely map slash paths to database document rules
   const cleanDocId = voc.replace(/\//g, "-");
 
-try {
+  try {
     const docRef = doc(firestoreDb, "playbooks", cleanDocId);
     const docSnap = await getDoc(docRef);
 
@@ -245,12 +245,9 @@ try {
         setTimeout(() => panel.classList.remove('panel-flash-active'), 600);
       }
     } else {
+      // Clean fallback if document doesn't exist in Firestore
       target.innerHTML = html + `• Follow standard processing vectors designated for ${voc}.<br><br><i style="color: var(--text-muted);">Note: Detailed cloud playbook sheet not yet compiled for this row.</i>`;
       updatePlaybookSpiel(concern, voc, ""); // Pass blank if missing to clear the old layout
-    }
-  } {
-      target.innerHTML = html + `• Follow standard processing vectors designated for ${voc}.<br><br><i style="color: var(--text-muted);">Note: Detailed cloud playbook sheet not yet compiled for this row.</i>`;
-      updatePlaybookSpiel(concern, voc, ""); // Pass blank if missing
     }
   } catch (error) {
     console.error("Playbook cloud fetch drop:", error);
