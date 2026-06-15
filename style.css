@@ -590,3 +590,29 @@ body {
     display: none !important;
   }
 }
+/* ==========================================================================
+   MOBILE ACTION DOCK RESPONSIVE CONFIGURATION
+   ========================================================================== */
+
+/* 1. Hide the bar by default on all standard desktop/laptop monitors */
+.floating-action-dock {
+  display: none !important; 
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 12px 20px;
+  gap: 12px;
+  z-index: 999;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* 2. Automatically make it visible ONLY on smaller phone or tablet screens */
+@media (max-width: 768px) {
+  .floating-action-dock {
+    display: flex !important;
+  }
+}
