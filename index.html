@@ -187,17 +187,19 @@
         </div>
       </div>
 
-      <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-          <div>
-            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
-            <select id="supeConcern" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;" onchange="syncSupervisorVocDropdown()"></select>
-          </div>
-          <div>
-            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target VOC Reference ID</label>
-            <select id="supeVoc" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;" onchange="loadCurrentVocMasterData()"></select>
-          </div>
-        </div>
+<div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div>
+      <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
+      <!-- 🧼 Cleaned: onchange removed -->
+      <select id="supeConcern" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;"></select>
+    </div>
+    <div>
+      <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target VOC Reference ID</label>
+      <!-- 🧼 Cleaned: onchange removed -->
+      <select id="supeVoc" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;"></select>
+    </div>
+  </div>
 
         <div style="margin-bottom: 16px;">
           <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Operational Matrix Advice (Use HTML markup like &lt;br&gt; for line splits)</label>
