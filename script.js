@@ -617,6 +617,10 @@ async function loadCurrentVocMasterData() {
   const labelInput = document.getElementById("supeLabel");
   const spielInput = document.getElementById("supeSpielText");
   
+  // 🎯 Grab the Agent UI containers to push live views into
+  const suggestionsContainer = document.getElementById("suggestions");
+  const spielContainer = document.getElementById("playbookSpielContainer");
+  
   if (!targetVoc) return;
 
   const cleanDocId = targetVoc.replace(/\//g, "-");
@@ -627,15 +631,78 @@ async function loadCurrentVocMasterData() {
     
     if (snap.exists()) {
       const data = snap.data();
+      
+      // 1. Populate the Supervisor Editor fields
       if(htmlInput) htmlInput.value = data.htmlContent || "";
       if(urlInput) urlInput.value = data.hyperlinkUrl || "";
       if(labelInput) labelInput.value = data.hyperlinkLabel || "";
       if(spielInput) spielInput.value = data.rawSpielText || "";
+
+      // 2. 🎯 LIVE RENDER: Inject the Advice AND the Link into the Agent View Panel (#suggestions)
+      if (suggestionsContainer) {
+        const advice = data.htmlContent || "No operational advice available for this item.";
+        const url = data.hyperlinkUrl || "";
+        const label = data.hyperlinkLabel || "Open Related KB Reference / Link";
+
+        let htmlContent = `
+          <div class="playbook-advice-block">
+            <p style="line-height: 1.5; white-space: pre-line; color: #f8fafc; margin: 0;">${advice}</p>
+          </div>
+        `;
+
+        // ✨ If a URL exists in the database record, render it beautifully here:
+        if (url && url.trim() !== "") {
+          htmlContent += `
+            <div class="playbook-link-block" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+              <a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                <i class="fas fa-external-link-alt"></i> ${label}
+              </a>
+            </div>
+          `;
+        }
+        suggestionsContainer.innerHTML = htmlContent;
+      }
+
+      // 3. 🎯 LIVE RENDER: Inject the Canned Email Template below the advice
+      if (spielContainer) {
+        const templateText = data.rawSpielText || "";
+
+        if (templateText && templateText.trim() !== "") {
+          spielContainer.innerHTML = `
+            <div style="position: relative; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; margin-top: 8px;">
+              <pre id="spielTextElement" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 12px; color: #cbd5e1; max-height: 200px; overflow-y: auto; line-height: 1.4;">${templateText}</pre>
+              <button type="button" id="copySpielInlineBtn" style="position: absolute; top: 8px; right: 8px; background: #334155; border: none; color: #fff; font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-copy"></i> Copy Spiel
+              </button>
+            </div>
+          `;
+          
+          // Secure modular clipboard binding for the new dynamic button
+          const copyBtn = document.getElementById("copySpielInlineBtn");
+          if (copyBtn) {
+            copyBtn.addEventListener("click", () => {
+              const text = document.getElementById("spielTextElement").innerText;
+              navigator.clipboard.writeText(text);
+              alert("📋 Canned Spiel copied to workspace clipboard!");
+            });
+          }
+        } else {
+          spielContainer.innerHTML = `
+            <div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">
+              The corresponding email spiel template will load automatically upon context verification.
+            </div>
+          `;
+        }
+      }
+
     } else {
+      // Document does not exist yet -> Reset everything safely
       if(htmlInput) htmlInput.value = "";
       if(urlInput) urlInput.value = "";
       if(labelInput) labelInput.value = "";
       if(spielInput) spielInput.value = "";
+      if(suggestionsContainer) suggestionsContainer.innerHTML = "No configuration found for this VOC. Create one above!";
+      if(spielContainer) spielContainer.innerHTML = `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center;">No template found.</div>`;
     }
   } catch (err) {
     console.error("Supervisor master data read fail:", err);
@@ -665,12 +732,15 @@ async function saveMasterPlaybookConfiguration() {
   try {
     const docRef = doc(firestoreDb, "playbooks", cleanDocId);
     
-    const updateData = {
-      htmlContent: targetHtml,
-      rawSpielText: targetSpiel,
-      hyperlinkUrl: targetUrl,
-      hyperlinkLabel: targetUrl !== "" && targetLabel === "" ? "Open Related KB Reference / Link" : targetLabel
-    };
+// Ensure your updateData block handles empty fields perfectly like this:
+const updateData = {
+  htmlContent: targetHtml || "",
+  rawSpielText: targetSpiel || "",
+  hyperlinkUrl: targetUrl || "",
+  hyperlinkLabel: targetUrl.trim() !== "" && (!targetLabel || targetLabel.trim() === "") 
+    ? "Open Related KB Reference / Link" 
+    : (targetLabel || "")
+};
 
     await setDoc(docRef, updateData, { merge: true });
     alert(`🎉 Success! Master playbook entry for "${targetVoc}" updated globally.`);
