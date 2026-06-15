@@ -1509,6 +1509,11 @@ function terminateAgentSession() {
 async function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
   
+  // 🎯 1. ADD THIS RIGHT HERE: Instantly wipe supervisor inputs and reset the lock state
+  if (typeof terminateSupervisorSession === "function") {
+    terminateSupervisorSession();
+  }
+
   if (currentAgentId && currentAgentId !== "SUPERVISOR") {
     const todayStr = getSystemDateString();
     try {
@@ -1542,6 +1547,10 @@ async function executeLogOutRoutine() {
   
   renderHistoryView();
   showToast("Session closed safely. Workspace locked.");
+
+  // 🎯 2. OPTIONAL ADVANCED CLEANUP: Force an instantaneous browser window reload
+  // Un-commenting this line guarantees a 100% pure blank slate for the next login!
+  window.location.reload();
 }
 
 async function resetForm(event) {
