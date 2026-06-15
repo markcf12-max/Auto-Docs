@@ -53,7 +53,6 @@
         </div>
       </div>
 
-      <!-- Searchable & Reactive VOC Layout Module -->
       <div class="form-group" id="vocFormGroup">
         <label for="voc">VOC Option Dropdown</label>
         <input 
@@ -170,6 +169,55 @@
     </section>
   </main>
 
+  <div style="max-width: 1400px; margin: 0 auto 40px auto; padding: 0 20px; box-sizing: border-box;">
+    <div id="supervisorPanel" style="background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(8px); border: 1px solid rgba(96, 165, 250, 0.2); border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        <h3 style="color: #60a5fa; margin: 0; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-family: inherit;">
+          <i class="fas fa-user-shield"></i> Supervisor Master Matrix Content Portal
+        </h3>
+        <span id="authBadge" style="background: #ef4444; color: #fff; font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s;" onclick="unlockSupervisorPortal()">LOCKED</span>
+      </div>
+
+      <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
+            <select id="supeConcern" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;" onchange="syncSupervisorVocDropdown()"></select>
+          </div>
+          <div>
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target VOC Reference ID</label>
+            <select id="supeVoc" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;" onchange="loadCurrentVocMasterData()"></select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Operational Matrix Advice (Use HTML markup like &lt;br&gt; for line splits)</label>
+          <textarea id="supeHtmlContent" rows="3" placeholder="• Step 1 advice...<br>• Step 2 advice..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Hyperlink Destination URL (Knowledge Base Reference)</label>
+            <input type="url" id="supeUrl" placeholder="https://kb.example.com/operational-guide" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Custom Anchor Label Text Display</label>
+            <input type="text" id="supeLabel" placeholder="👉 Open Core Activation KB Portal" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="color: #f59e0b; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Email Spiel Blueprint Draft Template (Supports systemic data flags like [Agent Name], [Case Number])</label>
+          <textarea id="supeSpielText" rows="6" placeholder="Dear Customer,\n\nYour case number is [Case Number]..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
+        </div>
+
+        <button onclick="saveMasterPlaybookConfiguration()" style="background: #1d4ed8; color: #fff; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: background 0.2s; font-family: inherit;" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1d4ed8'">
+          <i class="fas fa-cloud-upload-alt"></i> Publish Master Matrix Updates Live
+        </button>
+      </div>
+    </div>
+  </div>
+
   <button id="drawerToggle" class="drawer-toggle-btn">
     <i class="fas fa-book-open"></i> <span>View Playbooks</span>
   </button>
@@ -198,7 +246,7 @@
           <label for="authLob">Line of Business Account Target (LOB)</label>
           <select id="authLob">
             <option value="">Select LOB Channel</option>
-            <option value="ES">ES (Enterprise Solutions)</option>
+            <option value="ES">ES (Enterprise Support)</option>
             <option value="EBG">EBG (Enterprise Business Group)</option>
           </select>
         </div>
