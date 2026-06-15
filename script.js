@@ -1593,10 +1593,10 @@ document.addEventListener("DOMContentLoaded", () => {
   $('logoutBtn')?.addEventListener('click', terminateAgentSession);
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
 
-  // 🎯 FIXED: Sitting safely inside the initialization flow!
+  // 🎯 FIXED TELEMETRY CLOSE ACTION: Targets the correct supervisor panel container!
   $('closeTelemetryBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
-    const telemetryContainer = document.getElementById("telemetryPanel") || $('telemetryContainer');
+    const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
     if (telemetryContainer) {
       telemetryContainer.style.display = "none";
     }
