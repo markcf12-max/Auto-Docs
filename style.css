@@ -129,14 +129,6 @@ body {
   font-size: 20px;
   font-weight: 700;
 }
-.version-tag {
-  font-size: 12px;
-  padding: 2px 6px;
-  background: var(--primary);
-  color: white;
-  border-radius: 4px;
-  vertical-align: middle;
-}
 
 .header-sync-engine {
   display: flex;
@@ -305,6 +297,7 @@ body {
   transition: background-color 0.3s, border-color 0.3s;
 }
 
+@break-keys
 @keyframes panelFlashAnimation {
   0% { box-shadow: 0 0 0 0px rgba(16, 185, 129, 0.6); }
   50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
@@ -350,7 +343,7 @@ body {
 }
 
 /* ==========================================================================
-   8. SECURE SYSTEM MODALS & PORTAL PLOCKS (LOGIN INTERFACE & OVERLAYS)
+   8. SECURE SYSTEM MODALS & PORTAL BLOCKS (LOGIN INTERFACE & OVERLAYS)
    ========================================================================== */
 .modal-overlay {
   position: fixed;
@@ -358,7 +351,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 23, 42, 0.85); /* Semitransparent background layer */
+  background: rgba(15, 23, 42, 0.85);
   z-index: 99999;
   display: flex;
   justify-content: center;
@@ -437,7 +430,7 @@ body {
 }
 .modal-toggle-link:hover { text-decoration: underline; }
 
-/* Supervisor Data Portal Adaptions */
+/* Supervisor Data Portal Adaptations */
 .supervisor-overlay { background: rgba(15, 23, 42, 0.95); }
 .supervisor-container { width: 500px; }
 .supervisor-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; margin-bottom: 20px; }
@@ -457,7 +450,7 @@ body {
 .btn-alert-dismiss { width: 100%; border: none; color: white; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
 /* ==========================================================================
-   9. MOBILE COLLAPSIBLE DRAWERS & RESPONSIVE VIEWPORT PATCHES
+   9. MOBILE ACTION DOCK & RESPONSIVE VIEWPORT ENGINE
    ========================================================================== */
 .drawer-toggle-btn {
   display: none;
@@ -479,22 +472,23 @@ body {
 }
 
 .floating-action-dock {
-  display: none;
+  display: none; /* Hidden on normal wide desktops */
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
+  right: 0;
   background: var(--bg-panel);
   border-top: 1px solid var(--border-color);
   z-index: 1000;
   box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-  box-sizing: border-box;
+  padding: 10px;
 }
 
+/* 📱 CORE VIEWPORT RESPONSIVE RULES (< 1024px) */
 @media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;
-    margin-bottom: 60px;
+    margin-bottom: 80px; /* Leaves breathing space for sticky footer bar */
   }
   
   .app-header {
@@ -563,13 +557,13 @@ body {
     display: flex !important;
   }
 
+  /* Structural stabilization for sticky action tray elements */
   .floating-action-dock {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
-    width: 100% !important;
-    left: 0 !important;
-    padding: 10px;
     gap: 10px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
   }
 
   .floating-action-dock button {
@@ -590,37 +584,10 @@ body {
     display: none !important;
   }
 }
-/* ==========================================================================
-   MOBILE ACTION DOCK RESPONSIVE CONFIGURATION
-   ========================================================================== */
 
-/* 1. Hide the bar by default on all standard desktop/laptop monitors */
-.floating-action-dock {
-  display: none !important; 
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(12px);
-  padding: 12px 20px;
-  gap: 12px;
-  z-index: 999;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-}
-
-/* 2. Automatically make it visible ONLY on smaller phone or tablet screens */
-@media (max-width: 768px) {
-  .floating-action-dock {
-    display: flex !important;
-  }
-}
 /* ==========================================================================
    🏢 CORPORATE BRANDING ENGINE & LOGO ALIGNMENT
    ========================================================================== */
-
-/* 🛰️ HEADER FLEX BRANDING CONTAINER */
 .logo-branding-container {
   display: flex;
   align-items: center;
@@ -633,31 +600,29 @@ body {
   gap: 10px;
 }
 
-/* 🖼️ IMAGE HANDLER FOR FLUSH WEB RENDER */
 .brand-logo-img {
-  height: 28px;        /* Keeps the header clean and professional */
-  width: auto;         /* Preserves original horizontal scale proportions */
-  object-fit: contain; /* Prevents edge clipping or accidental stretching */
+  height: 28px;        /* Keeps header tidy and professional */
+  width: auto;         /* Preserves aspect-ratio proportions */
+  object-fit: contain; /* Prevents edge clipping or distortion */
   display: block;
   
-  /* ⚡ STABILIZATION PIPELINE FOR MOVING GIF PIXELS */
+  /* Stabilization pipeline for sharp animation renders */
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
 }
 
-/* ➖ MINIMALIST GRAPHIC DIVIDER LINE */
 .logo-divider {
   width: 1px;
   height: 18px;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: var(--border-color);
   display: inline-block;
+  opacity: 0.5;
 }
 
-/* 🏷️ VERSION TAG ALIGNMENT REFINEMENT */
 .version-tag {
   font-size: 11px;
   font-weight: 400;
-  color: #64748b;
+  color: var(--text-muted);
   background: rgba(255, 255, 255, 0.05);
   padding: 2px 6px;
   border-radius: 4px;
