@@ -693,11 +693,24 @@ async function loadCurrentVocMasterData() {
 // ==========================================
 async function loadCurrentVocMasterDataForAgent() {
   // Completely ignore supervisor elements to prevent background locks!
+  const agentConcern = document.getElementById("concernType")?.value || $('concernType')?.value;
   const agentVoc = document.getElementById("voc")?.value || $('voc')?.value;
   const suggestionsContainer = document.getElementById("suggestions");
   const spielContainer = document.getElementById("playbookSpielContainer");
   
-  if (!agentVoc || agentVoc.trim() === "") return;
+  if (!suggestionsContainer) return;
+
+  // 🎯 FIX 1: If either field is empty, actively reset the panel layout state instead of exiting silently
+  if (!agentConcern || agentConcern.trim() === "" || !agentVoc || agentVoc.trim() === "") {
+    suggestionsContainer.innerHTML = "Select Concern & VOC to view matrix playbook options...";
+    if (spielContainer) {
+      spielContainer.innerHTML = `
+        <div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">
+          The corresponding email spiel template will load automatically upon context verification.
+        </div>`;
+    }
+    return;
+  }
 
   const cleanDocId = agentVoc.replace(/\//g, "-");
   
@@ -709,22 +722,20 @@ async function loadCurrentVocMasterDataForAgent() {
       const data = snap.data();
       
       // Update Agent Drawer UI View ONLY
-      if (suggestionsContainer) {
-        const advice = data.htmlContent || "No operational advice available for this item.";
-        const url = data.hyperlinkUrl || "";
-        const label = data.hyperlinkLabel || "Open Related KB Reference / Link";
+      const advice = data.htmlContent || "No operational advice available for this item.";
+      const url = data.hyperlinkUrl || "";
+      const label = data.hyperlinkLabel || "Open Related KB Reference / Link";
 
-        let htmlContent = `<div class="playbook-advice-block"><p style="line-height: 1.5; white-space: pre-line; color: #f8fafc; margin: 0;">${advice}</p></div>`;
-        if (url && url.trim() !== "") {
-          htmlContent += `
-            <div class="playbook-link-block" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
-              <a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
-                <i class="fas fa-external-link-alt"></i> ${label}
-              </a>
-            </div>`;
-        }
-        suggestionsContainer.innerHTML = htmlContent;
+      let htmlContent = `<div class="playbook-advice-block"><p style="line-height: 1.5; white-space: pre-line; color: #f8fafc; margin: 0;">${advice}</p></div>`;
+      if (url && url.trim() !== "") {
+        htmlContent += `
+          <div class="playbook-link-block" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+            <a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; font-weight: 600; text-decoration: underline; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+              <i class="fas fa-external-link-alt"></i> ${label}
+            </a>
+          </div>`;
       }
+      suggestionsContainer.innerHTML = htmlContent;
 
       if (spielContainer) {
         const templateText = data.rawSpielText || "";
@@ -734,7 +745,8 @@ async function loadCurrentVocMasterDataForAgent() {
           </div>` : `<div style="padding: 12px; color: #94a3b8; font-style: italic; font-size: 13px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 4px;">The corresponding email spiel template will load automatically upon context verification.</div>`;
       }
     } else {
-      if (suggestionsContainer) suggestionsContainer.innerHTML = "No configuration found for this tracking element.";
+      // 🎯 FIX 2: Gracefully handle mismatched categories
+      suggestionsContainer.innerHTML = `<div style="padding: 10px; color: #94a3b8; font-style: italic;">No active matrix playbook found for "${agentVoc}".</div>`;
       if (spielContainer) spielContainer.innerHTML = "";
     }
   } catch (err) {
