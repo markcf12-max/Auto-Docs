@@ -793,7 +793,15 @@ function listenToSessionState() {
   document.querySelectorAll("input, textarea").forEach(el => {
     // 🎯 FIXED: Explicitly protect authentication AND supervisor configuration fields from being wiped!
     const isAuthField = el.id === 'authEmail' || el.id === 'authPassword' || el.id === 'authName';
-    const isSupeField = el.id === 'supeHtmlContent' || el.id === 'supeUrl' || el.id === 'supeLabel' || el.id === 'supeSpielText';
+    
+    // 🎯 UPDATED: Added broadcastTextInput to the ironclad protection array!
+    const isSupeField = (
+      el.id === 'supeHtmlContent' || 
+      el.id === 'supeUrl' || 
+      el.id === 'supeLabel' || 
+      el.id === 'supeSpielText' ||
+      el.id === 'broadcastTextInput'
+    );
 
     if (!isAuthField && !isSupeField) {
       el.value = "";
@@ -964,28 +972,53 @@ async function pullLiveWorkspace() {
   }
 }
 
-function listenToOperationalBroadcasts() {
-  const banner = $('adminBroadcastBanner');
-  const textContainer = $('broadcastMessageText');
-  if (!banner || !textContainer) return;
+// 🚀 DEPLOY LIVE BROADCAST TO ALL AGENT TERMINALS (UPDATED TO MATCH SYSTEM_MANAGEMENT)
+async function executeLiveBroadcastPublish() {
+  const message = $('broadcastTextInput').value.trim();
+  // Note: Your current agent banner doesn't handle severity background shifts yet,
+  // but we pass it anyway in case you want to style it later!
+  const severity = $('broadcastSeveritySelect').value; 
 
-  const broadcastRef = doc(firestoreDb, "system_management", "broadcast_alerts");
+  if (!message) {
+    showSystemAlert("Empty Message", "Please input text content before initiating a live system broadcast.");
+    return;
+  }
 
-  onSnapshot(broadcastRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data.active === true && data.message && data.message.trim() !== "") {
-        textContainer.textContent = `SYSTEM ALERT: ${data.message.toUpperCase()}`;
-        banner.style.display = "flex"; 
-      } else {
-        banner.style.display = "none";  
-      }
-    } else {
-      banner.style.display = "none";
-    }
-  }, (error) => {
-    console.warn("Broadcast listener network drop:", error);
-  });
+  try {
+    // 🎯 TARGET MATCHED: Writing directly to the document your agents are streaming!
+    const broadcastRef = doc(firestoreDb, "system_management", "broadcast_alerts");
+    await setDoc(broadcastRef, {
+      message: message,
+      active: true, // 🎯 FIELD MATCHED: Sets data.active to true
+      severity: severity,
+      broadcasted_by: currentAgentName || "Operations Supervisor",
+      updated_at: Date.now()
+    }, { merge: true }); // Merge ensures we don't accidentally blow away other hidden system settings
+
+    showToast("Live operational broadcast deployed successfully!");
+  } catch (error) {
+    console.error("Broadcast deployment error:", error);
+    showSystemAlert("Database Sync Failure", "Failed to push announcement payload to agents.");
+  }
+}
+
+// 🧼 WIPE THE ACTIVE BROADCAST FROM ALL AGENT SCREENS INSTANTLY
+async function executeClearActiveBroadcast() {
+  try {
+    // 🎯 TARGET MATCHED: Tells the agent listener to shut down the display toggle
+    const broadcastRef = doc(firestoreDb, "system_management", "broadcast_alerts");
+    await setDoc(broadcastRef, {
+      message: "",
+      active: false, // 🎯 FIELD MATCHED: Triggers the else clause to hide banner
+      updated_at: Date.now()
+    }, { merge: true });
+
+    $('broadcastTextInput').value = "";
+    showToast("Active system broadcast terminated.");
+  } catch (error) {
+    console.error("Broadcast termination error:", error);
+    showSystemAlert("Database Sync Failure", "Failed to clear the active broadcast banner.");
+  }
 }
 
 /* ==========================================================================
@@ -1610,14 +1643,21 @@ document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   
-  // 🎯 FIXED LOGOUT BINDING: Run the comprehensive master router instead of just the agent side!
+  // 🎯 MASTER LOGOUT ROUTINE
   $('logoutBtn')?.addEventListener('click', executeLogOutRoutine);
   
+  // 📊 TELEMETRY REPORT EXTRACTION
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
 
-  // 🎯 ADD THIS: Connects manual badge clicks straight to your auth modal trigger!
+  // 📢 LIVE OPERATIONAL BROADCAST BINDINGS
+  $('publishBroadcastBtn')?.addEventListener('click', executeLiveBroadcastPublish);
+  $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
+
+  // 📝 MASTER PLAYBOOK MATRIX EDITOR BINDING
+  $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
+
+  // 🎯 PORTAL UNLOCK SECURITY BADGE
   $('authBadge')?.addEventListener('click', () => {
-    // If it's locked, show the standard modal so supervisors can enter codes
     if (currentAgentId !== "SUPERVISOR") {
       const loginModal = $('authModal');
       if (loginModal) loginModal.style.display = "flex";
