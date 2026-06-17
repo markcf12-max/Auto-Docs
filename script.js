@@ -1696,12 +1696,24 @@ document.addEventListener("DOMContentLoaded", () => {
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
-  $('authBadge')?.addEventListener('click', () => {
-    if (currentAgentId !== "SUPERVISOR") {
-      const loginModal = $('authModal');
-      if (loginModal) loginModal.style.display = "flex";
-    }
-  });
+// 🛡️ UPGRADED: Telemetry Portal & Supervisor Access Gate
+  const authBadgeBtn = document.getElementById('authBadge') || $('authBadge');
+  if (authBadgeBtn) {
+    authBadgeBtn.addEventListener('click', () => {
+      const loginModal = document.getElementById('authModal') || $('authModal');
+      const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+
+      if (currentAgentId !== "SUPERVISOR") {
+        // If they aren't authorized yet, prompt the login interface
+        if (loginModal) loginModal.style.display = "flex";
+      } else {
+        // 🎯 FIX: If they ARE a Supervisor, instantly display the Telemetry panel!
+        if (telemetryContainer) {
+          telemetryContainer.style.display = "flex";
+        }
+      }
+    });
+  }
 
   $('closeTelemetryBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
