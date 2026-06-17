@@ -359,6 +359,9 @@ function toggleAuthMode(e) {
   }
 }
 
+/* ==========================================================================
+   AUTHENTICATION ENTRYWAY & INTEGRATED SESSION STATE ROUTINES
+   ========================================================================== */
 async function handleAuthSubmission(e) {
   e.preventDefault();
   const agentId = $('authEmail').value.trim();
@@ -367,7 +370,7 @@ async function handleAuthSubmission(e) {
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
-// STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
+  // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
       currentAgentId = "SUPERVISOR";
@@ -391,7 +394,11 @@ async function handleAuthSubmission(e) {
         bypassLockForAuthenticatedSupervisor();
       }
       
-      // showSupervisorPanel(); // Commenting this out prevents it from popping up automatically
+      // 🎯 MODAL INTERCEPT: Dynamically clear out login banners/reminders for admin accounts
+      if (typeof window.evaluateShiftCheckInModal === "function") {
+        window.evaluateShiftCheckInModal();
+      }
+      
       showToast("Supervisor Portal Engaged.");
       return;
     } else {
@@ -440,7 +447,7 @@ async function handleAuthSubmission(e) {
           }, { merge: true });
 
           isolateWorkspaceUI("AGENT");
-          handleSessionLoginTransition();
+          await handleSessionLoginTransition();
           showToast(`Identity verified. ${currentAgentLob} Session Clear!`);
         } else {
           showSystemAlert("Authorization Failure", "Incorrect password entered for this security gateway.");
@@ -514,6 +521,11 @@ async function handleSessionLoginTransition() {
   updateVocOptions(true);
   updateOutput();
   updateSuggestions();
+  
+  // 🎯 THE FIX: Instantly evaluate and dismiss/sync the checklist modal logic upon successful shift login
+  if (typeof window.evaluateShiftCheckInModal === "function") {
+    window.evaluateShiftCheckInModal();
+  }
   
   await pullLiveWorkspace();
 }
@@ -1696,69 +1708,80 @@ document.addEventListener("DOMContentLoaded", () => {
     updateThemeIcon(true);
   }
 
-  // 🎯 CORE CONFIG: Permanent Upper-Left Pulsing Orb Integration
-  const pulsingOrb = document.getElementById('upperLeftPulsingOrb') || $('upperLeftPulsingOrb');
-  if (pulsingOrb) {
-    const orbIcon = pulsingOrb.querySelector('i');
+// ==========================================================================
+  // 🎛️ FIXED: Permanent Upper-Left Pulsing Orb Integration
+  // ==========================================================================
+  const mainSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+  if (mainSystemOrb) {
+    // Ensure the icon matches your high-priority specification
+    const orbIcon = mainSystemOrb.querySelector('i');
     if (orbIcon) {
-      orbIcon.className = "fas fa-folder-open";
+      orbIcon.className = "fas fa-folder-open meta-orb-icon";
     }
     
-    // Set the initial visual state to indicate an unread shift status deck
-    pulsingOrb.className = "meta-orb-trigger login-unread";
+    // Set initial login unread state (Blue-to-Amber breathe loop)
+    mainSystemOrb.className = "meta-orb-trigger login-unread";
     
-    pulsingOrb.addEventListener('click', (e) => {
+    // Core Click Trigger Repair
+    mainSystemOrb.addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleDrawer();
-      // Smoothly transition orb to standard monitoring mode upon initial click
-      pulsingOrb.className = "meta-orb-trigger all-clear";
+      
+      // Target the exact drawer ID from your modern HTML markup
+      const drawer = document.getElementById('metaTrackerDrawer');
+      if (drawer) {
+        drawer.classList.toggle('drawer-open');
+        
+        // Update the Orb pulse animation to the calm monitoring state
+        mainSystemOrb.className = "meta-orb-trigger all-clear";
+      }
     });
   }
 
-// ==========================================================================
-  // 🎯 FIXED & ISOLATED: Morning Briefing Center Glassmorphic Modal Interceptor
+  // ==========================================================================
+  // 🎯 FIXED: Morning Briefing Center Modal & Gatekeeping Logic
   // ==========================================================================
   const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
   
-  // Using a uniquely scoped local name to bypass constant reassignment rules
-  const targetSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+  // Wrap this setup in a reusable utility function so your Auth State Listener
+  // can re-evaluate the modal visibility right when the agent signs in!
+  window.evaluateShiftCheckInModal = function() {
+    if (!glassmorphicReminderModal) return;
 
-  if (glassmorphicReminderModal) {
-    // Structural view gate check based on live authorization states
-    if (currentAgentId || localStorage.getItem("active_agent_session_id")) {
+    // Gate Check: Hidden if supervisor, logged-in agent, or session storage exists
+    if (currentAgentId === "SUPERVISOR" || currentAgentId || localStorage.getItem("active_agent_session_id")) {
       glassmorphicReminderModal.style.display = 'none';
-      if (targetSystemOrb) targetSystemOrb.className = "meta-orb-trigger all-clear";
+      if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger all-clear";
     } else {
+      // Show only when no authenticated credentials exist on boot
       glassmorphicReminderModal.style.display = 'flex';
+      glassmorphicReminderModal.style.opacity = '1';
     }
+  };
 
-    // MATCHED HOOK: Triggers drawer sliding event sequence instantly from Briefing Note
-    const trackerActionBtn = document.getElementById('dismissReminderBtn');
-    if (trackerActionBtn) {
-      trackerActionBtn.addEventListener('click', () => {
-        // Apply smooth CSS opacity drop matching transition rules
-        glassmorphicReminderModal.style.opacity = '0';
-        glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
+  // Run immediately on boot to handle pre-cached sessions
+  window.evaluateShiftCheckInModal();
+
+  // MATCHED HOOK: "Got it, View Tracker" Button Execution Path
+  const trackerActionBtn = document.getElementById('dismissReminderBtn');
+  if (trackerActionBtn) {
+    trackerActionBtn.addEventListener('click', () => {
+      // Smooth visual transition fade out
+      glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
+      glassmorphicReminderModal.style.opacity = '0';
+      
+      setTimeout(() => {
+        glassmorphicReminderModal.style.display = 'none';
         
-        setTimeout(() => {
-          glassmorphicReminderModal.style.display = 'none';
-          
-          // Command target drawer selector layer to slide into view
-          const drawer = document.getElementById('metaTrackerDrawer');
-          if (drawer && !drawer.classList.contains('drawer-open')) {
-            // Trigger your custom open logic function safe-check
-            if (typeof toggleDrawer === "function") {
-              toggleDrawer();
-            } else {
-              drawer.classList.add('drawer-open');
-            }
-          }
-          
-          // Shift system tracking beacon indicator cleanly to active observation mode
-          if (targetSystemOrb) targetSystemOrb.className = "meta-orb-trigger all-clear";
-        }, 350);
-      });
-    }
+        // Slide out the specific Priority Case Monitor drawer
+        const drawer = document.getElementById('metaTrackerDrawer');
+        if (drawer) {
+          drawer.classList.add('drawer-open');
+        }
+        
+        // Stabilize tracking beacon dot state
+        if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger all-clear";
+      }, 350);
+    });
   }
 
   // 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
