@@ -1838,10 +1838,136 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🎯 CORE CONFIG: Real-time Pressure Form Logic continues below normally...
+  // ==========================================================================
+  // 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
+  // ==========================================================================
+  const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
+  trackingFields.forEach(id => {
+    const el = $(id);
+    if (!el) return; 
+    
+    const freshElement = el.cloneNode(true);
+    el.parentNode.replaceChild(freshElement, el);
+
+    freshElement.addEventListener("input", (e) => { 
+      if (id === "wocas" && document.getElementById('trackerSystemErrorToggle')?.checked) {
+        const rawValue = e.target.value;
+        const cleanLog = rawValue.replace(/at\s+.*\(?:\d+:\d+\)?/g, '').replace(/[\r\n]+/g, '\n').trim();
+        if (rawValue !== cleanLog) {
+          e.target.value = cleanLog;
+        }
+      }
+      updateOutput(); 
+      updateSuggestions(); 
+      saveData(false); 
+    });
+    
+    freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
+    freshElement.addEventListener("blur", () => { saveData(true); });
+  });
+
+  $('historyContainer')?.addEventListener('click', (e) => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    const action = button.getAttribute('data-action');
+    const index = parseInt(button.getAttribute('data-index'), 10);
+    
+    if (action === 'recopy') {
+      loadHistoryItem(index);
+    } else if (action === 'delete') {
+      deleteHistoryItem(index);
+    }
+  });
+
+  $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
+  $("min")?.addEventListener("input", (e) => validateMinField(e.target));
+
+  $("concernType")?.addEventListener("change", () => {
+    const vocInput = $("voc");
+    if (vocInput) vocInput.value = ""; 
+
+    updateVocOptions(false);
+    updateOutput();
+    
+    const suggestionsBox = document.getElementById('suggestions');
+    if (suggestionsBox) {
+      suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
+    }
+    
+    const spielContainer = document.getElementById('playbookSpielContainer');
+    if (spielContainer) {
+      spielContainer.innerHTML = `
+        <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
+          The corresponding email spiel template will load automatically upon context verification.
+        </div>`;
+    }
+    saveData(true);
+  });
+
+  $("voc")?.addEventListener("input", () => {
+    updateOutput();
+    if ($("concernType")?.value && $("voc")?.value) {
+      updateSuggestions(); 
+    }
+  });
+
+  $("voc")?.addEventListener("change", () => {
+    updateOutput();
+    saveData(true);
+    if ($("concernType")?.value && $("voc")?.value) {
+      updateSuggestions(); 
+    }
+  });
+
+  $("copyBtn")?.addEventListener("click", copyDoc);
+  $("mobileCopyBtn")?.addEventListener("click", copyDoc);
+  $("resetBtn")?.addEventListener("click", resetForm);
+  $("mobileResetBtn")?.addEventListener("click", resetForm);
+
+  $("drawerToggle")?.addEventListener("click", toggleDrawer);
+  $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
+  $("themeToggle")?.addEventListener("click", toggleTheme);
+
+  $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
+  $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
+
+  // 📊 Supervisor Telemetry Panel Inline Action Triggers
+  const closeSupervisorBtn = document.getElementById('closeSupervisorBtn');
+  const exitPortalBtn = document.getElementById('exitPortalBtn');
+  const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
+
+  const hideExtractionModal = () => {
+    if (supervisorAdminPanel) {
+      supervisorAdminPanel.style.display = 'none';
+    }
+  };
+
+  if (closeSupervisorBtn) closeSupervisorBtn.addEventListener('click', hideExtractionModal);
+  if (exitPortalBtn) exitPortalBtn.addEventListener('click', hideExtractionModal);
+
+  // Global background window listener hooks
+  document.addEventListener('click', (e) => {
+    const drawer = $('playbookPanel');
+    if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
+      drawer.classList.remove('drawer-open');
+      const toggleBtn = $('drawerToggle');
+      if (toggleBtn) {
+        if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
+        if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
+      }
+    }
+  });
+
+  // Call persistent downstream network data feeds
+  listenToOperationalBroadcasts();
+  if (typeof listenToSessionState === "function") listenToSessionState();
+
+}); // 🎯 COMPLETE CONTAINER CLOSURE WITHOUT SYNTAX DROPS
+
+
 /* ==========================================================================
-   VALIDATORS & DRAWERS
-   ========================================================================== */
+   VALIDATORS & DRAWERS (Global Access Helper Routines)
+========================================================================== */
 function validateCaseField(el) {
   if (!el) return;
   const val = el.value.trim().toUpperCase();
@@ -1888,30 +2014,7 @@ function toggleDrawer(e) {
   }
 }
 
-/* ==========================================================================
-   📊 SUPERVISOR TELEMETRY MODAL CONTROLS
-   ========================================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-  const closeSupervisorBtn = document.getElementById('closeSupervisorBtn');
-  const exitPortalBtn = document.getElementById('exitPortalBtn');
-  const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
-
-  const hideExtractionModal = () => {
-    if (supervisorAdminPanel) {
-      supervisorAdminPanel.style.display = 'none';
-    }
-  };
-
-  if (closeSupervisorBtn) {
-    closeSupervisorBtn.addEventListener('click', hideExtractionModal);
-  }
-  
-  if (exitPortalBtn) {
-    exitPortalBtn.addEventListener('click', hideExtractionModal);
-  }
-});
-
-// 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE (WITH FORCE-COLOR SEVERITY)
+// 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE
 function listenToOperationalBroadcasts() {
   const banner = $('adminBroadcastBanner');
   const textContainer = $('broadcastMessageText');
@@ -1940,7 +2043,6 @@ function listenToOperationalBroadcasts() {
           banner.style.setProperty("background", "#3b82f6", "important");
           banner.style.setProperty("color", "#ffffff", "important");
         }
-
       } else {
         banner.style.display = "none";  
       }
