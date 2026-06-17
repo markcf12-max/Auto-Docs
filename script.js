@@ -1558,9 +1558,6 @@ async function executeSupervisorExtraction() {
 }
 
 /* ==========================================================================
-   RESET & LOGOUT UTILITIES
-   ========================================================================== */
-/* ==========================================================================
    AGENTS TERMINATION GATEWAYS & WORKSPACE STATE CLEANERS
    ========================================================================== */
 function terminateAgentSession() {
@@ -1749,11 +1746,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 // ==========================================================================
-  // 🎯 FIXED & ISOLATED: Upper-Left Pulsing Orb & Briefing Integration
+  // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
   // ==========================================================================
-  // Using a completely unique local identifier to bypass the constant variable assignment crash
+  // Using locally unique variable names to guarantee zero constant variable assignment crashes
   const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
   const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
+  const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
+  const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
 
   if (shiftCheckInOrb) {
     const orbIcon = shiftCheckInOrb.querySelector('i');
@@ -1767,10 +1766,20 @@ document.addEventListener("DOMContentLoaded", () => {
     // Core Click Trigger Repair
     shiftCheckInOrb.addEventListener('click', (e) => {
       e.stopPropagation();
-      const drawer = document.getElementById('metaTrackerDrawer');
-      if (drawer) {
-        drawer.classList.toggle('drawer-open');
+      if (metaTrackerDrawerSubPane) {
+        metaTrackerDrawerSubPane.classList.toggle('drawer-open');
         shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+      }
+    });
+  }
+
+  // 🎯 THE CRITICAL REPAIR: Hook up the HTML template '×' close button
+  if (closeMetaDrawerHeaderBtn) {
+    closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (metaTrackerDrawerSubPane) {
+        metaTrackerDrawerSubPane.classList.remove('drawer-open');
       }
     });
   }
@@ -1811,9 +1820,8 @@ document.addEventListener("DOMContentLoaded", () => {
       
       setTimeout(() => {
         glassmorphicReminderModal.style.display = 'none';
-        const drawer = document.getElementById('metaTrackerDrawer');
-        if (drawer) {
-          drawer.classList.add('drawer-open');
+        if (metaTrackerDrawerSubPane) {
+          metaTrackerDrawerSubPane.classList.add('drawer-open');
         }
         if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }, 350);
