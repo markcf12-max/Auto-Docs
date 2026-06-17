@@ -1715,8 +1715,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 🎯 CORE CONFIG: Morning Briefing Center Glassmorphic Modal Interceptor
-  const glassmorphicReminderModal = document.getElementById('glassmorphicLoginReminderModal');
+// ==========================================================================
+  // 🎯 CORE REPAIR: Morning Briefing Center Glassmorphic Modal Interceptor
+  // ==========================================================================
+  const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
+  const pulsingOrb = document.getElementById('metaTrackerOrb');
+
   if (glassmorphicReminderModal) {
     // Structural view gate check based on live authorization states
     if (currentAgentId || localStorage.getItem("active_agent_session_id")) {
@@ -1726,31 +1730,30 @@ document.addEventListener("DOMContentLoaded", () => {
       glassmorphicReminderModal.style.display = 'flex';
     }
 
-    // INTERCEPTOR ACTION 1: Open Left Workspace Drawer immediately from Briefing Note
-    const trackerActionBtn = glassmorphicReminderModal.querySelector('.action-view-tracker') || document.getElementById('goToTrackerBtn');
+    // MATCHED HOOK: Triggers drawer sliding event sequence instantly from Briefing Note
+    const trackerActionBtn = document.getElementById('dismissReminderBtn');
     if (trackerActionBtn) {
       trackerActionBtn.addEventListener('click', () => {
+        // Apply smooth CSS opacity drop matching transition rules
         glassmorphicReminderModal.style.opacity = '0';
+        glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
+        
         setTimeout(() => {
           glassmorphicReminderModal.style.display = 'none';
-          const drawer = $('playbookPanel');
+          
+          // Command target drawer selector layer to slide into view
+          const drawer = document.getElementById('metaTrackerDrawer');
           if (drawer && !drawer.classList.contains('drawer-open')) {
-            toggleDrawer();
+            // Trigger your custom open logic function safe-check
+            if (typeof toggleDrawer === "function") {
+              toggleDrawer();
+            } else {
+              drawer.classList.add('drawer-open');
+            }
           }
+          
+          // Shift system tracking beacon indicator cleanly to active observation mode
           if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger all-clear";
-        }, 350);
-      });
-    }
-
-    // INTERCEPTOR ACTION 2: Smooth dismiss modal, leaving the Orb pulsing as a silent guide
-    const acknowledgeCloseBtn = glassmorphicReminderModal.querySelector('.action-acknowledge-dismiss') || document.getElementById('acknowledgeBriefingBtn');
-    if (acknowledgeCloseBtn) {
-      acknowledgeCloseBtn.addEventListener('click', () => {
-        glassmorphicReminderModal.style.opacity = '0';
-        setTimeout(() => {
-          glassmorphicReminderModal.style.display = 'none';
-          // Explicitly keep the Orb flash active to act as persistent memory
-          if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger login-unread";
         }, 350);
       });
     }
