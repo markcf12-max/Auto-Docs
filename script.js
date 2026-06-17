@@ -1716,18 +1716,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 // ==========================================================================
-  // 🎯 FIXED: Morning Briefing Center Glassmorphic Modal Interceptor
+  // 🎯 FIXED & ISOLATED: Morning Briefing Center Glassmorphic Modal Interceptor
   // ==========================================================================
   const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
   
-  // Removed 'const' keyword here to prevent the identifier collision error
-  pulsingOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+  // Using a uniquely scoped local name to bypass constant reassignment rules
+  const targetSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
 
   if (glassmorphicReminderModal) {
     // Structural view gate check based on live authorization states
     if (currentAgentId || localStorage.getItem("active_agent_session_id")) {
       glassmorphicReminderModal.style.display = 'none';
-      if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger all-clear";
+      if (targetSystemOrb) targetSystemOrb.className = "meta-orb-trigger all-clear";
     } else {
       glassmorphicReminderModal.style.display = 'flex';
     }
@@ -1755,7 +1755,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           
           // Shift system tracking beacon indicator cleanly to active observation mode
-          if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger all-clear";
+          if (targetSystemOrb) targetSystemOrb.className = "meta-orb-trigger all-clear";
         }, 350);
       });
     }
