@@ -1782,9 +1782,14 @@ document.addEventListener("DOMContentLoaded", () => {
     
     shiftCheckInOrb.className = "meta-orb-trigger login-unread";
     
+// ==========================================================================
+// 🛡️ UNIFIED BLUEPRINT ENGINE: TOGGLE ORB EVENT HANDLER
+// ==========================================================================
+
 // Core Orb Event Handler (Orb Stays Visible & Toggles Drawer)
 shiftCheckInOrb.addEventListener('click', (e) => {
   e.stopPropagation();
+  
   if (metaTrackerDrawerSubPane) {
     const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
     
@@ -1795,8 +1800,7 @@ shiftCheckInOrb.addEventListener('click', (e) => {
       shiftCheckInOrb.className = "meta-orb-trigger all-clear";
     }
   }
-});
-    });
+}); // 🎯 Balanced and closed cleanly. No trailing or stray syntax loops!
   }
 
   // Hook up the close '×' action inside the PiP header to return the Orb back to duty
