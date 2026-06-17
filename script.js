@@ -1771,37 +1771,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (shiftCheckInOrb) {
-    // Add internal transitions for clean show/hide tracking animations
-    shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-    
-    const orbIcon = shiftCheckInOrb.querySelector('i');
-    if (orbIcon) {
-      orbIcon.className = "fas fa-folder-open meta-orb-icon";
-    }
-    
-    shiftCheckInOrb.className = "meta-orb-trigger login-unread";
-    
 // ==========================================================================
-// 🛡️ UNIFIED BLUEPRINT ENGINE: TOGGLE ORB EVENT HANDLER
+// 🛡️ UNIFIED BLUEPRINT ENGINE: TOGGLE ORB SETUP & EVENT HANDLER
 // ==========================================================================
 
-// Core Orb Event Handler (Orb Stays Visible & Toggles Drawer)
-shiftCheckInOrb.addEventListener('click', (e) => {
-  e.stopPropagation();
+if (shiftCheckInOrb) {
+  // Add internal transitions for clean show/hide tracking animations
+  shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
   
-  if (metaTrackerDrawerSubPane) {
+  const orbIcon = shiftCheckInOrb.querySelector('i');
+  if (orbIcon) {
+    orbIcon.className = "fas fa-folder-open meta-orb-icon";
+  }
+  
+  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+} // 🎯 FIX: This safely closes the initial 'if (shiftCheckInOrb)' block!
+
+
+// Core Orb Event Handler (Orb Stays Visible & Toggles Drawer)
+if (shiftCheckInOrb && metaTrackerDrawerSubPane) {
+  shiftCheckInOrb.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevents click from bubbling up and breaking other elements
+    
     const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
     
     if (isOpen) {
       shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
-      // Optional: Add a custom class to make the orb spin or dim while open
     } else {
+      // If it's no longer open, restore it to all-clear or login-unread based on your preference
       shiftCheckInOrb.className = "meta-orb-trigger all-clear";
     }
-  }
-}); // 🎯 Balanced and closed cleanly. No trailing or stray syntax loops!
-  }
+  }); // Balanced and closed cleanly.
+}
 
   // Hook up the close '×' action inside the PiP header to return the Orb back to duty
   if (closeMetaDrawerHeaderBtn) {
