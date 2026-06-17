@@ -677,116 +677,56 @@ body.dark-theme .meta-orb-badge,
 }
 
 /* ==========================================================================
-   11. PICTURE-IN-PICTURE (PIP) FLOATING LOGIN REMINDER (NON-BLOCKING)
+   💾 PICTURE-IN-PICTURE (PIP) FLOATING WORKSPACE TRACKER PANELS
    ========================================================================== */
-
-/* 🎯 THE FIX: Remove full-screen size, push to bottom-right, and remove pointer events from the backdrop */
-.login-reminder-overlay {
+#metaTrackerDrawer {
   position: fixed;
   bottom: 24px;
-  right: 24px;
-  width: auto;
-  height: auto;
-  background: transparent;      /* Wiped out the screen tint layer */
-  backdrop-filter: none;       /* Wiped the screen-wide blur that trapped inputs */
-  -webkit-backdrop-filter: none;
-  z-index: 9999;               /* Safe elevation, but below your highest app layers */
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-end;
-  opacity: 1;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;        /* 🚀 CRITICAL: Clicks pass right through the empty space to the app! */
-}
-
-/* 🎯 THE FIX: Handle sizing directly on the container card, and restore pointer events inside it */
-.login-reminder-container {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;              /* Snugged up padding slightly for a smaller footprint */
-  width: 360px;               /* Clean fixed width for a true mini-deck style */
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); /* Stronger shadow so it pops off the background fields */
-  text-align: center;
-  pointer-events: auto;       /* 🚀 CRITICAL: Restores click control *only* inside the actual panel card */
+  left: 24px;                  /* Pins it right underneath your upper-left orb area nicely */
+  width: 380px;
+  height: 500px;
+  max-height: 80vh;            /* Prevents it from clipping small monitors */
   
-  /* Add high-end glassmorphism styling to the panel itself */
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* ==========================================================================
-   🎨 DESIGN OPTIMIZATIONS FOR MINI FOOTPRINT
-   ========================================================================== */
-.reminder-icon-shield {
-  width: 48px;                /* Downscaled from 64px */
-  height: 48px;               /* Downscaled from 64px */
-  background: rgba(37, 99, 235, 0.1);
-  color: var(--primary);
-  border-radius: 50%;
+  /* Modern styling that fits over documentation seamlessly */
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;            /* Adjusted icon weight */
-  margin: 0 auto 12px auto;
+  flex-direction: column;
+  z-index: 9000;               /* Ensures it floats safely above inputs without trapping global modals */
+  
+  /* Off-screen starting position for the slide-in animation */
+  transform: translateX(-450px) scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
 }
 
-.login-reminder-container h2 {
-  font-size: 16px;            /* Downscaled from 20px */
-  font-weight: 800;
-  letter-spacing: -0.4px;
-  color: var(--text-main);
-  margin-bottom: 6px;
+/* 🚀 THE PIP ACTIVATE TRIGGER STATE */
+#metaTrackerDrawer.drawer-open {
+  transform: translateX(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;        /* Restores internal button clicks */
 }
 
-.login-reminder-container p {
-  font-size: 12px;            /* Downscaled from 13px */
-  line-height: 1.4;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-}
-
-.reminder-checklist {
-  text-align: left;
-  background: var(--bg-app);
-  border: 1px dashed var(--border-color);
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  list-style: none;
-}
-.reminder-checklist li {
-  font-size: 11px;            /* Snug text sizing for scannability */
-  font-weight: 600;
-  color: var(--text-main);
-  margin-bottom: 8px;
+/* Internal Layout Optimization for the PiP Body Container */
+#metaTrackerDrawer .drawer-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-}
-.reminder-checklist li:last-child { 
-  margin-bottom: 0; 
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.btn-reminder-acknowledge {
-  width: 100%;
-  background: var(--primary);
-  color: #ffffff;
-  border: none;
-  padding: 10px 16px;
-  border-radius: var(--radius);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.btn-reminder-acknowledge:hover {
-  background: var(--primary-hover);
+#metaTrackerDrawer .drawer-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;            /* Keeps scroll container locked strictly inside the PiP box */
 }
 
 /* ==========================================================================
