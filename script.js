@@ -1746,90 +1746,122 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 // ==========================================================================
-// 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
-// ==========================================================================
-const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
-const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
-const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
-const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
+  // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
+  // ==========================================================================
+  const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+  const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
+  const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
+  const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
 
-if (shiftCheckInOrb) {
-  const orbIcon = shiftCheckInOrb.querySelector('i');
-  if (orbIcon) {
-    orbIcon.className = "fas fa-folder-open meta-orb-icon";
+  // Helper routine to safely handle UI display toggles for the floating orb
+  function setOrbVisibility(isVisible) {
+    if (!shiftCheckInOrb) return;
+    if (isVisible) {
+      shiftCheckInOrb.style.display = "flex";
+      setTimeout(() => {
+        shiftCheckInOrb.style.opacity = "1";
+        shiftCheckInOrb.style.transform = "scale(1)";
+      }, 20);
+    } else {
+      shiftCheckInOrb.style.opacity = "0";
+      shiftCheckInOrb.style.transform = "scale(0.8)";
+      setTimeout(() => {
+        shiftCheckInOrb.style.display = "none";
+      }, 200); // Smooth CSS transition delay matching
+    }
   }
-  
-  // Set initial tracking state configuration profile
-  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
-  
-  // Core Click Trigger Repair -> Toggles our custom PiP window mode!
-  shiftCheckInOrb.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (metaTrackerDrawerSubPane) {
-      metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-      shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-    }
-  });
-}
 
-// Hook up the HTML template '×' close button inside the floating tracker panel
-if (closeMetaDrawerHeaderBtn) {
-  closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (metaTrackerDrawerSubPane) {
-      metaTrackerDrawerSubPane.classList.remove('drawer-open');
-    }
-  });
-}
-
-// Hide reminder instantly when visiting the website raw (pre-login)
-if (glassmorphicReminderModal) {
-  glassmorphicReminderModal.style.display = 'none';
-  glassmorphicReminderModal.style.opacity = '0';
-}
-
-// Define the Global Shift Trigger Wrapper (Kept full screen/center as you requested!)
-window.evaluateShiftCheckInModal = function() {
-  if (!glassmorphicReminderModal) return;
-
-  if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
-    glassmorphicReminderModal.style.display = 'none';
-    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-  } else {
-    glassmorphicReminderModal.style.display = 'flex';
-    setTimeout(() => {
-      glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
-      glassmorphicReminderModal.style.opacity = '1';
-    }, 50);
+  if (shiftCheckInOrb) {
+    // Add internal transitions for clean show/hide tracking animations
+    shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
     
-    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+    const orbIcon = shiftCheckInOrb.querySelector('i');
+    if (orbIcon) {
+      orbIcon.className = "fas fa-folder-open meta-orb-icon";
+    }
+    
+    shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+    
+    // Core Orb Event Handler
+    shiftCheckInOrb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (metaTrackerDrawerSubPane) {
+        metaTrackerDrawerSubPane.classList.toggle('drawer-open');
+        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+        
+        // 🎯 FIX: Hide the Orb when the Priority Tracker window expands open
+        if (metaTrackerDrawerSubPane.classList.contains('drawer-open')) {
+          setOrbVisibility(false);
+        }
+      }
+    });
   }
-};
 
-// Connect the "Got it, View Tracker" Action Event
-const trackerActionBtn = document.getElementById('dismissReminderBtn');
-if (trackerActionBtn) {
-  trackerActionBtn.addEventListener('click', (e) => {
-    if (e) {
+  // Hook up the close '×' action inside the PiP header to return the Orb back to duty
+  if (closeMetaDrawerHeaderBtn) {
+    closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-    }
-
-    glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
-    glassmorphicReminderModal.style.opacity = '0';
-    
-    localStorage.setItem("shift_reminder_cleared", "true");
-    
-    setTimeout(() => {
-      glassmorphicReminderModal.style.display = 'none';
       if (metaTrackerDrawerSubPane) {
-        metaTrackerDrawerSubPane.classList.add('drawer-open');
+        metaTrackerDrawerSubPane.classList.remove('drawer-open');
+        
+        // 🎯 FIX: Bring the Orb back smoothly once the panel window is closed
+        setOrbVisibility(true);
       }
+    });
+  }
+
+  if (glassmorphicReminderModal) {
+    glassmorphicReminderModal.style.display = 'none';
+    glassmorphicReminderModal.style.opacity = '0';
+  }
+
+  // Global Shift Trigger Wrapper
+  window.evaluateShiftCheckInModal = function() {
+    if (!glassmorphicReminderModal) return;
+
+    if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
+      glassmorphicReminderModal.style.display = 'none';
+      setOrbVisibility(true);
       if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-    }, 350);
-  });
-}
+    } else {
+      glassmorphicReminderModal.style.display = 'flex';
+      setOrbVisibility(true); // Ensure Orb is primed behind modal setup
+      setTimeout(() => {
+        glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
+        glassmorphicReminderModal.style.opacity = '1';
+      }, 50);
+      
+      if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+    }
+  };
+
+  // Connect the "Got it, View Tracker" Action Event
+  const trackerActionBtn = document.getElementById('dismissReminderBtn');
+  if (trackerActionBtn) {
+    trackerActionBtn.addEventListener('click', (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
+      glassmorphicReminderModal.style.opacity = '0';
+      
+      localStorage.setItem("shift_reminder_cleared", "true");
+      
+      setTimeout(() => {
+        glassmorphicReminderModal.style.display = 'none';
+        if (metaTrackerDrawerSubPane) {
+          metaTrackerDrawerSubPane.classList.add('drawer-open');
+          
+          // 🎯 FIX: Hide the Orb here as well since the view modal directly deploys the drawer window
+          setOrbVisibility(false);
+        }
+        if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+      }, 350);
+    });
+  }
 
 // 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
 const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
