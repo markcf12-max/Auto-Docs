@@ -677,17 +677,49 @@ body.dark-theme .meta-orb-badge,
 }
 
 /* ==========================================================================
-   💾 PICTURE-IN-PICTURE (PIP) FLOATING WORKSPACE TRACKER PANELS
+   💾 11. FULL-SCREEN CENTERED LOGIN REMINDER MODAL (KEEPS AS IS)
    ========================================================================== */
-#metaTrackerDrawer {
+.login-reminder-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100000; /* Stays securely on top of everything on initial load */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.login-reminder-container {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+
+/* ==========================================================================
+   📺 12. FIXED PICTURE-IN-PICTURE (PIP) FLOATING WORKSPACE DRAWER
+   ========================================================================== */
+.glass-tracker-drawer {
   position: fixed;
   bottom: 24px;
-  left: 24px;                  /* Pins it right underneath your upper-left orb area nicely */
+  left: 24px;                  /* Anchors it cleanly below your upper-left orb */
   width: 380px;
   height: 500px;
-  max-height: 80vh;            /* Prevents it from clipping small monitors */
+  max-height: 80vh;            /* Prevents clipping on smaller agent monitors */
   
-  /* Modern styling that fits over documentation seamlessly */
+  /* High-end Frosted Glassmorphism */
   background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -697,72 +729,39 @@ body.dark-theme .meta-orb-badge,
   
   display: flex;
   flex-direction: column;
-  z-index: 9000;               /* Ensures it floats safely above inputs without trapping global modals */
-  
-  /* Off-screen starting position for the slide-in animation */
+  z-index: 9000;               /* Below the login modal, but floats perfectly over input fields */
+  overflow: hidden;            /* Stops data from bleeding out of the panel card */
+  padding: 20px;
+  box-sizing: border-box;
+
+  /* Off-screen closed starting state (Slide-in effect) */
   transform: translateX(-450px) scale(0.95);
   opacity: 0;
   pointer-events: none;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
 }
 
-/* 🚀 THE PIP ACTIVATE TRIGGER STATE */
-#metaTrackerDrawer.drawer-open {
+/* Dark theme variance check optimization override */
+.dark-mode .glass-tracker-drawer, 
+body.dark-theme .glass-tracker-drawer {
+  background: rgba(15, 23, 42, 0.97);
+}
+
+/* 🚀 THE PIP ACTIVATE ENGINE STATE TRIGGER */
+.glass-tracker-drawer.drawer-open {
   transform: translateX(0) scale(1);
   opacity: 1;
-  pointer-events: auto;        /* Restores internal button clicks */
+  pointer-events: auto;        /* Restores button clicking inside the panel card */
 }
 
-/* Internal Layout Optimization for the PiP Body Container */
-#metaTrackerDrawer .drawer-header {
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-#metaTrackerDrawer .drawer-body {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;            /* Keeps scroll container locked strictly inside the PiP box */
-}
-
-/* ==========================================================================
-   12. PICTURE-IN-PICTURE STICKY WINDOW & ARCHIVE DECKS
-   ========================================================================== */
-.glass-tracker-drawer {
-  position: fixed;
-  top: 0;
-  left: -360px;
-  width: 340px;
-  height: 100vh;
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 15px 0 35px rgba(0, 0, 0, 0.3);
-  z-index: 9989;
-  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 24px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-.dark-mode .glass-tracker-drawer, body.dark-theme .glass-tracker-drawer {
-  background: rgba(15, 23, 42, 0.65);
-}
-.glass-tracker-drawer.drawer-open {
-  left: 0 !important;
-}
-
+/* Sub-panel component alignments */
 .glass-drawer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
 }
+
 .glass-drawer-header h3 {
   font-size: 15px;
   font-weight: 700;
@@ -770,6 +769,14 @@ body.dark-theme .meta-orb-badge,
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
+}
+
+.glass-drawer-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 4px 0 12px 0;
 }
 
 .tracker-scroll-area {
