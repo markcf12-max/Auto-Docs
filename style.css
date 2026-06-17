@@ -589,14 +589,14 @@ body {
 .logo-divider { width: 1px; height: 18px; background-color: var(--border-color); display: inline-block; opacity: 0.5; }
 
 /* ==========================================================================
-   10. MODERN ADAPTIVE FLOATING ORB (THEME INTERLINKED MATRIX)
+   10. MODERN ADAPTIVE FLOATING ORB (PERMANENT TOP-LEFT PULSE ENGINE)
    ========================================================================== */
 .meta-orb-trigger {
   position: fixed;
-  bottom: 85px;
-  right: 25px;
-  width: 54px;
-  height: 54px;
+  top: 24px;
+  left: 24px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -605,23 +605,27 @@ body {
   z-index: 9990;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   
-  /* ☀️ Light Theme Base Parameters: High Contrast Dark Slate Silhouette */
-  background: linear-gradient(135deg, #1e293b, #334155);
+  /* Permanent Pulsing Configuration */
+  animation: permanentOrbPulse 2.5s infinite ease-in-out;
+  
+  /* ☀️ Light Theme Base: High Contrast Dark Slate Structure */
+  background: linear-gradient(135deg, #0f172a, #1e293b);
   color: #ffffff;
-  box-shadow: 0 4px 20px rgba(30, 41, 59, 0.25), 0 0 0 3px #0f172a;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.3), 0 0 0 4px rgba(15, 23, 42, 0.1);
 }
 
 .meta-orb-trigger:hover {
   transform: scale(1.08);
+  animation-play-state: paused; /* Locks rotation & sizing frames smoothly on hover */
 }
 
 .meta-orb-icon {
   font-size: 20px;
-  color: #ffffff;
+  color: #3b82f6; /* Contrasts distinctly over dark gradients */
   transition: transform 0.3s ease;
 }
 .meta-orb-trigger:hover .meta-orb-icon {
-  transform: rotate(15deg) scale(1.1);
+  transform: rotate(25deg) scale(1.15);
 }
 
 .meta-orb-badge {
@@ -640,45 +644,145 @@ body {
   justify-content: center;
   padding: 0 4px;
   border: 2px solid #ffffff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
 }
 
-/* 🌙 Dynamic Override Matrix: Flips look safely based on layout themes */
+/* 🌙 Dark Mode Dynamic Theme Adaptive Switch */
 .dark-mode .meta-orb-trigger,
 body.dark-theme .meta-orb-trigger,
 [data-theme="dark"] .meta-orb-trigger {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: #ffffff;
-  box-shadow: 0 4px 25px rgba(37, 99, 235, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 4px 25px rgba(37, 99, 235, 0.4), 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
-
+.dark-mode .meta-orb-icon,
+body.dark-theme .meta-orb-icon,
+[data-theme="dark"] .meta-orb-icon {
+  color: #ffffff;
+}
 .dark-mode .meta-orb-badge,
 body.dark-theme .meta-orb-badge,
 [data-theme="dark"] .meta-orb-badge {
-  border-color: #1e293b;
+  border-color: #0f172a;
 }
 
-/* Dynamic State Animations: Retained for Active Pipeline Cycles */
-.meta-orb-trigger.active-tracking {
-  animation: orbGlowPulse 3s infinite ease-in-out;
-}
-.meta-orb-trigger.sla-near-deadline {
-  animation: orbUrgentPulse 1.5s infinite ease-in-out;
-}
-
-@keyframes orbGlowPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(59, 130, 246, 0.7), 0 0 0 3px rgba(255,255,255,0.9); }
-}
-@keyframes orbUrgentPulse {
-  0%, 100% { transform: scale(1); background: linear-gradient(135deg, #d97706, #f59e0b); }
-  50% { transform: scale(1.08); background: linear-gradient(135deg, #b45309, #d97706); box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), 0 0 0 3px #ffffff; }
+/* Continuous Soft Expansion Engine Keyframes */
+@keyframes permanentOrbPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.3), 0 0 0 4px rgba(37, 99, 235, 0.15);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 28px rgba(37, 99, 235, 0.45), 0 0 0 8px rgba(37, 99, 235, 0.3);
+  }
 }
 
 /* ==========================================================================
-   11. PICTURE-IN-PICTURE STICKY WINDOW & ARCHIVE DECKS
+   11. CENTER FLOATING LOGIN REMINDER MODAL (LAUNCH MECHANISM)
    ========================================================================== */
-/* Frosted Glass Floating Left Drawer Panel */
+.login-reminder-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px); /* Clear app background separation blur layer */
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100000; /* Overrides global layout frames securely */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.login-reminder-container {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.reminder-icon-shield {
+  width: 64px;
+  height: 64px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 16px auto;
+}
+
+.login-reminder-container h2 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.login-reminder-container p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.reminder-checklist {
+  text-align: left;
+  background: var(--bg-app);
+  border: 1px dashed var(--border-color);
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  list-style: none;
+}
+.reminder-checklist li {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.reminder-checklist li:last-child { 
+  margin-bottom: 0; 
+}
+.reminder-checklist li .dot-inc { 
+  font-size: 14px; 
+}
+
+.btn-reminder-acknowledge {
+  width: 100%;
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-reminder-acknowledge:hover {
+  background: var(--primary-hover);
+}
+
+/* ==========================================================================
+   12. PICTURE-IN-PICTURE STICKY WINDOW & ARCHIVE DECKS
+   ========================================================================== */
 .glass-tracker-drawer {
   position: fixed;
   top: 0;
@@ -701,7 +805,7 @@ body.dark-theme .meta-orb-badge,
   background: rgba(15, 23, 42, 0.65);
 }
 .glass-tracker-drawer.drawer-open {
-  left: 0;
+  left: 0 !important;
 }
 
 .glass-drawer-header {
@@ -726,7 +830,6 @@ body.dark-theme .meta-orb-badge,
   padding-right: 4px;
 }
 
-/* Custom slim modern scrollbars */
 .tracker-scroll-area::-webkit-scrollbar,
 .history-box::-webkit-scrollbar,
 .horizontal-folder-deck::-webkit-scrollbar {
@@ -740,7 +843,6 @@ body.dark-theme .meta-orb-badge,
   border-radius: 10px;
 }
 
-/* Micro-Cards for Running Cases */
 .micro-tracker-card {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -762,7 +864,15 @@ body.dark-theme .meta-orb-badge,
   border-color: rgba(239, 68, 68, 0.25);
 }
 
-/* Completely Non-Blocking Floating Workspace Panel */
+/* ⚠️ Error log variance class styling for the drawer list tracker entries */
+.micro-tracker-card.type-error-log {
+  border-left: 4px solid #ef4444; 
+  background: rgba(239, 68, 68, 0.01);
+}
+.micro-tracker-card.type-error-log .banner-track-label {
+  color: #ef4444 !important;
+}
+
 .sticky-preview-window {
   position: fixed;
   bottom: 24px;
@@ -800,7 +910,6 @@ body.dark-theme .meta-orb-badge,
   white-space: pre-wrap;
 }
 
-/* Horizontal Folder Container Elements */
 .horizontal-folder-deck {
   display: flex;
   align-items: center;
@@ -835,7 +944,6 @@ body.dark-theme .meta-orb-badge,
   font-weight: 600;
 }
 
-/* Modern Compact [+] Button */
 .btn-vault-expand-node {
   flex: 0 0 auto;
   width: 32px;
@@ -857,7 +965,6 @@ body.dark-theme .meta-orb-badge,
   border-color: var(--primary);
 }
 
-/* Grid Layout Matrix inside the Expansion Vault overlay view */
 .vault-grid-layout {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
