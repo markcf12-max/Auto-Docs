@@ -818,8 +818,8 @@ body.dark-theme .meta-orb-badge,
 #metaTrackerDrawer {
   position: fixed !important;
   bottom: 24px !important;
-  left: 24px !important;       /* Anchors it safely to the bottom left */
-  top: auto !important;        /* Wipes out any old top positions */
+  left: 24px !important;        /* Anchors it safely to the bottom left */
+  top: auto !important;         /* Wipes out any old top positions */
   width: 380px !important;
   height: 500px !important;
   max-height: 80vh !important;
@@ -834,7 +834,7 @@ body.dark-theme .meta-orb-badge,
   
   display: flex !important;
   flex-direction: column !important;
-  z-index: 9000 !important;    /* Safely floats over active document workspace entries */
+  z-index: 9000 !important;     /* Safely floats over active document workspace entries */
   overflow: hidden !important;
   padding: 20px !important;
   box-sizing: border-box !important;
@@ -878,23 +878,27 @@ body.dark-theme .meta-orb-badge,
   margin: 4px 0 12px 0;
 }
 
-.tracker-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  margin-top: 15px;
-  padding-right: 4px;
+/* 🎯 THE FIX: Explicitly target the ID of the internal Scroll Workspace */
+#metaTrackerQueueBox.tracker-scroll-area {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  margin-top: 15px !important;
+  padding-right: 4px !important;
+  display: block !important;
 }
 
-.tracker-scroll-area::-webkit-scrollbar,
+/* Ultra-Clean Modern Micro Scrollbars */
+#metaTrackerQueueBox::-webkit-scrollbar,
 .history-box::-webkit-scrollbar,
 .horizontal-folder-deck::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
-.tracker-scroll-area::-webkit-scrollbar-thumb,
+
+#metaTrackerQueueBox::-webkit-scrollbar-thumb,
 .history-box::-webkit-scrollbar-thumb,
 .horizontal-folder-deck::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--border-color, rgba(255, 255, 255, 0.2));
   border-radius: 10px;
 }
 
