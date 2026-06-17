@@ -9,9 +9,6 @@
 </head>
 <body>
 
-  <!-- ==========================================================================
-       🆕 HIGH-PRIORITY FLOATING CENTER LOGIN REMINDER MODAL
-       ========================================================================== -->
   <div class="login-reminder-overlay" id="loginReminderScreen">
     <div class="login-reminder-container">
       <div class="reminder-icon-shield">
@@ -31,17 +28,12 @@
     </div>
   </div>
 
-  <!-- ==========================================================================
-       MODERNIZED FLOATING SYSTEMS LAYER (THEME ADAPTIVE CONFIGURATION)
-       ========================================================================== -->
-  <!-- 🆕 UPDATED: PERMANENT PULSING ORB LAUNCHER (Positioned via CSS Engine) -->
   <div id="metaTrackerOrb" class="meta-orb-trigger" title="Toggle Monitoring Case Tracker">
     <i class="fas fa-folder-open meta-orb-icon"></i>
     <span id="metaOrbBadgeCount" class="meta-orb-badge">3</span>
   </div>
 
-  <!-- 🧪 FROSTED GLASS BACKGROUND SLIDE-OUT TRACKER PANEL -->
-  <div id="metaTrackerDrawer" class="glass-tracker-drawer">
+  <div id="metaTrackerDrawer">
     <div class="glass-drawer-header">
       <h3><i class="fas fa-satellite-dish animate-pulse"></i> Priority Case Monitor</h3>
       <button id="closeMetaDrawerBtn" class="btn-close-modal">&times;</button>
@@ -49,11 +41,9 @@
     <p class="glass-drawer-desc">Active timers sync across workstations. Alerts prompt on screen upon reaching zero.</p>
     
     <div id="metaTrackerQueueBox" class="tracker-scroll-area">
-      <!-- Items populate here dynamically via JavaScript -->
-    </div>
+      </div>
   </div>
 
-  <!-- 🖼️ NON-BLOCKING STICKY PICTURE-IN-PICTURE PREVIEW WINDOW -->
   <div id="stickyPreviewWindow" class="sticky-preview-window" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <span id="stickyPreviewHeaderTitle" style="font-size: 12px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">[Case Review]</span>
@@ -65,9 +55,6 @@
     </button>
   </div>
 
-  <!-- ==========================================================================
-       MAIN SYSTEM CORE WORKSPACE
-       ========================================================================= -->
   <div id="adminBroadcastBanner" class="broadcast-banner" style="display: none;">
     <div class="broadcast-content">
       <i class="fas fa-bullhorn animate-bounce"></i> 
@@ -134,7 +121,6 @@
           list="vocOptions" 
           placeholder="Choose a Concern Type above first..." 
           autocomplete="off"
-          onfocus="this.value='';"
           inputmode="search"
         >
         <datalist id="vocOptions">
@@ -192,7 +178,6 @@
         <textarea id="wocas" rows="2"></textarea>
       </div>
 
-      <!-- ⏱️ TIMED FOLLOW-UP TRACKER CONFIGURATION SUB-PANE -->
       <div class="form-group monitor-config-subpane">
         <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
           <input type="checkbox" id="enableCaseTrackingCheck" style="width: auto; cursor: pointer;">
@@ -245,23 +230,17 @@
           </div>
         </div>
 
-        <!-- 🔍 LIVE HISTORY KEYWORD SEARCH WRAPPER -->
         <div style="margin-bottom: 10px; position: relative;">
           <input type="text" id="shiftHistorySearchInput" placeholder="Search entries by ID, client name, or keywords...">
           <span class="history-search-icon"><i class="fas fa-search"></i></span>
         </div>
 
-        <!-- Current Active Session History Output Logs Container -->
         <div id="historyContainer" class="history-box"></div>
 
-        <!-- 📁 HORIZONTAL CALENDAR MATRIX ARCHIVE TRACKS (LAST 3 DAYS + EXTENSION VAULT) -->
         <div style="margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 10px;">
           <h5 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.3px;">Historical Archives</h5>
           <div class="horizontal-folder-deck" style="display: flex; gap: 8px; align-items: center;">
-            <!-- Expanded Expand/Collapse Compact '+' node button -->
             <button id="expandVaultBtn" class="btn-vault-expand-node" title="Open Complete Monthly Archive Vault" style="width: 32px; height: 32px; font-weight: bold; font-size: 16px; cursor: pointer;">+</button>
-            
-            <!-- Horizontal Deck Target for Last 3 days populated dynamically via JS -->
             <div id="horizontalSliderTarget" style="display: flex; gap: 8px; align-items: center;"></div>
           </div>
         </div>
@@ -316,7 +295,7 @@
           <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Deploy instant emergency notifications, queue spikes, or process updates directly to all active agent banner arrays.</p>
           
           <div style="margin-bottom: 12px;">
-            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here... (Will automatically shift to uppercase style on terminal screens)" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
+            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
           </div>
           
           <div style="display: flex; gap: 16px; align-items: flex-end;">
@@ -342,23 +321,23 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
             <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
-            <select id="supeConcern" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;"></select>
+            <select id="supeConcern" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;"><option value="">Select Concern</option></select>
           </div>
           <div>
             <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target VOC Reference ID</label>
-            <select id="supeVoc" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;"></select>
+            <select id="supeVoc" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit;"><option value="">Select VOC</option></select>
           </div>
         </div>
 
         <div style="margin-bottom: 16px;">
-          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Operational Matrix Advice (Use HTML markup like &lt;br&gt; for line splits)</label>
-          <textarea id="supeHtmlContent" rows="3" placeholder="• Step 1 advice...<br>• Step 2 advice..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
+          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Operational Matrix Advice</label>
+          <textarea id="supeHtmlContent" rows="3" placeholder="• Step 1 advice..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
-            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Hyperlink Destination URL (Knowledge Base Reference)</label>
-            <input type="url" id="supeUrl" placeholder="https://kb.example.com/operational-guide" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; box-sizing: border-box;">
+            <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Hyperlink Destination URL</label>
+            <input type="url" id="supeUrl" placeholder="https://kb.example.com" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; box-sizing: border-box;">
           </div>
           <div>
             <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Custom Anchor Label Text Display</label>
@@ -367,8 +346,8 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Email Spiel Blueprint Draft Template (Supports systemic data flags like [Agent Name], [Case Number])</label>
-          <textarea id="supeSpielText" rows="6" placeholder="Dear Customer,\n\nYour case number is [Case Number]..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
+          <label style="color: #60a5fa; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 600;">Email Spiel Blueprint Draft Template</label>
+          <textarea id="supeSpielText" rows="6" placeholder="Dear Customer..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; line-height: 1.4;"></textarea>
         </div>
 
         <button id="supePublishBtn" style="background: #1d4ed8; color: #fff; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: background 0.2s; font-family: inherit;">
@@ -462,10 +441,6 @@
     </div>
   </div>
 
-  <!-- ==========================================================================
-       VAULT REPOSITORY SUB-MODALS OVERLAYS
-       ========================================================================== -->
-  <!-- 📂 MONTHLY ARCHIVE EXPANSION SELECTION VAULT OVERLAY -->
   <div id="archiveVaultModal" class="modal-overlay" style="display: none;">
     <div class="modal-container" style="width: 460px; background: var(--bg-panel); border: 1px solid var(--border-color);">
       <div class="supervisor-header-row" style="margin-bottom: 12px; padding-bottom: 8px;">
@@ -473,13 +448,10 @@
         <button id="closeVaultModalBtn" class="btn-close-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
       </div>
       <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 10px 0;">Select a calendar transaction run folder below to review logged profiles from that specific shift date.</p>
-      
-      <!-- Vault Grid Target Placement -->
       <div id="vaultGridPlacement" class="vault-grid-layout"></div>
     </div>
   </div>
 
-  <!-- 📄 INNER DATE RECORDS FOLDER DIRECTORY POPUP SUB-MODAL -->
   <div id="folderLogsListModal" class="modal-overlay" style="display: none; z-index: 100000;">
     <div class="modal-container" style="width: 440px; background: var(--bg-panel); border: 1px solid var(--border-color);">
       <div class="supervisor-header-row" style="margin-bottom: 10px; padding-bottom: 6px;">
@@ -487,8 +459,7 @@
         <button id="closeFolderListModalBtn" class="btn-close-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
       </div>
       <div id="folderLogsItemsListContainer" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
-        <!-- Dynamic mini item summaries inject here -->
-      </div>
+        </div>
     </div>
   </div>
 
