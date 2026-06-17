@@ -813,12 +813,12 @@ body.dark-theme .meta-orb-badge,
 
 
 /* ==========================================================================
-   📺 12. FIXED PICTURE-IN-PICTURE (PIP) FLOATING WORKSPACE DRAWER
+   📺 12. FIXED PICTURE-IN-PICTURE (PIP) FLOATING WORKSPACE DRAWER (REPAIRED)
    ========================================================================== */
 .glass-tracker-drawer {
   position: fixed;
   bottom: 24px;
-  left: 24px;                  /* Anchors it cleanly below your upper-left orb */
+  left: 24px;                  /* Anchors the panel beautifully to the bottom left */
   width: 380px;
   height: 500px;
   max-height: 80vh;            /* Prevents clipping on smaller agent monitors */
@@ -833,13 +833,13 @@ body.dark-theme .meta-orb-badge,
   
   display: flex;
   flex-direction: column;
-  z-index: 9000;               /* Below the login modal, but floats perfectly over input fields */
-  overflow: hidden;            /* Stops data from bleeding out of the panel card */
+  z-index: 9000;               /* Below global modals, but floats over standard input views */
+  overflow: hidden;
   padding: 20px;
   box-sizing: border-box;
 
-  /* Off-screen closed starting state (Slide-in effect) */
-  transform: translateX(-450px) scale(0.95);
+  /* 🎯 THE FIX: Use clean spatial values instead of conflicting absolute offsets */
+  transform: translateY(50px) scale(0.95);
   opacity: 0;
   pointer-events: none;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
@@ -851,11 +851,11 @@ body.dark-theme .glass-tracker-drawer {
   background: rgba(15, 23, 42, 0.97);
 }
 
-/* 🚀 THE PIP ACTIVATE ENGINE STATE TRIGGER */
+/* 🚀 THE FIXED PIP ACTIVATE ENGINE STATE TRIGGER */
 .glass-tracker-drawer.drawer-open {
-  transform: translateX(0) scale(1);
-  opacity: 1;
-  pointer-events: auto;        /* Restores button clicking inside the panel card */
+  transform: translateY(0) scale(1) !important; /* 🎯 Brings it into clear view smoothly */
+  opacity: 1 !important;
+  pointer-events: auto !important;             /* Restores click paths inside the widget */
 }
 
 /* Sub-panel component alignments */
