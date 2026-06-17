@@ -15,7 +15,7 @@
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 
-.dark-mode {
+.dark-mode, body.dark-theme, [data-theme="dark"] {
   --bg-app: #0f172a;
   --bg-panel: #1e293b;
   --text-main: #f8fafc;
@@ -130,7 +130,7 @@ body {
   width: fit-content;
   letter-spacing: 0.5px;
 }
-.dark-mode .version-tag { 
+.dark-mode .version-tag, body.dark-theme .version-tag { 
   background: rgba(255,255,255,0.06); 
 }
 
@@ -163,7 +163,7 @@ body {
 #themeToggle:hover {
   background: rgba(0,0,0,0.05);
 }
-.dark-mode #themeToggle:hover {
+.dark-mode #themeToggle:hover, body.dark-theme #themeToggle:hover {
   background: rgba(255,255,255,0.05);
 }
 
@@ -197,7 +197,7 @@ body {
   transition: all 0.3s ease;
 }
 
-.dark-mode .floating-banner-pill {
+.dark-mode .floating-banner-pill, body.dark-theme .floating-banner-pill {
   background: rgba(30, 41, 59, 0.45);
   border-color: rgba(96, 165, 250, 0.15);
   backdrop-filter: blur(12px);
@@ -214,7 +214,7 @@ body {
   font-weight: 700;
   font-size: 11px;
 }
-.dark-mode .banner-track-label {
+.dark-mode .banner-track-label, body.dark-theme .banner-track-label {
   color: #60a5fa;
 }
 
@@ -541,7 +541,7 @@ body {
     font-size: 14px !important;
     padding: 0 !important;
     line-height: 0 !important;
-    text-indent: 0 !important; /* Strips any historical displacement rules */
+    text-indent: 0 !important;
     overflow: hidden !important;
     transition: all 0.2s ease;
   }
@@ -589,51 +589,35 @@ body {
 .logo-divider { width: 1px; height: 18px; background-color: var(--border-color); display: inline-block; opacity: 0.5; }
 
 /* ==========================================================================
-   10. MODERN GLASSMORPHISM ENGINE & FLOATING ORB (ASK META STYLE)
+   10. MODERN ADAPTIVE FLOATING ORB (THEME INTERLINKED MATRIX)
    ========================================================================== */
-/* The Floating Orb Ring Container */
 .meta-orb-trigger {
   position: fixed;
-  top: 16px;
-  left: 16px;
-  width: 48px;
-  height: 48px;
+  bottom: 85px;
+  right: 25px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--bg-panel), rgba(15, 23, 42, 0.1));
-  border: 2px solid var(--border-color);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 9990;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* ☀️ Light Theme Base Parameters: High Contrast Dark Slate Silhouette */
+  background: linear-gradient(135deg, #1e293b, #334155);
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(30, 41, 59, 0.25), 0 0 0 3px #0f172a;
 }
 
-/* Dynamic State: Glow Ring Cycle when tracking is running */
-.meta-orb-trigger.active-tracking {
-  border-color: #3b82f6;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6), inset 0 0 8px rgba(59, 130, 246, 0.3);
-  animation: orbGlowPulse 3s infinite ease-in-out;
-}
-.meta-orb-trigger.sla-near-deadline {
-  border-color: #f59e0b;
-  box-shadow: 0 0 15px rgba(245, 158, 11, 0.6), inset 0 0 8px rgba(245, 158, 11, 0.3);
-  animation: orbUrgentPulse 1.5s infinite ease-in-out;
-}
-
-@keyframes orbGlowPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(59, 130, 246, 0.4); }
-  50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(59, 130, 246, 0.7); }
-}
-@keyframes orbUrgentPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
-  50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }
+.meta-orb-trigger:hover {
+  transform: scale(1.08);
 }
 
 .meta-orb-icon {
-  font-size: 18px;
-  color: var(--primary);
+  font-size: 20px;
+  color: #ffffff;
   transition: transform 0.3s ease;
 }
 .meta-orb-trigger:hover .meta-orb-icon {
@@ -650,15 +634,50 @@ body {
   font-weight: 800;
   min-width: 18px;
   height: 18px;
-  border-radius: 9px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 2px solid var(--bg-app);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
 }
 
+/* 🌙 Dynamic Override Matrix: Flips look safely based on layout themes */
+.dark-mode .meta-orb-trigger,
+body.dark-theme .meta-orb-trigger,
+[data-theme="dark"] .meta-orb-trigger {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #ffffff;
+  box-shadow: 0 4px 25px rgba(37, 99, 235, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.95);
+}
+
+.dark-mode .meta-orb-badge,
+body.dark-theme .meta-orb-badge,
+[data-theme="dark"] .meta-orb-badge {
+  border-color: #1e293b;
+}
+
+/* Dynamic State Animations: Retained for Active Pipeline Cycles */
+.meta-orb-trigger.active-tracking {
+  animation: orbGlowPulse 3s infinite ease-in-out;
+}
+.meta-orb-trigger.sla-near-deadline {
+  animation: orbUrgentPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes orbGlowPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(59, 130, 246, 0.7), 0 0 0 3px rgba(255,255,255,0.9); }
+}
+@keyframes orbUrgentPulse {
+  0%, 100% { transform: scale(1); background: linear-gradient(135deg, #d97706, #f59e0b); }
+  50% { transform: scale(1.08); background: linear-gradient(135deg, #b45309, #d97706); box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), 0 0 0 3px #ffffff; }
+}
+
+/* ==========================================================================
+   11. PICTURE-IN-PICTURE STICKY WINDOW & ARCHIVE DECKS
+   ========================================================================== */
 /* Frosted Glass Floating Left Drawer Panel */
 .glass-tracker-drawer {
   position: fixed;
@@ -678,7 +697,7 @@ body {
   display: flex;
   flex-direction: column;
 }
-.dark-mode .glass-tracker-drawer {
+.dark-mode .glass-tracker-drawer, body.dark-theme .glass-tracker-drawer {
   background: rgba(15, 23, 42, 0.65);
 }
 .glass-tracker-drawer.drawer-open {
@@ -706,6 +725,7 @@ body {
   margin-top: 15px;
   padding-right: 4px;
 }
+
 /* Custom slim modern scrollbars */
 .tracker-scroll-area::-webkit-scrollbar,
 .history-box::-webkit-scrollbar,
@@ -742,9 +762,6 @@ body {
   border-color: rgba(239, 68, 68, 0.25);
 }
 
-/* ==========================================================================
-   11. PICTURE-IN-PICTURE STICKY WINDOW & ARCHIVE DECKS
-   ========================================================================== */
 /* Completely Non-Blocking Floating Workspace Panel */
 .sticky-preview-window {
   position: fixed;
@@ -764,7 +781,7 @@ body {
   padding: 14px;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.dark-mode .sticky-preview-window {
+.dark-mode .sticky-preview-window, body.dark-theme .sticky-preview-window {
   background: rgba(30, 41, 59, 0.85);
   border-color: rgba(255,255,255,0.08);
 }
