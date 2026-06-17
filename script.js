@@ -1749,29 +1749,48 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 // ==========================================================================
-  // 🎯 FIXED: Morning Briefing Center Modal - Post-Login Trigger Configuration
+  // 🎯 FIXED: Permanent Upper-Left Pulsing Orb & Briefing Integration
   // ==========================================================================
+  // 1. Re-use the existing variable instead of redeclaring it with 'const'
+  mainSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
   const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
-  const mainSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
 
-  // 1. Force the reminder to be COMPLETELY HIDDEN when visiting the website initially
+  if (mainSystemOrb) {
+    const orbIcon = mainSystemOrb.querySelector('i');
+    if (orbIcon) {
+      orbIcon.className = "fas fa-folder-open meta-orb-icon";
+    }
+    
+    // Set initial tracking state configuration profile
+    mainSystemOrb.className = "meta-orb-trigger login-unread";
+    
+    // Core Click Trigger Repair
+    mainSystemOrb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const drawer = document.getElementById('metaTrackerDrawer');
+      if (drawer) {
+        drawer.classList.toggle('drawer-open');
+        mainSystemOrb.className = "meta-orb-trigger all-clear";
+      }
+    });
+  }
+
+  // 2. Hide reminder instantly when visiting the website raw
   if (glassmorphicReminderModal) {
     glassmorphicReminderModal.style.display = 'none';
     glassmorphicReminderModal.style.opacity = '0';
   }
 
-  // 2. Redefine this utility to explicitly ACTIVATE and show the modal
+  // 3. Define the Global Shift Trigger Wrapper
   window.evaluateShiftCheckInModal = function() {
     if (!glassmorphicReminderModal) return;
 
-    // Gate Check: Keep hidden if supervisor or if they've already completed it this session
     if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
       glassmorphicReminderModal.style.display = 'none';
       if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger all-clear";
     } else {
-      // 🚀 Bring it into view only when explicitly triggered after a successful login!
+      // Elevate layer state visibility only when explicitly triggered post-login
       glassmorphicReminderModal.style.display = 'flex';
-      // Trigger a tiny layout repaint for a smooth CSS fade-in transition
       setTimeout(() => {
         glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
         glassmorphicReminderModal.style.opacity = '1';
@@ -1781,25 +1800,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // 3. Update your button click handler to save their progress so it doesn't loop
+  // 4. Connect the "Got it, View Tracker" Action Event
   const trackerActionBtn = document.getElementById('dismissReminderBtn');
   if (trackerActionBtn) {
     trackerActionBtn.addEventListener('click', () => {
       glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
       glassmorphicReminderModal.style.opacity = '0';
       
-      // Save state flag so it doesn't keep populating on simple page refreshes
       localStorage.setItem("shift_reminder_cleared", "true");
       
       setTimeout(() => {
         glassmorphicReminderModal.style.display = 'none';
-        
-        // Open up the panel drawer 
         const drawer = document.getElementById('metaTrackerDrawer');
         if (drawer) {
           drawer.classList.add('drawer-open');
         }
-        
         if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger all-clear";
       }, 350);
     });
