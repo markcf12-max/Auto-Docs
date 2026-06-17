@@ -1411,10 +1411,18 @@ async function executeSupervisorExtraction() {
       const q = query(
         performanceRef, 
         where("submission_date", ">=", startDateFilter), 
-        where("submission_date", "<=", endDateFilter)
+        where("submission_date", "<=", endDateFilter),
+        orderBy("submission_date", "desc")
       );
 
-      const performanceSnapshot = await getDocs(q);
+      let performanceSnapshot;
+      try {
+        performanceSnapshot = await getDocs(q);
+      } catch (indexError) {
+        console.warn("Composite Index missing/unoptimized. Falling back to clean scan partition model...", indexError);
+        const fallbackQuery = query(performanceRef, where("submission_date", ">=", startDateFilter), where("submission_date", "<=", endDateFilter));
+        performanceSnapshot = await getDocs(fallbackQuery);
+      }
       
       if (performanceSnapshot.empty) {
         console.warn("Targeted history range void. Scanning global active workspace drafts...");
@@ -1545,7 +1553,6 @@ function terminateAgentSession() {
   const cancelBtn = $('confirmLogoutCancelBtn');
   const confirmBtn = $('confirmLogoutSubmitBtn');
 
-  // IF THE CURRENT ACTIVE USER ID IS A SUPERVISOR, CLOSE THE PORTAL IMMEDIATELY WITH NO CONFIRMATION
   if (currentAgentId === "SUPERVISOR") {
     executeLogOutRoutine();
     return;
@@ -1578,7 +1585,6 @@ function terminateAgentSession() {
 async function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
   
-  // 🎯 1. ADD THIS RIGHT HERE: Instantly wipe supervisor inputs and reset the lock state
   if (typeof terminateSupervisorSession === "function") {
     terminateSupervisorSession();
   }
@@ -1596,17 +1602,13 @@ async function executeLogOutRoutine() {
     }
   }
 
-  // Restore regular UI states default values safely
   localStorage.removeItem("active_agent_session_id");
   
   currentAgentId = null;
   currentAgentName = "Unknown Agent";
   currentAgentLob = "UNKNOWN";
   
-  // Enforce rigid layout isolation rules to clean up workbench states entirely
   isolateWorkspaceUI("AGENT"); 
-  
-  // Fall straight back down into initial unauthorized state system prompt loops
   showLoginGateway(false);
   updateOutput();
   
@@ -1617,8 +1619,6 @@ async function executeLogOutRoutine() {
   renderHistoryView();
   showToast("Session closed safely. Workspace locked.");
 
-  // 🎯 2. OPTIONAL ADVANCED CLEANUP: Force an instantaneous browser window reload
-  // Un-commenting this line guarantees a 100% pure blank slate for the next login!
   window.location.reload();
 }
 
@@ -1669,20 +1669,13 @@ document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
   
-  // 🎯 MASTER LOGOUT ROUTINE
   $('logoutBtn')?.addEventListener('click', executeLogOutRoutine);
-  
-  // 📊 TELEMETRY REPORT EXTRACTION
   $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
 
-  // 📢 LIVE OPERATIONAL BROADCAST BINDINGS
   $('publishBroadcastBtn')?.addEventListener('click', executeLiveBroadcastPublish);
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
-
-  // 📝 MASTER PLAYBOOK MATRIX EDITOR BINDING
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
-  // 🎯 PORTAL UNLOCK SECURITY BADGE
   $('authBadge')?.addEventListener('click', () => {
     if (currentAgentId !== "SUPERVISOR") {
       const loginModal = $('authModal');
@@ -1690,7 +1683,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🎯 FIXED TELEMETRY CLOSE ACTION: Targets the correct supervisor panel container!
   $('closeTelemetryBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
@@ -1704,14 +1696,92 @@ document.addEventListener("DOMContentLoaded", () => {
     updateThemeIcon(true);
   }
 
-  // 🌟 FIXED: Removed 'concernType' and 'voc' from this loop to prevent event listener clashing!
+  // 🎯 CORE CONFIG: Permanent Upper-Left Pulsing Orb Integration
+  const pulsingOrb = document.getElementById('upperLeftPulsingOrb') || $('upperLeftPulsingOrb');
+  if (pulsingOrb) {
+    const orbIcon = pulsingOrb.querySelector('i');
+    if (orbIcon) {
+      orbIcon.className = "fas fa-folder-open";
+    }
+    
+    // Set the initial visual state to indicate an unread shift status deck
+    pulsingOrb.className = "meta-orb-trigger login-unread";
+    
+    pulsingOrb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDrawer();
+      // Smoothly transition orb to standard monitoring mode upon initial click
+      pulsingOrb.className = "meta-orb-trigger all-clear";
+    });
+  }
+
+  // 🎯 CORE CONFIG: Morning Briefing Center Glassmorphic Modal Interceptor
+  const glassmorphicReminderModal = document.getElementById('glassmorphicLoginReminderModal');
+  if (glassmorphicReminderModal) {
+    // Structural view gate check based on live authorization states
+    if (currentAgentId || localStorage.getItem("active_agent_session_id")) {
+      glassmorphicReminderModal.style.display = 'none';
+      if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger all-clear";
+    } else {
+      glassmorphicReminderModal.style.display = 'flex';
+    }
+
+    // INTERCEPTOR ACTION 1: Open Left Workspace Drawer immediately from Briefing Note
+    const trackerActionBtn = glassmorphicReminderModal.querySelector('.action-view-tracker') || document.getElementById('goToTrackerBtn');
+    if (trackerActionBtn) {
+      trackerActionBtn.addEventListener('click', () => {
+        glassmorphicReminderModal.style.opacity = '0';
+        setTimeout(() => {
+          glassmorphicReminderModal.style.display = 'none';
+          const drawer = $('playbookPanel');
+          if (drawer && !drawer.classList.contains('drawer-open')) {
+            toggleDrawer();
+          }
+          if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger all-clear";
+        }, 350);
+      });
+    }
+
+    // INTERCEPTOR ACTION 2: Smooth dismiss modal, leaving the Orb pulsing as a silent guide
+    const acknowledgeCloseBtn = glassmorphicReminderModal.querySelector('.action-acknowledge-dismiss') || document.getElementById('acknowledgeBriefingBtn');
+    if (acknowledgeCloseBtn) {
+      acknowledgeCloseBtn.addEventListener('click', () => {
+        glassmorphicReminderModal.style.opacity = '0';
+        setTimeout(() => {
+          glassmorphicReminderModal.style.display = 'none';
+          // Explicitly keep the Orb flash active to act as persistent memory
+          if (pulsingOrb) pulsingOrb.className = "meta-orb-trigger login-unread";
+        }, 350);
+      });
+    }
+  }
+
+  // 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
   const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
   trackingFields.forEach(id => {
     const el = $(id);
     if (!el) return; 
-    el.addEventListener("input", () => { updateOutput(); updateSuggestions(); saveData(false); });
-    el.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
-    el.addEventListener("blur", () => { saveData(true); });
+    
+    const freshElement = el.cloneNode(true);
+    el.parentNode.replaceChild(freshElement, el);
+
+    freshElement.addEventListener("input", (e) => { 
+      // If this is our custom system log tracker field, instantly sanitize it
+      if (id === "wocas" && document.getElementById('trackerSystemErrorToggle')?.checked) {
+        const rawValue = e.target.value;
+        // Strip call stack garbage parameters, memory address wrappers, and trace lines
+        const cleanLog = rawValue.replace(/at\s+.*\(?:\d+:\d+\)?/g, '').replace(/[\r\n]+/g, '\n').trim();
+        if (rawValue !== cleanLog) {
+          e.target.value = cleanLog;
+        }
+      }
+      updateOutput(); 
+      updateSuggestions(); 
+      saveData(false); 
+    });
+    
+    freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
+    freshElement.addEventListener("blur", () => { saveData(true); });
   });
 
   $('historyContainer')?.addEventListener('click', (e) => {
@@ -1730,17 +1800,13 @@ document.addEventListener("DOMContentLoaded", () => {
   $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
   $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-  // 🎯 CONNECT THE AGENT CATEGORY DROPDOWN TO FIRESTORE
   $("concernType")?.addEventListener("change", () => {
-    // 1. Instantly clear out the old VOC value so it doesn't pollute the new query
     const vocInput = $("voc");
     if (vocInput) vocInput.value = ""; 
 
-    // 2. Refresh the datalist options for the newly selected concern type
     updateVocOptions(false);
     updateOutput();
     
-    // 3. Reset the playbook panels to a clean waiting state
     const suggestionsBox = document.getElementById('suggestions');
     if (suggestionsBox) {
       suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
@@ -1757,23 +1823,18 @@ document.addEventListener("DOMContentLoaded", () => {
     saveData(true);
   });
   
-// 🎯 CONNECT THE AGENT VOC TEXT BOX / SUGGESTIONS TO FIRESTORE
   $("voc")?.addEventListener("input", () => {
     updateOutput();
-    
-    // Fire the unified matrix compiler the exact millisecond a valid VOC choice is input
     if ($("concernType")?.value && $("voc")?.value) {
-      updateSuggestions(); // ◄ Let this single function handle the data pull & formatting
+      updateSuggestions(); 
     }
   });
 
   $("voc")?.addEventListener("change", () => {
     updateOutput();
     saveData(true);
-    
-    // Safety check execution to ensure the matrix loads on direct mouse clicks/datalist selections
     if ($("concernType")?.value && $("voc")?.value) {
-      updateSuggestions(); // ◄ Let this single function handle the data pull & formatting
+      updateSuggestions(); 
     }
   });
 
@@ -1804,6 +1865,7 @@ document.addEventListener("DOMContentLoaded", () => {
   listenToOperationalBroadcasts();
   listenToSessionState();
 });
+
 /* ==========================================================================
    VALIDATORS & DRAWERS
    ========================================================================== */
@@ -1852,6 +1914,7 @@ function toggleDrawer(e) {
     if (btnIcon) btnIcon.className = "fas fa-book-open";
   }
 }
+
 /* ==========================================================================
    📊 SUPERVISOR TELEMETRY MODAL CONTROLS
    ========================================================================== */
@@ -1866,7 +1929,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Attach click listeners to both close buttons in the HTML layout
   if (closeSupervisorBtn) {
     closeSupervisorBtn.addEventListener('click', hideExtractionModal);
   }
@@ -1875,6 +1937,7 @@ document.addEventListener("DOMContentLoaded", () => {
     exitPortalBtn.addEventListener('click', hideExtractionModal);
   }
 });
+
 // 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE (WITH FORCE-COLOR SEVERITY)
 function listenToOperationalBroadcasts() {
   const banner = $('adminBroadcastBanner');
@@ -1888,30 +1951,24 @@ function listenToOperationalBroadcasts() {
       const data = docSnap.data();
       
       if (data.active === true && data.message && data.message.trim() !== "") {
-        // 1. Force the layout display open and inject the message uppercase
         textContainer.textContent = `SYSTEM ALERT: ${data.message.toUpperCase()}`;
         banner.style.display = "flex"; 
 
-        // 🎨 FORCE BACKGROUND COLORS BASED ON SUPERVISOR SEVERITY DROPDOWN
         if (data.severity === "critical") {
-          // 🔴 CRITICAL ALERT: Vivid Emergency Red
           banner.style.setProperty("background-color", "#ef4444", "important");
           banner.style.setProperty("background", "#ef4444", "important");
           banner.style.setProperty("color", "#ffffff", "important");
         } else if (data.severity === "warning") {
-          // 🟡 WARNING ALERT: Intense Safety Amber
           banner.style.setProperty("background-color", "#f59e0b", "important");
           banner.style.setProperty("background", "#f59e0b", "important");
-          banner.style.setProperty("color", "#000000", "important"); // Dark text for readability contrast
+          banner.style.setProperty("color", "#000000", "important"); 
         } else {
-          // 🔵 INFO ALERT: Operational Blue
           banner.style.setProperty("background-color", "#3b82f6", "important");
           banner.style.setProperty("background", "#3b82f6", "important");
           banner.style.setProperty("color", "#ffffff", "important");
         }
 
       } else {
-        // 🧼 Auto-hide banner if supervisor clears it or flags it inactive
         banner.style.display = "none";  
       }
     } else {
