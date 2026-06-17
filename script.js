@@ -1716,10 +1716,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 // ==========================================================================
-  // 🎯 CORE REPAIR: Morning Briefing Center Glassmorphic Modal Interceptor
+  // 🎯 FIXED: Morning Briefing Center Glassmorphic Modal Interceptor
   // ==========================================================================
   const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
-  const pulsingOrb = document.getElementById('metaTrackerOrb');
+  
+  // Removed 'const' keyword here to prevent the identifier collision error
+  pulsingOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
 
   if (glassmorphicReminderModal) {
     // Structural view gate check based on live authorization states
