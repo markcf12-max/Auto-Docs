@@ -1560,6 +1560,9 @@ async function executeSupervisorExtraction() {
 /* ==========================================================================
    RESET & LOGOUT UTILITIES
    ========================================================================== */
+/* ==========================================================================
+   AGENTS TERMINATION GATEWAYS & WORKSPACE STATE CLEANERS
+   ========================================================================== */
 function terminateAgentSession() {
   const logoutModal = $('logoutModal');
   const cancelBtn = $('confirmLogoutCancelBtn');
@@ -1614,11 +1617,19 @@ async function executeLogOutRoutine() {
     }
   }
 
+  // 🎯 THE FIX: Purge the persistent checker flag from disk so the modal forces an login check-in on the next loop
   localStorage.removeItem("active_agent_session_id");
+  localStorage.removeItem("shift_reminder_cleared");
   
   currentAgentId = null;
   currentAgentName = "Unknown Agent";
   currentAgentLob = "UNKNOWN";
+  
+  // 🎯 THE FIX: Reset the permanent Orb back to its default state ahead of the browser reload pass
+  const trackingOrbNode = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+  if (trackingOrbNode) {
+    trackingOrbNode.className = "meta-orb-trigger login-unread";
+  }
   
   isolateWorkspaceUI("AGENT"); 
   showLoginGateway(false);
