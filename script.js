@@ -1696,49 +1696,49 @@ document.addEventListener("DOMContentLoaded", () => {
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
-// 🛡️ UPGRADED: Telemetry Portal & Supervisor Access Gate
-  const authBadgeBtn = document.getElementById('authBadge') || $('authBadge');
-  if (authBadgeBtn) {
-    authBadgeBtn.addEventListener('click', (e) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+// 🛡️ UPGRADED & FIXED: Telemetry Portal & Supervisor Access Gate
+const authBadgeBtn = document.getElementById('authBadge') || $('authBadge');
+if (authBadgeBtn) {
+  authBadgeBtn.addEventListener('click', (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-      const loginModal = document.getElementById('authModal') || $('authModal');
-      const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
-      
-      // 🔍 FALLBACK SECURITY GATING:
-      // If currentAgentId isn't updated but your session state UI shows you are a supervisor, handle it cleanly.
-      const isSupervisor = (typeof currentAgentId !== 'undefined' && currentAgentId === "SUPERVISOR") || 
-                           (document.body.classList.contains('role-supervisor')) ||
-                           (localStorage.getItem('user_role') === "SUPERVISOR");
-
-      if (!isSupervisor) {
-        // If they aren't authorized yet, prompt the login interface
-        if (loginModal) {
-          loginModal.style.display = "flex";
-        }
-      } else {
-        // 🎯 FIX: If verified as a Supervisor, instantly display the Telemetry panel!
-        if (telemetryContainer) {
-          telemetryContainer.style.display = "flex";
-          
-          // Force layout refresh if layout parameters are cached by the engine
-          telemetryContainer.style.opacity = "1";
-          telemetryContainer.style.visibility = "visible";
-        }
-      }
-    });
-  }
-
-  $('closeTelemetryBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
+    const loginModal = document.getElementById('authModal') || $('authModal');
     const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
-    if (telemetryContainer) {
-      telemetryContainer.style.display = "none";
+    
+    // 🔍 FALLBACK SECURITY GATING:
+    const isSupervisor = (typeof currentAgentId !== 'undefined' && currentAgentId === "SUPERVISOR") || 
+                         (document.body.classList.contains('role-supervisor')) ||
+                         (localStorage.getItem('user_role') === "SUPERVISOR");
+
+    if (!isSupervisor) {
+      // If they aren't authorized yet, prompt the login interface
+      if (loginModal) {
+        loginModal.style.display = "flex";
+        if (typeof loginModal.style.opacity !== 'undefined') loginModal.style.opacity = "1";
+      }
+    } else {
+      // 🎯 FIXED: Force reset layout parameters explicitly together
+      if (telemetryContainer) {
+        telemetryContainer.style.display = "flex";
+        telemetryContainer.style.visibility = "visible";
+        telemetryContainer.style.opacity = "1";
+      }
     }
   });
+}
+
+$('closeTelemetryBtn')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+  if (telemetryContainer) {
+    telemetryContainer.style.display = "none";
+    telemetryContainer.style.visibility = "hidden";
+    telemetryContainer.style.opacity = "0";
+  }
+});
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
@@ -1965,11 +1965,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const exitPortalBtn = document.getElementById('exitPortalBtn');
   const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
 
-  const hideExtractionModal = () => {
-    if (supervisorAdminPanel) {
-      supervisorAdminPanel.style.display = 'none';
-    }
-  };
+const hideExtractionModal = () => {
+  if (supervisorAdminPanel) {
+    supervisorAdminPanel.style.display = 'none';
+    supervisorAdminPanel.style.visibility = 'hidden';
+    supervisorAdminPanel.style.opacity = '0';
+  }
+};
 
   if (closeSupervisorBtn) closeSupervisorBtn.addEventListener('click', hideExtractionModal);
   if (exitPortalBtn) exitPortalBtn.addEventListener('click', hideExtractionModal);
