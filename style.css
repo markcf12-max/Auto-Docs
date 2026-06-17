@@ -587,3 +587,265 @@ body {
 .dual-logo-wrapper { display: flex; align-items: center; gap: 10px; }
 .brand-logo-img { height: 28px; width: auto; object-fit: contain; display: block; }
 .logo-divider { width: 1px; height: 18px; background-color: var(--border-color); display: inline-block; opacity: 0.5; }
+
+/* ==========================================================================
+   10. MODERN GLASSMORPHISM ENGINE & FLOATING ORB (ASK META STYLE)
+   ========================================================================== */
+/* The Floating Orb Ring Container */
+.meta-orb-trigger {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--bg-panel), rgba(15, 23, 42, 0.1));
+  border: 2px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 9990;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Dynamic State: Glow Ring Cycle when tracking is running */
+.meta-orb-trigger.active-tracking {
+  border-color: #3b82f6;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6), inset 0 0 8px rgba(59, 130, 246, 0.3);
+  animation: orbGlowPulse 3s infinite ease-in-out;
+}
+.meta-orb-trigger.sla-near-deadline {
+  border-color: #f59e0b;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.6), inset 0 0 8px rgba(245, 158, 11, 0.3);
+  animation: orbUrgentPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes orbGlowPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(59, 130, 246, 0.4); }
+  50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(59, 130, 246, 0.7); }
+}
+@keyframes orbUrgentPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
+  50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }
+}
+
+.meta-orb-icon {
+  font-size: 18px;
+  color: var(--primary);
+  transition: transform 0.3s ease;
+}
+.meta-orb-trigger:hover .meta-orb-icon {
+  transform: rotate(15deg) scale(1.1);
+}
+
+.meta-orb-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--bg-app);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Frosted Glass Floating Left Drawer Panel */
+.glass-tracker-drawer {
+  position: fixed;
+  top: 0;
+  left: -360px;
+  width: 340px;
+  height: 100vh;
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 15px 0 35px rgba(0, 0, 0, 0.3);
+  z-index: 9989;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.dark-mode .glass-tracker-drawer {
+  background: rgba(15, 23, 42, 0.65);
+}
+.glass-tracker-drawer.drawer-open {
+  left: 0;
+}
+
+.glass-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.glass-drawer-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tracker-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 15px;
+  padding-right: 4px;
+}
+/* Custom slim modern scrollbars */
+.tracker-scroll-area::-webkit-scrollbar,
+.history-box::-webkit-scrollbar,
+.horizontal-folder-deck::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.tracker-scroll-area::-webkit-scrollbar-thumb,
+.history-box::-webkit-scrollbar-thumb,
+.horizontal-folder-deck::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+/* Micro-Cards for Running Cases */
+.micro-tracker-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+.micro-tracker-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.micro-tracker-card.expired {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ==========================================================================
+   11. PICTURE-IN-PICTURE STICKY WINDOW & ARCHIVE DECKS
+   ========================================================================== */
+/* Completely Non-Blocking Floating Workspace Panel */
+.sticky-preview-window {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  max-height: 400px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  z-index: 9950;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.dark-mode .sticky-preview-window {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255,255,255,0.08);
+}
+
+.sticky-preview-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-app);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 10px 0;
+  border: 1px solid var(--border-color);
+  white-space: pre-wrap;
+}
+
+/* Horizontal Folder Container Elements */
+.horizontal-folder-deck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 10px 2px;
+}
+
+.folder-tile-node {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.folder-tile-node:hover {
+  background: var(--bg-app);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+.folder-tile-node i {
+  color: #eab308;
+  font-size: 14px;
+}
+.folder-tile-node span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Modern Compact [+] Button */
+.btn-vault-expand-node {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-vault-expand-node:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+/* Grid Layout Matrix inside the Expansion Vault overlay view */
+.vault-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+  max-height: 260px;
+  overflow-y: auto;
+}
