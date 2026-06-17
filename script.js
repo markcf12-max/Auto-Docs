@@ -1746,86 +1746,88 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 // ==========================================================================
-  // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
-  // ==========================================================================
-  // Using locally unique variable names to guarantee zero constant variable assignment crashes
-  const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
-  const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
-  const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
-  const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
+// 🛡️ REPAIRED BLUEPRINT ENGINE: MORNING BRIEFING PICTURE-IN-PICTURE LAYER
+// ==========================================================================
+const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
+const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
+const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
 
-  if (shiftCheckInOrb) {
-    const orbIcon = shiftCheckInOrb.querySelector('i');
-    if (orbIcon) {
-      orbIcon.className = "fas fa-folder-open meta-orb-icon";
-    }
-    
-    // Set initial tracking state configuration profile
-    shiftCheckInOrb.className = "meta-orb-trigger login-unread";
-    
-    // Core Click Trigger Repair
-    shiftCheckInOrb.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (metaTrackerDrawerSubPane) {
-        metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-      }
-    });
+if (shiftCheckInOrb) {
+  const orbIcon = shiftCheckInOrb.querySelector('i');
+  if (orbIcon) {
+    orbIcon.className = "fas fa-folder-open meta-orb-icon";
   }
+  
+  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+  
+  shiftCheckInOrb.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (metaTrackerDrawerSubPane) {
+      metaTrackerDrawerSubPane.classList.toggle('drawer-open');
+      shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+    }
+  });
+}
 
-  // 🎯 THE CRITICAL REPAIR: Hook up the HTML template '×' close button
-  if (closeMetaDrawerHeaderBtn) {
-    closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
+if (closeMetaDrawerHeaderBtn) {
+  closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (metaTrackerDrawerSubPane) {
+      metaTrackerDrawerSubPane.classList.remove('drawer-open');
+    }
+  });
+}
+
+if (glassmorphicReminderModal) {
+  glassmorphicReminderModal.style.display = 'none';
+  glassmorphicReminderModal.style.opacity = '0';
+}
+
+// Global Shift Trigger Wrapper
+window.evaluateShiftCheckInModal = function() {
+  if (!glassmorphicReminderModal) return;
+
+  if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
+    glassmorphicReminderModal.style.display = 'none';
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+  } else {
+    // Reveal exclusively as a floating right-hand PiP box
+    glassmorphicReminderModal.style.display = 'flex';
+    setTimeout(() => {
+      glassmorphicReminderModal.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      glassmorphicReminderModal.style.opacity = '1';
+    }, 50);
+    
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+  }
+};
+
+// Connect the "Got it, Acknowledge Info" Action Event
+const trackerActionBtn = document.getElementById('dismissReminderBtn');
+if (trackerActionBtn) {
+  trackerActionBtn.addEventListener('click', (e) => {
+    if (e) {
       e.preventDefault();
       e.stopPropagation();
-      if (metaTrackerDrawerSubPane) {
-        metaTrackerDrawerSubPane.classList.remove('drawer-open');
-      }
-    });
-  }
-
-  // Hide reminder instantly when visiting the website raw (pre-login)
-  if (glassmorphicReminderModal) {
-    glassmorphicReminderModal.style.display = 'none';
-    glassmorphicReminderModal.style.opacity = '0';
-  }
-
-  // Define the Global Shift Trigger Wrapper
-  window.evaluateShiftCheckInModal = function() {
-    if (!glassmorphicReminderModal) return;
-
-    if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
-      glassmorphicReminderModal.style.display = 'none';
-      if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-    } else {
-      // Elevate layer state visibility only when explicitly triggered post-login
-      glassmorphicReminderModal.style.display = 'flex';
-      setTimeout(() => {
-        glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
-        glassmorphicReminderModal.style.opacity = '1';
-      }, 50);
-      
-      if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
     }
-  };
 
-  // Connect the "Got it, View Tracker" Action Event
-  const trackerActionBtn = document.getElementById('dismissReminderBtn');
-  if (trackerActionBtn) {
-    trackerActionBtn.addEventListener('click', () => {
-      glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
-      glassmorphicReminderModal.style.opacity = '0';
+    glassmorphicReminderModal.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    glassmorphicReminderModal.style.opacity = '0';
+    
+    localStorage.setItem("shift_reminder_cleared", "true");
+    
+    setTimeout(() => {
+      glassmorphicReminderModal.style.display = 'none';
       
-      localStorage.setItem("shift_reminder_cleared", "true");
-      
-      setTimeout(() => {
-        glassmorphicReminderModal.style.display = 'none';
-        if (metaTrackerDrawerSubPane) {
-          metaTrackerDrawerSubPane.classList.add('drawer-open');
-        }
-        if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-      }, 350);
-    });
+      // 🎯 FIXED: No longer forcing 'drawer-open' to crash onto the screen! 
+      // The orb transitions cleanly into an alert monitoring state, 
+      // leaving the agent's active documentation layout unblocked.
+      if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+    }, 250);
+  });
+}
   }
   // 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
   const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
