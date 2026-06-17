@@ -1939,6 +1939,7 @@ document.addEventListener('click', (e) => {
 
 listenToOperationalBroadcasts();
 listenToSessionState();
+});
 /* ==========================================================================
    VALIDATORS & DRAWERS
    ========================================================================== */
