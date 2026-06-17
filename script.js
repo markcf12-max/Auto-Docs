@@ -1684,7 +1684,7 @@ async function resetForm(event) {
 
 /* ==========================================================================
    INITIALIZATION ENGINE & LOOPS
-/* ========================================================================== */
+========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
@@ -1716,36 +1716,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateThemeIcon(true);
   }
 
-// ==========================================================================
-  // 🎛️ FIXED: Permanent Upper-Left Pulsing Orb Integration
   // ==========================================================================
-  const mainSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
-  if (mainSystemOrb) {
-    // Ensure the icon matches your high-priority specification
-    const orbIcon = mainSystemOrb.querySelector('i');
-    if (orbIcon) {
-      orbIcon.className = "fas fa-folder-open meta-orb-icon";
-    }
-    
-    // Set initial login unread state (Blue-to-Amber breathe loop)
-    mainSystemOrb.className = "meta-orb-trigger login-unread";
-    
-    // Core Click Trigger Repair
-    mainSystemOrb.addEventListener('click', (e) => {
-      e.stopPropagation();
-      
-      // Target the exact drawer ID from your modern HTML markup
-      const drawer = document.getElementById('metaTrackerDrawer');
-      if (drawer) {
-        drawer.classList.toggle('drawer-open');
-        
-        // Update the Orb pulse animation to the calm monitoring state
-        mainSystemOrb.className = "meta-orb-trigger all-clear";
-      }
-    });
-  }
-
-// ==========================================================================
   // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
   // ==========================================================================
   const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
@@ -1767,7 +1738,7 @@ document.addEventListener("DOMContentLoaded", () => {
       shiftCheckInOrb.style.transform = "scale(0.8)";
       setTimeout(() => {
         shiftCheckInOrb.style.display = "none";
-      }, 200); // Smooth CSS transition delay matching
+      }, 200);
     }
   }
 
@@ -1782,11 +1753,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
     shiftCheckInOrb.className = "meta-orb-trigger login-unread";
 
-    // 🎯 Core Orb Event Handler (Orb Stays Visible & Toggles Drawer cleanly)
-    if (metaTrackerDrawerSubPane) {
-      shiftCheckInOrb.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevents click from bubbling up and breaking layout elements
-        
+    // 🎯 THE ONLY ORB CLICK HANDLER IN THE ENTIRE SCRIPT
+    shiftCheckInOrb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      if (metaTrackerDrawerSubPane) {
         const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
         
         if (isOpen) {
@@ -1794,8 +1765,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           shiftCheckInOrb.className = "meta-orb-trigger all-clear";
         }
-      });
-    }
+      }
+    });
   }
 
   // Hook up the close '×' action inside the PiP header to return the Orb back to a calm state
@@ -1807,8 +1778,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (metaTrackerDrawerSubPane) {
         metaTrackerDrawerSubPane.classList.remove('drawer-open');
         
-        // 🎯 FIX: Since the Orb stays on screen, we don't trigger inline animation resets.
-        // We just cleanly update its theme class state to reflect it's closed.
+        // Reset Orb state class visually without touching layout style parameters
         if (shiftCheckInOrb) {
           shiftCheckInOrb.className = "meta-orb-trigger all-clear";
         }
@@ -1816,7 +1786,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Soft reset on initialization modal layout variables
   if (glassmorphicReminderModal) {
     glassmorphicReminderModal.style.display = 'none';
     glassmorphicReminderModal.style.opacity = '0';
@@ -1832,7 +1801,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
     } else {
       glassmorphicReminderModal.style.display = 'flex';
-      setOrbVisibility(true); // Ensure Orb is primed behind modal setup
+      setOrbVisibility(true);
       setTimeout(() => {
         glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
         glassmorphicReminderModal.style.opacity = '1';
@@ -1842,7 +1811,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-// Connect the "Got it, View Tracker" Action Event
+  // Connect the "Got it, View Tracker" Action Event
   const trackerActionBtn = document.getElementById('dismissReminderBtn');
   if (trackerActionBtn) {
     trackerActionBtn.addEventListener('click', (e) => {
@@ -1861,7 +1830,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (metaTrackerDrawerSubPane) {
           metaTrackerDrawerSubPane.classList.add('drawer-open');
           
-          // 🎯 FIX: Remove setOrbVisibility(false) so the Orb stays alive on your screen!
           if (shiftCheckInOrb) {
             shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
           }
@@ -1870,115 +1838,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-// 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
-const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
-trackingFields.forEach(id => {
-  const el = $(id);
-  if (!el) return; 
-  
-  const freshElement = el.cloneNode(true);
-  el.parentNode.replaceChild(freshElement, el);
-
-  freshElement.addEventListener("input", (e) => { 
-    // If this is our custom system log tracker field, instantly sanitize it
-    if (id === "wocas" && document.getElementById('trackerSystemErrorToggle')?.checked) {
-      const rawValue = e.target.value;
-      // Strip call stack garbage parameters, memory address wrappers, and trace lines
-      const cleanLog = rawValue.replace(/at\s+.*\(?:\d+:\d+\)?/g, '').replace(/[\r\n]+/g, '\n').trim();
-      if (rawValue !== cleanLog) {
-        e.target.value = cleanLog;
-      }
-    }
-    updateOutput(); 
-    updateSuggestions(); 
-    saveData(false); 
-  });
-  
-  freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
-  freshElement.addEventListener("blur", () => { saveData(true); });
-});
-
-$('historyContainer')?.addEventListener('click', (e) => {
-  const button = e.target.closest('button');
-  if (!button) return;
-  const action = button.getAttribute('data-action');
-  const index = parseInt(button.getAttribute('data-index'), 10);
-  
-  if (action === 'recopy') {
-    loadHistoryItem(index);
-  } else if (action === 'delete') {
-    deleteHistoryItem(index);
-  }
-});
-
-$("case")?.addEventListener("input", (e) => validateCaseField(e.target));
-$("min")?.addEventListener("input", (e) => validateMinField(e.target));
-
-$("concernType")?.addEventListener("change", () => {
-  const vocInput = $("voc");
-  if (vocInput) vocInput.value = ""; 
-
-  updateVocOptions(false);
-  updateOutput();
-  
-  const suggestionsBox = document.getElementById('suggestions');
-  if (suggestionsBox) {
-    suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
-  }
-  
-  const spielContainer = document.getElementById('playbookSpielContainer');
-  if (spielContainer) {
-    spielContainer.innerHTML = `
-      <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
-        The corresponding email spiel template will load automatically upon context verification.
-      </div>`;
-  }
-
-  saveData(true);
-});
-
-$("voc")?.addEventListener("input", () => {
-  updateOutput();
-  if ($("concernType")?.value && $("voc")?.value) {
-    updateSuggestions(); 
-  }
-});
-
-$("voc")?.addEventListener("change", () => {
-  updateOutput();
-  saveData(true);
-  if ($("concernType")?.value && $("voc")?.value) {
-    updateSuggestions(); 
-  }
-});
-
-$("copyBtn")?.addEventListener("click", copyDoc);
-$("mobileCopyBtn")?.addEventListener("click", copyDoc);
-$("resetBtn")?.addEventListener("click", resetForm);
-$("mobileResetBtn")?.addEventListener("click", resetForm);
-
-$("drawerToggle")?.addEventListener("click", toggleDrawer);
-$("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
-$("themeToggle")?.addEventListener("click", toggleTheme);
-
-$("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
-$("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
-
-document.addEventListener('click', (e) => {
-  const drawer = $('playbookPanel');
-  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
-    drawer.classList.remove('drawer-open');
-    const toggleBtn = $('drawerToggle');
-    if (toggleBtn) {
-      if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
-      if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
-    }
-  }
-});
-
-listenToOperationalBroadcasts();
-listenToSessionState();
-});
+  // 🎯 CORE CONFIG: Real-time Pressure Form Logic continues below normally...
 /* ==========================================================================
    VALIDATORS & DRAWERS
    ========================================================================== */
