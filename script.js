@@ -1842,7 +1842,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Connect the "Got it, View Tracker" Action Event
+// Connect the "Got it, View Tracker" Action Event
   const trackerActionBtn = document.getElementById('dismissReminderBtn');
   if (trackerActionBtn) {
     trackerActionBtn.addEventListener('click', (e) => {
@@ -1861,10 +1861,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (metaTrackerDrawerSubPane) {
           metaTrackerDrawerSubPane.classList.add('drawer-open');
           
-          // 🎯 FIX: Hide the Orb here as well since the view modal directly deploys the drawer window
-          setOrbVisibility(false);
+          // 🎯 FIX: Remove setOrbVisibility(false) so the Orb stays alive on your screen!
+          if (shiftCheckInOrb) {
+            shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
+          }
         }
-        if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }, 350);
     });
   }
