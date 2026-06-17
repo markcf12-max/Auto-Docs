@@ -1782,18 +1782,20 @@ document.addEventListener("DOMContentLoaded", () => {
     
     shiftCheckInOrb.className = "meta-orb-trigger login-unread";
     
-    // Core Orb Event Handler
-    shiftCheckInOrb.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (metaTrackerDrawerSubPane) {
-        metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-        
-        // 🎯 FIX: Hide the Orb when the Priority Tracker window expands open
-        if (metaTrackerDrawerSubPane.classList.contains('drawer-open')) {
-          setOrbVisibility(false);
-        }
-      }
+// Core Orb Event Handler (Orb Stays Visible & Toggles Drawer)
+shiftCheckInOrb.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (metaTrackerDrawerSubPane) {
+    const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
+    
+    if (isOpen) {
+      shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
+      // Optional: Add a custom class to make the orb spin or dim while open
+    } else {
+      shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+    }
+  }
+});
     });
   }
 
