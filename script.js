@@ -1737,48 +1737,58 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ==========================================================================
-  // 🎯 FIXED: Morning Briefing Center Modal & Gatekeeping Logic
+// ==========================================================================
+  // 🎯 FIXED: Morning Briefing Center Modal - Post-Login Trigger Configuration
   // ==========================================================================
   const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
-  
-  // Wrap this setup in a reusable utility function so your Auth State Listener
-  // can re-evaluate the modal visibility right when the agent signs in!
+  const mainSystemOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+
+  // 1. Force the reminder to be COMPLETELY HIDDEN when visiting the website initially
+  if (glassmorphicReminderModal) {
+    glassmorphicReminderModal.style.display = 'none';
+    glassmorphicReminderModal.style.opacity = '0';
+  }
+
+  // 2. Redefine this utility to explicitly ACTIVATE and show the modal
   window.evaluateShiftCheckInModal = function() {
     if (!glassmorphicReminderModal) return;
 
-    // Gate Check: Hidden if supervisor, logged-in agent, or session storage exists
-    if (currentAgentId === "SUPERVISOR" || currentAgentId || localStorage.getItem("active_agent_session_id")) {
+    // Gate Check: Keep hidden if supervisor or if they've already completed it this session
+    if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
       glassmorphicReminderModal.style.display = 'none';
       if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger all-clear";
     } else {
-      // Show only when no authenticated credentials exist on boot
+      // 🚀 Bring it into view only when explicitly triggered after a successful login!
       glassmorphicReminderModal.style.display = 'flex';
-      glassmorphicReminderModal.style.opacity = '1';
+      // Trigger a tiny layout repaint for a smooth CSS fade-in transition
+      setTimeout(() => {
+        glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
+        glassmorphicReminderModal.style.opacity = '1';
+      }, 50);
+      
+      if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger login-unread";
     }
   };
 
-  // Run immediately on boot to handle pre-cached sessions
-  window.evaluateShiftCheckInModal();
-
-  // MATCHED HOOK: "Got it, View Tracker" Button Execution Path
+  // 3. Update your button click handler to save their progress so it doesn't loop
   const trackerActionBtn = document.getElementById('dismissReminderBtn');
   if (trackerActionBtn) {
     trackerActionBtn.addEventListener('click', () => {
-      // Smooth visual transition fade out
       glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
       glassmorphicReminderModal.style.opacity = '0';
+      
+      // Save state flag so it doesn't keep populating on simple page refreshes
+      localStorage.setItem("shift_reminder_cleared", "true");
       
       setTimeout(() => {
         glassmorphicReminderModal.style.display = 'none';
         
-        // Slide out the specific Priority Case Monitor drawer
+        // Open up the panel drawer 
         const drawer = document.getElementById('metaTrackerDrawer');
         if (drawer) {
           drawer.classList.add('drawer-open');
         }
         
-        // Stabilize tracking beacon dot state
         if (mainSystemOrb) mainSystemOrb.className = "meta-orb-trigger all-clear";
       }, 350);
     });
