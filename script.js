@@ -531,19 +531,25 @@ async function handleSessionLoginTransition() {
 }
 
 /* ==========================================================================
-   👑 SUPERVISOR MATRIX MANAGER MODULE FUNCTIONS
+   👑 SUPERVISOR MATRIX MANAGER MODULE FUNCTIONS (SECURED WITH DATA STATE)
    ========================================================================== */
 
 function bypassLockForAuthenticatedSupervisor() {
+  // 🔒 CRITICAL SECURITY CHECK: Ensure the database listener has actually flipped the global switch
+  if (!isSupervisorAuthenticated) {
+    console.error("CRITICAL ALARM: Direct function execution attempt intercepted. Supervisor token state is FALSE.");
+    alert("Security Violation: Action rejected by the application kernel.");
+    return; // Kill execution immediately
+  }
+
   // 1. Establish permission verification variable state
-  isSupervisorAuthenticated = true;
-  
   const badge = document.getElementById("authBadge");
   if (badge) {
     badge.innerText = "SYSTEM ADMIN ACTIVE";
     badge.style.background = "#10b981";
   }
   
+  // 🎯 UI CHANGE: Bring up the full Supervisor operational wrapper
   const container = document.getElementById("supervisorContent");
   if (container) {
     container.style.display = "block";
@@ -556,7 +562,7 @@ function bypassLockForAuthenticatedSupervisor() {
   const supeConcernDropdown = document.getElementById("supeConcern");
   const supeVocDropdown = document.getElementById("supeVoc");
 
-  // 3. 🎯 LINK THE CATEGORY CHANGE EVENT SECURELY IN JAVASCRIPT
+  // 3. LINK THE CATEGORY CHANGE EVENT SECURELY IN JAVASCRIPT
   if (supeConcernDropdown) {
     supeConcernDropdown.addEventListener("change", () => {
       syncSupervisorVocDropdown();
@@ -564,7 +570,7 @@ function bypassLockForAuthenticatedSupervisor() {
     });
   }
 
-  // 4. 🎯 LINK THE VOC RECONCILIATION SELECTION STRAIGHT TO FIRESTORE READ ENGINE
+  // 4. LINK THE VOC RECONCILIATION SELECTION STRAIGHT TO FIRESTORE READ ENGINE
   if (supeVocDropdown) {
     supeVocDropdown.addEventListener("change", () => {
       loadCurrentVocMasterData();
@@ -604,19 +610,20 @@ function bypassLockForAuthenticatedSupervisor() {
     });
   }
 
-  // 7. 🚀 LINK THE PUBLISH BUTTON SECURELY TO THE FIRESTORE WRITE ENGINE
+  // 7. LINK THE PUBLISH BUTTON SECURELY TO THE FIRESTORE WRITE ENGINE
   const supePublishBtn = document.getElementById("supePublishBtn");
   if (supePublishBtn) {
+    // 🎯 RE-UPGRADED: Replaced wrapper with unified engine selector match
     supePublishBtn.addEventListener("click", () => {
       saveMasterPlaybookConfiguration();
     });
   }
 
-  // 8. ⚡ INSTANT UNLOCK: Force the options and live active data to populate immediately 
-  // so the supervisor doesn't have to hit refresh to see the portal contents!
+  // 8. INSTANT UNLOCK: Force options and active data to populate immediately 
   syncSupervisorVocDropdown();
   loadCurrentVocMasterData();
 }
+
 function initializeSupervisorDropdowns() {
   const supeConcern = document.getElementById("supeConcern");
   if (!supeConcern) return;
@@ -631,12 +638,15 @@ function initializeSupervisorDropdowns() {
 }
 
 function syncSupervisorVocDropdown() {
-  const concernVal = document.getElementById("supeConcern").value;
+  const supeConcernEl = document.getElementById("supeConcern");
+  if (!supeConcernEl) return;
+  
+  const concernVal = supeConcernEl.value;
   const supeVoc = document.getElementById("supeVoc");
   if (!supeVoc) return;
 
-  // Make sure your global VOC_OPTIONS constant dictionary exists and is accessible
-  if (!concernVal || !VOC_OPTIONS || !VOC_OPTIONS[concernVal]) {
+  // Added checking block to prevent throwing errors if VOC_OPTIONS is loading asynchronously from database
+  if (!concernVal || typeof VOC_OPTIONS === 'undefined' || !VOC_OPTIONS || !VOC_OPTIONS[concernVal]) {
     supeVoc.innerHTML = '<option value="">-- Select Concern First --</option>';
     return;
   }
