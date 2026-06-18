@@ -360,7 +360,7 @@ function toggleAuthMode(e) {
 }
 
 /* ==========================================================================
-   AUTHENTICATION ENTRYWAY & INTEGRATED SESSION STATE ROUTINES
+   AUTHENTICATION ENTRYWAY & INTEGRATED SESSION STATE ROUTINES (FIXED)
    ========================================================================== */
 async function handleAuthSubmission(e) {
   e.preventDefault();
@@ -373,11 +373,15 @@ async function handleAuthSubmission(e) {
   // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
   if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
     if (password === "SuperOps2026!") {
+      
+      // 🔒 1. ELEVATE STATE CLEARANCE TOKENS FIRST AHEAD OF PANEL GENERATION
+      isSupervisorAuthenticated = true; 
       currentAgentId = "SUPERVISOR";
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
       localStorage.setItem("active_agent_session_id", "SUPERVISOR");
-      
+      document.body.classList.add('role-supervisor'); // For CSS rule bindings
+
       // ERASE CREDENTIALS IMMEDIATELY AFTER VALIDS MET TO SECURE THE GATEWAY SCREEN
       $('authEmail').value = "";
       $('authPassword').value = "";
@@ -389,11 +393,19 @@ async function handleAuthSubmission(e) {
       // Directly Route layout to the Extraction Dashboard, avoiding documentation suite
       isolateWorkspaceUI("SUPERVISOR");
       
-      // 🎯 THE FIX: Instantly unlock the metrics, turn the badge green, and compile the options!
+      // 🚀 2. NOW THIS WILL PASS CLEANLY: The token is true!
       if (typeof bypassLockForAuthenticatedSupervisor === "function") {
         bypassLockForAuthenticatedSupervisor();
       }
       
+      // 🎯 FORCE RESET TELEMETRY PANEL VIEW STATES (Fixes Telemetry Button)
+      const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+      if (telemetryContainer) {
+        telemetryContainer.style.display = "none";
+        telemetryContainer.style.visibility = "hidden";
+        telemetryContainer.style.opacity = "0";
+      }
+
       // 🎯 MODAL INTERCEPT: Dynamically clear out login banners/reminders for admin accounts
       if (typeof window.evaluateShiftCheckInModal === "function") {
         window.evaluateShiftCheckInModal();
@@ -423,10 +435,12 @@ async function handleAuthSubmission(e) {
     if (currentAuthMode === "LOGIN") {
       if (agentSnap.exists()) {
         if (agentSnap.data().password === password) {
+          isSupervisorAuthenticated = false; // Explicit lock down reinforcement
           currentAgentId = agentId;
           currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
           currentAgentLob = agentSnap.data().lob || "UNKNOWN";
           localStorage.setItem("active_agent_session_id", agentId);
+          document.body.classList.remove('role-supervisor');
           
           // ERASE CREDENTIALS IMMEDIATELY ON AGENT LOGIN SUCCESS TO SECURE GATEWAY SCREEN
           $('authEmail').value = "";
