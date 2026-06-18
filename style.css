@@ -1037,32 +1037,34 @@ body.dark-theme .meta-orb-badge,
 ========================================================================== */
 
 #supervisorAdminPanel {
-  /* 1. Removes the fixed screen overlay settings that caused it to float away */
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  transform: none !important;
+  /* 🔒 SECURITY FIX: Hidden by default so regular agents cannot see it */
+  display: none !important; 
   
-  /* 2. Forces it to occupy full column width directly inside the flow layout */
-  display: flex !important;
-  width: 100% !important;
-  margin-bottom: 20px !important; /* Creates a clean gap directly above the broadcast center */
+  /* 1. Viewport-fixed absolute overlay position settings (Fixes the 1/4 screen scaling) */
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  
+  /* 2. Fluid Dynamic Dimensions (Flawless scaling down to paper size) */
+  width: 92vw !important;             
+  max-width: 850px !important;        
+  max-height: 85vh !important;        
   
   /* 3. Restores your premium dashboard panel design settings */
-  background: rgba(30, 41, 59, 0.4) !important; /* Sleek dashboard card slate */
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 8px !important;
-  padding: 16px 20px !important;
+  background: rgba(15, 23, 42, 0.98) !important; /* Rich Dark slate overlay */
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
   box-sizing: border-box !important;
+  overflow-y: auto !important; /* Adds a scrollbar inside the modal if window is squished */
   
-  /* 4. Alignment settings */
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 12px !important;
-  z-index: 10 !important;
+  /* 4. Internal alignment layouts */
+  flex-direction: column !important;
+  gap: 16px !important;
+  z-index: 99999 !important; /* Floats perfectly on top of everything */
 }
 
 /* Keeps the Open Telemetry / Admin status block layout looking tight */
@@ -1071,4 +1073,12 @@ body.dark-theme .meta-orb-badge,
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+}
+
+/* 📱 Mobile Scaling Rules (Ensures everything fits when the window is tiny) */
+@media screen and (max-width: 600px) {
+  #supervisorAdminPanel {
+    width: 96vw !important;
+    padding: 14px !important;
+  }
 }
