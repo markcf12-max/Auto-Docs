@@ -9,6 +9,7 @@
 </head>
 <body>
 
+  <!-- Agent Shift Check-In Modal Overlay -->
   <div class="login-reminder-overlay" id="loginReminderScreen">
     <div class="login-reminder-container">
       <div class="reminder-icon-shield">
@@ -28,11 +29,13 @@
     </div>
   </div>
 
+  <!-- Persistent Flow Monitor Orb Control Trigger -->
   <div id="metaTrackerOrb" class="meta-orb-trigger" title="Toggle Monitoring Case Tracker">
     <i class="fas fa-folder-open meta-orb-icon"></i>
-    <span id="metaOrbBadgeCount" class="meta-orb-badge">3</span>
+    <span id="metaOrbBadgeCount" class="meta-orb-badge">0</span>
   </div>
 
+  <!-- Priority Follow-Up Slide-Out Drawer Panel -->
   <div id="metaTrackerDrawer">
     <div class="glass-drawer-header">
       <h3><i class="fas fa-satellite-dish animate-pulse"></i> Priority Case Monitor</h3>
@@ -41,9 +44,11 @@
     <p class="glass-drawer-desc">Active timers sync across workstations. Alerts prompt on screen upon reaching zero.</p>
     
     <div id="metaTrackerQueueBox" class="tracker-scroll-area">
-      </div>
+      <!-- Active system-wide target clock cards inject here -->
+    </div>
   </div>
 
+  <!-- Floating Sticky Case Clipboard Recovery Preview Window -->
   <div id="stickyPreviewWindow" class="sticky-preview-window" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <span id="stickyPreviewHeaderTitle" style="font-size: 12px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">[Case Review]</span>
@@ -55,6 +60,7 @@
     </button>
   </div>
 
+  <!-- Critical Emergency Broadcast System Notification Grid -->
   <div id="adminBroadcastBanner" class="broadcast-banner" style="display: none;">
     <div class="broadcast-content">
       <i class="fas fa-bullhorn animate-bounce"></i> 
@@ -62,13 +68,14 @@
     </div>
   </div>
 
+  <!-- Core App Navigation Topbar Bar -->
   <header class="app-header">
     <div class="header-brand-block">
       <div class="header-title-wrapper">
         <i class="fas fa-cubes-stacked header-brand-icon"></i>
         <h1>Agent Documentation Suite</h1>
       </div>
-      <span class="version-tag">SYSTEM v2.4</span>
+      <span class="version-tag">SYSTEM v2.5</span>
     </div>
 
     <div id="floatingShiftBanner" class="floating-banner-pill">
@@ -93,8 +100,10 @@
     </div>
   </header>
 
+  <!-- Workspace Matrix Operational Split Grid -->
   <main class="layout">
     
+    <!-- Entry Formulation Column Panel -->
     <section class="inputPanel">
       <div class="form-grid">
         <div class="form-group">
@@ -178,18 +187,21 @@
         <textarea id="wocas" rows="2"></textarea>
       </div>
 
-      <div class="form-group monitor-config-subpane">
+      <!-- Configured Dynamic Monitoring Segment Subpane Interface Block -->
+      <div class="form-group monitor-config-subpane" style="background: rgba(30, 41, 59, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 6px;">
         <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
           <input type="checkbox" id="enableCaseTrackingCheck" style="width: auto; cursor: pointer;">
-          <label for="enableCaseTrackingCheck" style="cursor: pointer; margin: 0; font-weight: 700; font-size: 11px; color: #60a5fa;">
+          <label for="enableCaseTrackingCheck" style="cursor: pointer; margin: 0; font-weight: 700; font-size: 11px; color: #60a5fa; user-select: none;">
             <i class="fas fa-thumbtack"></i> Push Case to Active Follow-Up Monitor Drawer
           </label>
         </div>
         
+        <!-- Dropdown elements rendered dynamically via cloud sync systems -->
         <div id="trackingDropdownFields" style="display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
           <div>
-            <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Urgency Target</label>
-            <select id="trackUrgencyChannel" style="padding: 6px; font-size: 12px; width: 100%;">
+            <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Follow-Up Router Segment</label>
+            <select id="trackUrgencyChannel" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px;">
+              <!-- Options populated dynamically from firestore. Hardcoded nodes act as local fallbacks -->
               <option value="Case Monitoring">🔵 General Case Monitoring</option>
               <option value="One Hub">🟢 One Hub Route Queue</option>
               <option value="HLR">🟡 HLR Escalation Segment</option>
@@ -197,13 +209,13 @@
             </select>
           </div>
           <div>
-            <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">SLA Threshold</label>
-            <select id="trackTimerWindow" style="padding: 6px; font-size: 12px; width: 100%;">
+            <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">SLA Deadline Windows</label>
+            <select id="trackTimerWindow" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px;">
               <option value="30">30 Minutes</option>
               <option value="60">1 Hour</option>
               <option value="120">2 Hours</option>
               <option value="240">4 Hours</option>
-              <option value="1440">24 Hours</option>
+              <option value="1440">24 Hours (Tomorrow)</option>
             </select>
           </div>
         </div>
@@ -215,12 +227,14 @@
       </div>
     </section>
 
+    <!-- Compilation Output & Historical Manifest Panel Column -->
     <section class="outputPanel">
       <div class="panel-header">
         <h3>Live Compilation Summary Output</h3>
       </div>
       <pre id="output">Generating real-time output preview...</pre>
 
+      <!-- Re-engineered Log Tracking Board Layout Module Frame -->
       <div class="history-section">
         <div class="history-header">
           <h4><i class="fas fa-history"></i> Shift History Repository</h4>
@@ -230,23 +244,41 @@
           </div>
         </div>
 
-        <div style="margin-bottom: 10px; position: relative;">
-          <input type="text" id="shiftHistorySearchInput" placeholder="Search entries by ID, client name, or keywords...">
-          <span class="history-search-icon"><i class="fas fa-search"></i></span>
+        <!-- Universal Scanner Filter Input Bar Element -->
+        <div style="margin-bottom: 12px; position: relative;">
+          <input type="text" id="shiftHistorySearchInput" placeholder="Search entries instantly by ID, customer name, segment tags, or keywords..." style="width: 100%; box-sizing: border-box; padding: 10px 35px 10px 12px; font-family: inherit; font-size: 13px;">
+          <span class="history-search-icon" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"><i class="fas fa-search"></i></span>
         </div>
 
-        <div id="historyContainer" class="history-box"></div>
-
-        <div style="margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-          <h5 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.3px;">Historical Archives</h5>
-          <div class="horizontal-folder-deck" style="display: flex; gap: 8px; align-items: center;">
-            <button id="expandVaultBtn" class="btn-vault-expand-node" title="Open Complete Monthly Archive Vault" style="width: 32px; height: 32px; font-weight: bold; font-size: 16px; cursor: pointer;">+</button>
-            <div id="horizontalSliderTarget" style="display: flex; gap: 8px; align-items: center;"></div>
+        <!-- Visual Mini-Database Folder Matrix Dashboard Grid Wrapper -->
+        <div style="margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+          <h5 style="margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">
+            <i class="fas fa-folder-tree"></i> Archive Folders (Daily Counts View)
+          </h5>
+          <div class="horizontal-folder-deck" style="display: flex; gap: 10px; align-items: center; overflow-x: auto; padding: 4px 2px;">
+            <button id="expandVaultBtn" class="btn-vault-expand-node" title="Open Complete Monthly Archive Vault" style="width: 42px; height: 50px; flex-shrink: 0; background: rgba(255,255,255,0.03); border: 1px dashed var(--border-color); border-radius: 6px; color: var(--text-muted); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="fas fa-plus"></i></button>
+            
+            <!-- Target slider location deck grid where active interactive folder nodes map out -->
+            <div id="horizontalSliderTarget" style="display: flex; gap: 10px; align-items: center;">
+              <!-- Example Static Blueprint Visual Template for Script Engine Matching:
+              <div class="folder-node-btn active" data-date-bucket="06/18/26" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 65px; cursor: pointer; padding: 6px; background: rgba(96, 165, 250, 0.1); border: 1px solid #60a5fa; border-radius: 6px;">
+                <i class="fas fa-folder" style="font-size: 24px; color: #f59e0b;"></i>
+                <span style="font-size: 9px; font-weight: bold; margin-top: 4px; color: #fff;">06/18/26</span>
+                <span style="font-size: 9px; color: var(--text-muted);">(13 cases)</span>
+              </div>
+              -->
+            </div>
           </div>
+        </div>
+
+        <!-- Primary Log View Component Grid Container Panel - Holds up to 10 Rows dynamically -->
+        <div id="historyContainer" class="history-box" style="max-height: 480px; overflow-y: auto;">
+          <!-- 10 Case Logs rows append here -->
         </div>
       </div>
     </section>
 
+    <!-- Operational System Matrix Playbook Reference Column -->
     <section id="playbookPanel" class="suggestionPanel">
       <div class="panel-header playbook-desktop-title">
         <h3><i class="fas fa-book"></i> Interactive Knowledge Maps</h3>
@@ -273,20 +305,48 @@
     </section>
   </main>
 
+  <!-- Supervisor Master Management Panel Component Interface Portal -->
   <div style="max-width: 1400px; margin: 0 auto 40px auto; padding: 0 20px; box-sizing: border-box;">
     <div id="supervisorPanel" style="background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(8px); border: 1px solid rgba(96, 165, 250, 0.2); border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
         <h3 style="color: #60a5fa; margin: 0; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; font-family: inherit;">
           <i class="fas fa-user-shield"></i> Supervisor Master Matrix Content Portal
         </h3>
-<div style="display: flex; gap: 8px; align-items: center;">
-  <button type="button" id="openTelemetryBtn" class="btn-telemetry-trigger" style="background: #334155; color: #f8fafc; border: 1px solid #475569; font-size: 11px; padding: 5px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; font-family: inherit;">
-    <i class="fas fa-file-excel" style="color: #10b981;"></i> Open Telemetry Reports
-  </button>
-  <span id="authBadge" style="background: #ef4444; color: #fff; font-size: 11px; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s;">LOCKED</span>
-</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" id="openTelemetryBtn" class="btn-telemetry-trigger" style="background: #334155; color: #f8fafc; border: 1px solid #475569; font-size: 11px; padding: 5px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; font-family: inherit;">
+            <i class="fas fa-file-excel" style="color: #10b981;"></i> Open Telemetry Reports
+          </button>
+          <span id="authBadge" style="background: #ef4444; color: #fff; font-size: 11px; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s;">LOCKED</span>
+        </div>
+      </div>
 
       <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
+        
+        <!-- NEW sub-segment node for direct dropdown category configuration tag rules -->
+        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(96, 165, 250, 0.25); border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div style="grid-column: span 2;">
+            <h4 style="margin: 0 0 4px 0; color: #60a5fa; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+              <i class="fas fa-tags"></i> Follow-Up Dropdown Router Option Configuration Manager
+            </h4>
+            <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Add or eliminate routing category keys globally. Changes propagate in real time directly to all active loggers' inputs.</p>
+          </div>
+          <div>
+            <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Active Router Array Cache</label>
+            <div id="supeActiveTagsListContainer" style="background: #0f172a; border: 1px solid #334155; height: 110px; overflow-y: auto; padding: 8px; border-radius: 4px; display: flex; flex-direction: column; gap: 4px;">
+              <!-- Current dynamic cloud items will manifest list rules here -->
+            </div>
+          </div>
+          <div>
+            <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Inject Novel Option Variant Tag</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+              <input type="text" id="supeNewTagInput" placeholder="Ex: Billing Team Hold" style="flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-size: 12px;">
+              <button type="button" id="supeAddTagBtn" style="background: #10b981; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;"><i class="fas fa-plus"></i> Add</button>
+            </div>
+            <p style="margin: 0; color: #64748b; font-size: 11px; font-style: italic;">Note: Keep labels brief and concise to avoid UI clipping on low-resolution workstation monitors.</p>
+          </div>
+        </div>
+
+        <!-- Operational Urgent Live Message Broadcast Card Module Segment -->
         <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
           <h4 style="margin: 0 0 8px 0; color: #ef4444; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
             <i class="fas fa-bullhorn animate-pulse"></i> Live Operational Broadcast Center
@@ -356,6 +416,7 @@
     </div>
   </div>
 
+  <!-- Mobile View Overlay Drawer Toggle Triggers -->
   <button id="drawerToggle" class="drawer-toggle-btn">
     <i class="fas fa-book-open"></i> <span>View Playbooks</span>
   </button>
@@ -365,6 +426,7 @@
     <button id="mobileResetBtn" class="btn-secondary"><i class="fas fa-undo"></i> Wipe Form</button>
   </div>
 
+  <!-- Gateway Security Session Authentication Modal Overlay -->
   <div id="authModal" class="modal-overlay" style="display: none;">
     <div class="modal-container">
       <div class="modal-header-block">
@@ -398,6 +460,7 @@
     </div>
   </div>
 
+  <!-- Supervisor Telemetry Workbook Extract Modal Overlays -->
   <div id="supervisorAdminPanel" class="modal-overlay supervisor-overlay" style="display: none;">
     <div class="modal-container supervisor-container">
       <div class="supervisor-header-row">
@@ -440,6 +503,7 @@
     </div>
   </div>
 
+  <!-- Deep Historical Monthly Multi-Grid Vault Modal Components -->
   <div id="archiveVaultModal" class="modal-overlay" style="display: none;">
     <div class="modal-container" style="width: 460px; background: var(--bg-panel); border: 1px solid var(--border-color);">
       <div class="supervisor-header-row" style="margin-bottom: 12px; padding-bottom: 8px;">
@@ -451,6 +515,7 @@
     </div>
   </div>
 
+  <!-- Specific Folder Container Selection Content Modal Popover -->
   <div id="folderLogsListModal" class="modal-overlay" style="display: none; z-index: 100000;">
     <div class="modal-container" style="width: 440px; background: var(--bg-panel); border: 1px solid var(--border-color);">
       <div class="supervisor-header-row" style="margin-bottom: 10px; padding-bottom: 6px;">
@@ -458,10 +523,12 @@
         <button id="closeFolderListModalBtn" class="btn-close-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer;">&times;</button>
       </div>
       <div id="folderLogsItemsListContainer" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
-        </div>
+         <!-- Historical folder click listings emit array maps here -->
+      </div>
     </div>
   </div>
 
+  <!-- Feedback Messaging & Affirmation Warning Box Component -->
   <div id="alertModal" class="modal-overlay" style="display: none;">
     <div class="modal-container alert-box">
       <div id="alertModalIconContainer" class="alert-icon-container">
@@ -473,6 +540,7 @@
     </div>
   </div>
 
+  <!-- Operational Session Tear Down Confirmation Dialogue Modal -->
   <div id="logoutModal" class="modal-overlay" style="display: none;">
     <div class="modal-container alert-box">
       <div style="color: #f59e0b; font-size: 32px; margin-bottom: 12px;"><i class="fas fa-sign-out-alt"></i></div>
@@ -485,6 +553,7 @@
     </div>
   </div>
 
+  <!-- Standard System Toast Notification Element Popup -->
   <div id="toast" class="toast-notification"><span id="toastMessage">Workspace Notification</span></div>
 
   <script type="module" src="script.js"></script>
