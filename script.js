@@ -1568,14 +1568,15 @@ async function executeSupervisorExtraction() {
 }
 
 /* ==========================================================================
-   AGENTS TERMINATION GATEWAYS & WORKSPACE STATE CLEANERS
+   AGENTS TERMINATION GATEWAYS & WORKSPACE STATE CLEANERS (STATE-SYNCED)
    ========================================================================== */
 function terminateAgentSession() {
   const logoutModal = $('logoutModal');
   const cancelBtn = $('confirmLogoutCancelBtn');
   const confirmBtn = $('confirmLogoutSubmitBtn');
 
-  if (currentAgentId === "SUPERVISOR") {
+  // 🔒 SECURE SWITCH UPDATED: Use live runtime database flag instead of hardcoded strings
+  if (isSupervisorAuthenticated) {
     executeLogOutRoutine();
     return;
   }
@@ -1611,7 +1612,8 @@ async function executeLogOutRoutine() {
     terminateSupervisorSession();
   }
 
-  if (currentAgentId && currentAgentId !== "SUPERVISOR") {
+  // 🔒 DATABASE SECURITY UPDATED: Ensure exit logs are only sent for real agent IDs
+  if (currentAgentId && !isSupervisorAuthenticated) {
     const todayStr = getSystemDateString();
     try {
       const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
@@ -1624,7 +1626,11 @@ async function executeLogOutRoutine() {
     }
   }
 
-  // 🎯 THE FIX: Purge the persistent checker flag from disk so the modal forces an login check-in on the next loop
+  // 🎯 NEW SECURITY FIX: Wipe runtime database switches completely
+  isSupervisorAuthenticated = false; 
+  document.body.classList.remove('role-supervisor');
+
+  // 🎯 PERSISTENT PURGE: Clear disk keys
   localStorage.removeItem("active_agent_session_id");
   localStorage.removeItem("shift_reminder_cleared");
   
@@ -1632,7 +1638,7 @@ async function executeLogOutRoutine() {
   currentAgentName = "Unknown Agent";
   currentAgentLob = "UNKNOWN";
   
-  // 🎯 THE FIX: Reset the permanent Orb back to its default state ahead of the browser reload pass
+  // Reset the permanent Orb back to default ahead of browser reload pass
   const trackingOrbNode = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
   if (trackingOrbNode) {
     trackingOrbNode.className = "meta-orb-trigger login-unread";
@@ -1677,7 +1683,8 @@ async function resetForm(event) {
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
 
-    if (currentAgentId && currentAgentId !== "SUPERVISOR") {
+    // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
+    if (currentAgentId && !isSupervisorAuthenticated) {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await setDoc(docRef, { form_data: {} }, { merge: true });
     }
@@ -1691,7 +1698,6 @@ async function resetForm(event) {
     updateOutput();
   }
 }
-
 /* ==========================================================================
    INITIALIZATION ENGINE & LOOPS
 ========================================================================== */
@@ -1706,7 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
-// 🛡️ UPGRADED & FIXED: Telemetry Portal & Supervisor Access Gate
+// 🛡️ UPGRADED: Telemetry Portal & Supervisor Access Gate (Direct State Verification)
 const authBadgeBtn = document.getElementById('authBadge') || $('authBadge');
 if (authBadgeBtn) {
   authBadgeBtn.addEventListener('click', (e) => {
@@ -1718,23 +1724,22 @@ if (authBadgeBtn) {
     const loginModal = document.getElementById('authModal') || $('authModal');
     const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
     
-    // 🔍 FALLBACK SECURITY GATING:
-    const isSupervisor = (typeof currentAgentId !== 'undefined' && currentAgentId === "SUPERVISOR") || 
-                         (document.body.classList.contains('role-supervisor')) ||
-                         (localStorage.getItem('user_role') === "SUPERVISOR");
-
-    if (!isSupervisor) {
-      // If they aren't authorized yet, prompt the login interface
+    // 🔒 SECURE CHECK: Read directly from your live global boolean variable
+    if (!isSupervisorAuthenticated) {
+      console.warn(`Access Denied: Agent ${currentAgentName} (${currentAgentId}) does not possess SUPERVISOR authorization tokens.`);
       if (loginModal) {
         loginModal.style.display = "flex";
         if (typeof loginModal.style.opacity !== 'undefined') loginModal.style.opacity = "1";
+      } else {
+        alert("Access Denied: Supervisor clearance required.");
       }
     } else {
-      // 🎯 FIXED: Force reset layout parameters explicitly together
+      // 🎯 SUCCESS: Verified via real-time database state variable
       if (telemetryContainer) {
         telemetryContainer.style.display = "flex";
         telemetryContainer.style.visibility = "visible";
         telemetryContainer.style.opacity = "1";
+        console.log(`Access Granted: Supervisor ${currentAgentName} initialized telemetry streams.`);
       }
     }
   });
