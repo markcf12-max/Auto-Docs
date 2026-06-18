@@ -1724,28 +1724,20 @@ async function resetForm(event) {
     updateOutput();
   }
 }
+
 /* ==========================================================================
-   INITIALIZATION ENGINE & LOOPS (SYNTAX CHECK COMPLETED)
+   INITIALIZATION ENGINE & LOOPS
 ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
-  // 🔗 Standard UI Action Form & Core Authentication Event Handlers
-  if (typeof $ === 'function') {
-    $('authForm')?.addEventListener('submit', handleAuthSubmission);
-    $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
-    $('logoutBtn')?.addEventListener('click', executeLogOutRoutine);
-    $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
-    $('publishBroadcastBtn')?.addEventListener('click', executeLiveBroadcastPublish);
-    $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
-    $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
-  } else {
-    document.getElementById('authForm')?.addEventListener('submit', handleAuthSubmission);
-    document.getElementById('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
-    document.getElementById('logoutBtn')?.addEventListener('click', executeLogOutRoutine);
-    document.getElementById('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
-    document.getElementById('publishBroadcastBtn')?.addEventListener('click', executeLiveBroadcastPublish);
-    document.getElementById('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
-    document.getElementById('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
-  }
+  $('authForm')?.addEventListener('submit', handleAuthSubmission);
+  $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
+  
+  $('logoutBtn')?.addEventListener('click', executeLogOutRoutine);
+  $('adminExtractSubmitBtn')?.addEventListener('click', executeSupervisorExtraction);
+
+  $('publishBroadcastBtn')?.addEventListener('click', executeLiveBroadcastPublish);
+  $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
+  $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
   // 🛡️ REMAPPED & SECURED: Telemetry Portal Gate (Targeting Your New HTML ID)
   const openTelemetryBtn = document.getElementById('openTelemetryBtn');
@@ -1758,8 +1750,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("Telemetry Extraction Event Triggered via ID Selector.");
 
-      const loginModal = document.getElementById('authModal') || (typeof $ === 'function' ? $('authModal') : null);
-      const telemetryContainer = document.getElementById("supervisorAdminPanel") || (typeof $ === 'function' ? $('supervisorAdminPanel') : null);
+      const loginModal = document.getElementById('authModal') || $('authModal');
+      const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
       
       // 🔍 MULTI-LAYERED GATE CHECK: Validates live states and session strings
       const isSupervisor = (isSupervisorAuthenticated === true) || 
@@ -1794,26 +1786,19 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Initialization Failure: '#openTelemetryBtn' could not be found in layout.");
   }
 
-  // 🚪 Close Telemetry Workspace Layout Gate Handler
-  const closeTelemetryBtn = document.getElementById('closeTelemetryBtn') || (typeof $ === 'function' ? $('closeTelemetryBtn') : null);
-  if (closeTelemetryBtn) {
-    closeTelemetryBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const telemetryContainer = document.getElementById("supervisorAdminPanel") || (typeof $ === 'function' ? $('supervisorAdminPanel') : null);
-      if (telemetryContainer) {
-        telemetryContainer.style.display = "none";
-        telemetryContainer.style.visibility = "hidden";
-        telemetryContainer.style.opacity = "0";
-      }
-    });
-  }
-
-  // 🎨 Active Theme Mode Check Loop Initialization
-  if (typeof THEME_KEY !== 'undefined' && localStorage.getItem(THEME_KEY) === "dark") {
-    document.body.classList.add("dark-mode");
-    if (typeof updateThemeIcon === 'function') {
-      updateThemeIcon(true);
+  $('closeTelemetryBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+    if (telemetryContainer) {
+      telemetryContainer.style.display = "none";
+      telemetryContainer.style.visibility = "hidden";
+      telemetryContainer.style.opacity = "0";
     }
+  });
+
+  if (localStorage.getItem(THEME_KEY) === "dark") {
+    document.body.classList.add("dark-mode");
+    updateThemeIcon(true);
   }
 });
 
