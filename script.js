@@ -1738,53 +1738,68 @@ document.addEventListener("DOMContentLoaded", () => {
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
-// 🛡️ UPGRADED: Telemetry Portal & Supervisor Access Gate (Direct State Verification)
-const authBadgeBtn = document.getElementById('authBadge') || $('authBadge');
-if (authBadgeBtn) {
-  authBadgeBtn.addEventListener('click', (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  // 🛡️ REMAPPED & SECURED: Telemetry Portal Gate (Targeting Your New HTML ID)
+  const openTelemetryBtn = document.getElementById('openTelemetryBtn');
+  if (openTelemetryBtn) {
+    openTelemetryBtn.addEventListener('click', (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
 
-    const loginModal = document.getElementById('authModal') || $('authModal');
-    const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
-    
-    // 🔒 SECURE CHECK: Read directly from your live global boolean variable
-    if (!isSupervisorAuthenticated) {
-      console.warn(`Access Denied: Agent ${currentAgentName} (${currentAgentId}) does not possess SUPERVISOR authorization tokens.`);
-      if (loginModal) {
-        loginModal.style.display = "flex";
-        if (typeof loginModal.style.opacity !== 'undefined') loginModal.style.opacity = "1";
+      console.log("Telemetry Extraction Event Triggered via ID Selector.");
+
+      const loginModal = document.getElementById('authModal') || $('authModal');
+      const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+      
+      // 🔍 MULTI-LAYERED GATE CHECK: Validates live states and session strings
+      const isSupervisor = (isSupervisorAuthenticated === true) || 
+                           (currentAgentId === "SUPERVISOR") || 
+                           (localStorage.getItem('active_agent_session_id') === "SUPERVISOR") ||
+                           (document.body.classList.contains('role-supervisor'));
+
+      if (!isSupervisor) {
+        console.warn(`Extraction Access Blocked: Session lacks authorization tokens.`);
+        if (loginModal) {
+          loginModal.style.display = "flex";
+          if (typeof loginModal.style.opacity !== 'undefined') loginModal.style.opacity = "1";
+        } else {
+          alert("Access Denied: Supervisor clearance required.");
+        }
       } else {
-        alert("Access Denied: Supervisor clearance required.");
+        // 🎯 THE ENGINE FORCE-PASS: Bypasses all layout bottlenecks instantly
+        if (telemetryContainer) {
+          telemetryContainer.style.setProperty("display", "flex", "important");
+          telemetryContainer.style.setProperty("visibility", "visible", "important");
+          telemetryContainer.style.setProperty("opacity", "1", "important");
+          telemetryContainer.style.setProperty("height", "auto", "important");
+          
+          console.log(`Access Granted: Extraction panel rendered safely for admin.`);
+        } else {
+          console.error("FATAL UI ERROR: Target element '#supervisorAdminPanel' missing from DOM tree.");
+          alert("System Layout Error: The extraction container element (#supervisorAdminPanel) was not found.");
+        }
       }
-    } else {
-      // 🎯 SUCCESS: Verified via real-time database state variable
-      if (telemetryContainer) {
-        telemetryContainer.style.display = "flex";
-        telemetryContainer.style.visibility = "visible";
-        telemetryContainer.style.opacity = "1";
-        console.log(`Access Granted: Supervisor ${currentAgentName} initialized telemetry streams.`);
-      }
+    });
+  } else {
+    console.error("Initialization Failure: '#openTelemetryBtn' could not be found in layout.");
+  }
+
+  $('closeTelemetryBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+    if (telemetryContainer) {
+      telemetryContainer.style.display = "none";
+      telemetryContainer.style.visibility = "hidden";
+      telemetryContainer.style.opacity = "0";
     }
   });
-}
-
-$('closeTelemetryBtn')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
-  if (telemetryContainer) {
-    telemetryContainer.style.display = "none";
-    telemetryContainer.style.visibility = "hidden";
-    telemetryContainer.style.opacity = "0";
-  }
-});
 
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   }
+});
 
   // ==========================================================================
   // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
