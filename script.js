@@ -1802,225 +1802,225 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-  // ==========================================================================
-  // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
-  // ==========================================================================
-  const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
-  const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
-  const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
-  const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
+// ==========================================================================
+// 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
+// ==========================================================================
+const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
+const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
+const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
 
-  // Helper routine to safely handle UI display toggles for the floating orb
-  function setOrbVisibility(isVisible) {
-    if (!shiftCheckInOrb) return;
-    if (isVisible) {
-      shiftCheckInOrb.style.display = "flex";
-      setTimeout(() => {
-        shiftCheckInOrb.style.opacity = "1";
-        shiftCheckInOrb.style.transform = "scale(1)";
-      }, 20);
-    } else {
-      shiftCheckInOrb.style.opacity = "0";
-      shiftCheckInOrb.style.transform = "scale(0.8)";
-      setTimeout(() => {
-        shiftCheckInOrb.style.display = "none";
-      }, 200);
-    }
+// Helper routine to safely handle UI display toggles for the floating orb
+function setOrbVisibility(isVisible) {
+  if (!shiftCheckInOrb) return;
+  if (isVisible) {
+    shiftCheckInOrb.style.display = "flex";
+    setTimeout(() => {
+      shiftCheckInOrb.style.opacity = "1";
+      shiftCheckInOrb.style.transform = "scale(1)";
+    }, 20);
+  } else {
+    shiftCheckInOrb.style.opacity = "0";
+    shiftCheckInOrb.style.transform = "scale(0.8)";
+    setTimeout(() => {
+      shiftCheckInOrb.style.display = "none";
+    }, 200);
   }
+}
 
-  // Initial Core Setup Configuration for the Orb Layer
-  if (shiftCheckInOrb) {
-    shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-    
-    const orbIcon = shiftCheckInOrb.querySelector('i');
-    if (orbIcon) {
-      orbIcon.className = "fas fa-folder-open meta-orb-icon";
-    }
-    
-    shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+// Initial Core Setup Configuration for the Orb Layer
+if (shiftCheckInOrb) {
+  shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+  
+  const orbIcon = shiftCheckInOrb.querySelector('i');
+  if (orbIcon) {
+    orbIcon.className = "fas fa-folder-open meta-orb-icon";
+  }
+  
+  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
 
-    // 🎯 THE ONLY ORB CLICK HANDLER IN THE ENTIRE SCRIPT
-    shiftCheckInOrb.addEventListener('click', (e) => {
-      e.stopPropagation();
+  // 🎯 THE ONLY ORB CLICK HANDLER IN THE ENTIRE SCRIPT
+  shiftCheckInOrb.addEventListener('click', (e) => {
+    e.stopPropagation();
+    
+    if (metaTrackerDrawerSubPane) {
+      const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
       
-      if (metaTrackerDrawerSubPane) {
-        const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-        
-        if (isOpen) {
-          shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
-        } else {
-          shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-        }
+      if (isOpen) {
+        shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
+      } else {
+        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }
-    });
-  }
+    }
+  });
+}
 
-  // Hook up the close '×' action inside the PiP header to return the Orb back to a calm state
-  if (closeMetaDrawerHeaderBtn) {
-    closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
+// Hook up the close '×' action inside the PiP header to return the Orb back to a calm state
+if (closeMetaDrawerHeaderBtn) {
+  closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (metaTrackerDrawerSubPane) {
+      metaTrackerDrawerSubPane.classList.remove('drawer-open');
+      
+      // Reset Orb state class visually without touching layout style parameters
+      if (shiftCheckInOrb) {
+        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+      }
+    }
+  });
+}
+
+if (glassmorphicReminderModal) {
+  glassmorphicReminderModal.style.display = 'none';
+  glassmorphicReminderModal.style.opacity = '0';
+}
+
+// Global Shift Trigger Wrapper
+window.evaluateShiftCheckInModal = function() {
+  if (!glassmorphicReminderModal) return;
+
+  if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
+    glassmorphicReminderModal.style.display = 'none';
+    setOrbVisibility(true);
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+  } else {
+    glassmorphicReminderModal.style.display = 'flex';
+    setOrbVisibility(true);
+    setTimeout(() => {
+      glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
+      glassmorphicReminderModal.style.opacity = '1';
+    }, 50);
+    
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+  }
+};
+
+// Connect the "Got it, View Tracker" Action Event
+const trackerActionBtn = document.getElementById('dismissReminderBtn');
+if (trackerActionBtn) {
+  trackerActionBtn.addEventListener('click', (e) => {
+    if (e) {
       e.preventDefault();
       e.stopPropagation();
-      
-      if (metaTrackerDrawerSubPane) {
-        metaTrackerDrawerSubPane.classList.remove('drawer-open');
-        
-        // Reset Orb state class visually without touching layout style parameters
-        if (shiftCheckInOrb) {
-          shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-        }
-      }
-    });
-  }
+    }
 
-  if (glassmorphicReminderModal) {
-    glassmorphicReminderModal.style.display = 'none';
+    glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
     glassmorphicReminderModal.style.opacity = '0';
-  }
-
-  // Global Shift Trigger Wrapper
-  window.evaluateShiftCheckInModal = function() {
-    if (!glassmorphicReminderModal) return;
-
-    if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
+    
+    localStorage.setItem("shift_reminder_cleared", "true");
+    
+    setTimeout(() => {
       glassmorphicReminderModal.style.display = 'none';
-      setOrbVisibility(true);
-      if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-    } else {
-      glassmorphicReminderModal.style.display = 'flex';
-      setOrbVisibility(true);
-      setTimeout(() => {
-        glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
-        glassmorphicReminderModal.style.opacity = '1';
-      }, 50);
-      
-      if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
-    }
-  };
-
-  // Connect the "Got it, View Tracker" Action Event
-  const trackerActionBtn = document.getElementById('dismissReminderBtn');
-  if (trackerActionBtn) {
-    trackerActionBtn.addEventListener('click', (e) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
-      glassmorphicReminderModal.style.opacity = '0';
-      
-      localStorage.setItem("shift_reminder_cleared", "true");
-      
-      setTimeout(() => {
-        glassmorphicReminderModal.style.display = 'none';
-        if (metaTrackerDrawerSubPane) {
-          metaTrackerDrawerSubPane.classList.add('drawer-open');
-          
-          if (shiftCheckInOrb) {
-            shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
-          }
+      if (metaTrackerDrawerSubPane) {
+        metaTrackerDrawerSubPane.classList.add('drawer-open');
+        
+        if (shiftCheckInOrb) {
+          shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
         }
-      }, 350);
-    });
+      }
+    }, 350);
+  });
+}
+
+// ==========================================================================
+// 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
+// ==========================================================================
+const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
+trackingFields.forEach(id => {
+  const el = $(id);
+  if (!el) return; 
+  
+  const freshElement = el.cloneNode(true);
+  el.parentNode.replaceChild(freshElement, el);
+
+  freshElement.addEventListener("input", (e) => { 
+    if (id === "wocas" && document.getElementById('trackerSystemErrorToggle')?.checked) {
+      const rawValue = e.target.value;
+      const cleanLog = rawValue.replace(/at\s+.*\(?:\d+:\d+\)?/g, '').replace(/[\r\n]+/g, '\n').trim();
+      if (rawValue !== cleanLog) {
+        e.target.value = cleanLog;
+      }
+    }
+    updateOutput(); 
+    updateSuggestions(); 
+    saveData(false); 
+  });
+  
+  freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
+  freshElement.addEventListener("blur", () => { saveData(true); });
+});
+
+$('historyContainer')?.addEventListener('click', (e) => {
+  const button = e.target.closest('button');
+  if (!button) return;
+  const action = button.getAttribute('data-action');
+  const index = parseInt(button.getAttribute('data-index'), 10);
+  
+  if (action === 'recopy') {
+    loadHistoryItem(index);
+  } else if (action === 'delete') {
+    deleteHistoryItem(index);
   }
+});
 
-  // ==========================================================================
-  // 🎯 CORE CONFIG: Real-time Pressure Form Logic & Pure Regex Log Stripper
-  // ==========================================================================
-  const trackingFields = ["case", "subj", "name", "min", "company", "email", "thread", "datetime", "action", "wocas"];
-  trackingFields.forEach(id => {
-    const el = $(id);
-    if (!el) return; 
-    
-    const freshElement = el.cloneNode(true);
-    el.parentNode.replaceChild(freshElement, el);
+$("case")?.addEventListener("input", (e) => validateCaseField(e.target));
+$("min")?.addEventListener("input", (e) => validateMinField(e.target));
 
-    freshElement.addEventListener("input", (e) => { 
-      if (id === "wocas" && document.getElementById('trackerSystemErrorToggle')?.checked) {
-        const rawValue = e.target.value;
-        const cleanLog = rawValue.replace(/at\s+.*\(?:\d+:\d+\)?/g, '').replace(/[\r\n]+/g, '\n').trim();
-        if (rawValue !== cleanLog) {
-          e.target.value = cleanLog;
-        }
-      }
-      updateOutput(); 
-      updateSuggestions(); 
-      saveData(false); 
-    });
-    
-    freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
-    freshElement.addEventListener("blur", () => { saveData(true); });
-  });
+$("concernType")?.addEventListener("change", () => {
+  const vocInput = $("voc");
+  if (vocInput) vocInput.value = ""; 
 
-  $('historyContainer')?.addEventListener('click', (e) => {
-    const button = e.target.closest('button');
-    if (!button) return;
-    const action = button.getAttribute('data-action');
-    const index = parseInt(button.getAttribute('data-index'), 10);
-    
-    if (action === 'recopy') {
-      loadHistoryItem(index);
-    } else if (action === 'delete') {
-      deleteHistoryItem(index);
-    }
-  });
+  updateVocOptions(false);
+  updateOutput();
+  
+  const suggestionsBox = document.getElementById('suggestions');
+  if (suggestionsBox) {
+    suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
+  }
+  
+  const spielContainer = document.getElementById('playbookSpielContainer');
+  if (spielContainer) {
+    spielContainer.innerHTML = `
+      <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
+        The corresponding email spiel template will load automatically upon context verification.
+      </div>`;
+  }
+  saveData(true);
+});
 
-  $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
-  $("min")?.addEventListener("input", (e) => validateMinField(e.target));
+$("voc")?.addEventListener("input", () => {
+  updateOutput();
+  if ($("concernType")?.value && $("voc")?.value) {
+    updateSuggestions(); 
+  }
+});
 
-  $("concernType")?.addEventListener("change", () => {
-    const vocInput = $("voc");
-    if (vocInput) vocInput.value = ""; 
+$("voc")?.addEventListener("change", () => {
+  updateOutput();
+  saveData(true);
+  if ($("concernType")?.value && $("voc")?.value) {
+    updateSuggestions(); 
+  }
+});
 
-    updateVocOptions(false);
-    updateOutput();
-    
-    const suggestionsBox = document.getElementById('suggestions');
-    if (suggestionsBox) {
-      suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
-    }
-    
-    const spielContainer = document.getElementById('playbookSpielContainer');
-    if (spielContainer) {
-      spielContainer.innerHTML = `
-        <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
-          The corresponding email spiel template will load automatically upon context verification.
-        </div>`;
-    }
-    saveData(true);
-  });
+$("copyBtn")?.addEventListener("click", copyDoc);
+$("mobileCopyBtn")?.addEventListener("click", copyDoc);
+$("resetBtn")?.addEventListener("click", resetForm);
+$("mobileResetBtn")?.addEventListener("click", resetForm);
 
-  $("voc")?.addEventListener("input", () => {
-    updateOutput();
-    if ($("concernType")?.value && $("voc")?.value) {
-      updateSuggestions(); 
-    }
-  });
+$("drawerToggle")?.addEventListener("click", toggleDrawer);
+$("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
+$("themeToggle")?.addEventListener("click", toggleTheme);
 
-  $("voc")?.addEventListener("change", () => {
-    updateOutput();
-    saveData(true);
-    if ($("concernType")?.value && $("voc")?.value) {
-      updateSuggestions(); 
-    }
-  });
+$("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
+$("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-  $("copyBtn")?.addEventListener("click", copyDoc);
-  $("mobileCopyBtn")?.addEventListener("click", copyDoc);
-  $("resetBtn")?.addEventListener("click", resetForm);
-  $("mobileResetBtn")?.addEventListener("click", resetForm);
-
-  $("drawerToggle")?.addEventListener("click", toggleDrawer);
-  $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
-  $("themeToggle")?.addEventListener("click", toggleTheme);
-
-  $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
-  $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
-
-  // 📊 Supervisor Telemetry Panel Inline Action Triggers
-  const closeSupervisorBtn = document.getElementById('closeSupervisorBtn');
-  const exitPortalBtn = document.getElementById('exitPortalBtn');
-  const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
+// 📊 Supervisor Telemetry Panel Inline Action Triggers
+const closeSupervisorBtn = document.getElementById('closeSupervisorBtn');
+const exitPortalBtn = document.getElementById('exitPortalBtn');
+const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
 
 const hideExtractionModal = () => {
   if (supervisorAdminPanel) {
@@ -2030,25 +2030,27 @@ const hideExtractionModal = () => {
   }
 };
 
-  if (closeSupervisorBtn) closeSupervisorBtn.addEventListener('click', hideExtractionModal);
-  if (exitPortalBtn) exitPortalBtn.addEventListener('click', hideExtractionModal);
+if (closeSupervisorBtn) closeSupervisorBtn.addEventListener('click', hideExtractionModal);
+if (exitPortalBtn) exitPortalBtn.addEventListener('click', hideExtractionModal);
 
-  // Global background window listener hooks
-  document.addEventListener('click', (e) => {
-    const drawer = $('playbookPanel');
-    if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
-      drawer.classList.remove('drawer-open');
-      const toggleBtn = $('drawerToggle');
-      if (toggleBtn) {
-        if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
-        if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
-      }
+// Global background window listener hooks
+document.addEventListener('click', (e) => {
+  const drawer = $('playbookPanel');
+  if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
+    drawer.classList.remove('drawer-open');
+    const toggleBtn = $('drawerToggle');
+    if (toggleBtn) {
+      if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
+      if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
     }
-  });
+  }
+});
 
-  // Call persistent downstream network data feeds
-  listenToOperationalBroadcasts();
-  if (typeof listenToSessionState === "function") listenToSessionState();
+// Call persistent downstream network data feeds
+listenToOperationalBroadcasts();
+if (typeof listenToSessionState === "function") listenToSessionState();
+
+// 🎯 THE MISSING SAFETY BRACE RECONCILED BELOW
 
 }); // 🎯 COMPLETE CONTAINER CLOSURE WITHOUT SYNTAX DROPS
 
