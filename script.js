@@ -2,7 +2,20 @@
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, where, getDocs, increment } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  updateDoc, 
+  onSnapshot, 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  increment,
+  orderBy // 🎯 INJECTED: Fixes "Pipeline processing broke: orderBy is not defined"
+} from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
