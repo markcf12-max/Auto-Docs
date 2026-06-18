@@ -1033,72 +1033,42 @@ body.dark-theme .meta-orb-badge,
   overflow-y: auto;
 }
 /* ==========================================================================
-   🚨 EMERGENCY REPAIR: SUPERVISOR MATRIX PORTAL & TELEMETRY ALIGNMENT
+   🎯 ACCURATE DASHBOARD CONTAINER LAYOUT (STACKED ABOVE LIVE BROADCASTS)
 ========================================================================== */
 
-/* 1. Fixes the Master Portal Panel Container layout */
 #supervisorAdminPanel {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  width: 90vw !important;
-  max-width: 1100px !important;
-  max-height: 85vh !important;
-  background: rgba(15, 23, 42, 0.98) !important; /* Premium Dark HUD color */
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
-  z-index: 99999 !important;
-  padding: 24px !important;
-  box-sizing: border-box !important;
-  overflow-y: auto !important;
+  /* 1. Removes the fixed screen overlay settings that caused it to float away */
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
   
-  /* Flex layout engine safety defaults */
-  flex-direction: column !important;
-  gap: 16px !important;
-}
-
-/* 2. Style alignment handle for the Open Telemetry operational Trigger button */
-#openTelemetryBtn {
-  display: inline-flex !important;
+  /* 2. Forces it to occupy full column width directly inside the flow layout */
+  display: flex !important;
+  width: 100% !important;
+  margin-bottom: 20px !important; /* Creates a clean gap directly above the broadcast center */
+  
+  /* 3. Restores your premium dashboard panel design settings */
+  background: rgba(30, 41, 59, 0.4) !important; /* Sleek dashboard card slate */
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  padding: 16px 20px !important;
+  box-sizing: border-box !important;
+  
+  /* 4. Alignment settings */
+  flex-direction: row !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; /* Administrative Blue */
-  color: #ffffff !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  padding: 10px 16px !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  text-decoration: none !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  z-index: 10 !important;
 }
 
-#openTelemetryBtn:hover {
-  background: linear-gradient(135deg, #2563eb, #1e40af) !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* 3. Style fallback for the internal close controls inside the matrix layout */
-#closeSupervisorBtn, #exitPortalBtn, #closeTelemetryBtn {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  padding: 8px 14px !important;
-  border-radius: 6px !important;
-  cursor: pointer !important;
-  font-weight: 500 !important;
-  transition: background 0.15s ease !important;
-}
-
-#closeSupervisorBtn:hover, #exitPortalBtn:hover, #closeTelemetryBtn:hover {
-  background: rgba(239, 68, 68, 0.2) !important; /* Soft Warning Red Hover */
-  border-color: rgba(239, 68, 68, 0.4) !important;
-  color: #fef2f2 !important;
+/* Keeps the Open Telemetry / Admin status block layout looking tight */
+#supervisorAdminPanel .admin-status-wrapper,
+#supervisorAdminPanel .telemetry-header-block {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }
