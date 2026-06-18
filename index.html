@@ -197,29 +197,28 @@
         </div>
         
         <!-- Dropdown elements rendered dynamically via cloud sync systems -->
-        <div id="trackingDropdownFields" style="display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-          <div>
-            <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Follow-Up Router Segment</label>
-            <select id="trackUrgencyChannel" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px;">
-              <!-- Options populated dynamically from firestore. Hardcoded nodes act as local fallbacks -->
-              <option value="Case Monitoring">🔵 General Case Monitoring</option>
-              <option value="One Hub">🟢 One Hub Route Queue</option>
-              <option value="HLR">🟡 HLR Escalation Segment</option>
-              <option value="Organic Dependency">🔴 Organic Dependency Link</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">SLA Deadline Windows</label>
-            <select id="trackTimerWindow" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px;">
-              <option value="30">30 Minutes</option>
-              <option value="60">1 Hour</option>
-              <option value="120">2 Hours</option>
-              <option value="240">4 Hours</option>
-              <option value="1440">24 Hours (Tomorrow)</option>
-            </select>
-          </div>
-        </div>
-      </div>
+<div id="trackingDropdownFields" style="display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+  <div>
+    <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Follow-Up Router Segment</label>
+    <select id="trackUrgencyChannel" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px;">
+      <option value="Case Monitoring">🔵 General Case Monitoring</option>
+      <option value="One Hub">🟢 One Hub Route Queue</option>
+      <option value="HLR">🟡 HLR Escalation Segment</option>
+      <option value="Organic Dependency">🔴 Organic Dependency Link</option>
+    </select>
+  </div>
+  
+  <div>
+    <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Urgency / Timer Threshold</label>
+    <select id="urgencyTrackingTimerSelect" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px;">
+      <option value=""> Smooth Sailing (Standard Log Only)</option>
+      <option value="1">⏱️ 1 Minute Test Loop</option>
+      <option value="30">⏱️ 30 Minutes Check</option>
+      <option value="60">⏱️ 1 Hour Follow-up</option>
+      <option value="1440">⏱️ 24 Hours SLA Flag</option>
+    </select>
+  </div>
+</div>
 
       <div class="buttons" style="margin-top: 15px;">
         <button id="copyBtn" class="btn-primary"><i class="fas fa-copy"></i> Copy Output</button>
