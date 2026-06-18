@@ -835,14 +835,17 @@ const updateData = {
   }
 }
 
+/* ==========================================================================
+   SESSION SYSTEM MONITOR & PORTAL ROUTERS (TIMING & SECURITY FIXED)
+   ========================================================================== */
 function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
   
   document.querySelectorAll("input, textarea").forEach(el => {
-    // 🎯 FIXED: Explicitly protect authentication AND supervisor configuration fields from being wiped!
+    // Explicitly protect authentication AND supervisor configuration fields from being wiped!
     const isAuthField = el.id === 'authEmail' || el.id === 'authPassword' || el.id === 'authName';
     
-    // 🎯 UPDATED: Added broadcastTextInput to the ironclad protection array!
+    // Added broadcastTextInput to the ironclad protection array!
     const isSupeField = (
       el.id === 'supeHtmlContent' || 
       el.id === 'supeUrl' || 
@@ -864,17 +867,22 @@ function listenToSessionState() {
 
   if (cachedId) {
     currentAgentId = cachedId;
+    
+    // 🔒 EVALUATING CACHED SUPERVISOR ROUTE
     if (cachedId === "SUPERVISOR") {
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
       
-      // 1. Configure the workspace views for supervisor actions
+      // 🎯 THE CRITICAL TIMING FIX: Elevate state clearance tokens FIRST!
+      isSupervisorAuthenticated = true; 
+      
+      // Configure workspace layout views for supervisor actions
       isolateWorkspaceUI("SUPERVISOR");
       
       if ($('authModal')) $('authModal').style.display = "none";
       if ($('logoutBtn')) $('logoutBtn').style.display = "block";
       
-      // 2. Instantly unlock the Matrix Editor panel and sync UI parameters
+      // 🚀 NOW THIS WILL PASS SAFELY: The flag is true, unlocking elements cleanly
       bypassLockForAuthenticatedSupervisor();
       
       // Update system status badge to show online
@@ -884,6 +892,8 @@ function listenToSessionState() {
       return;
     }
     
+    // 🔒 EVALUATING CACHED AGENT ROUTE
+    isSupervisorAuthenticated = false; // Explicit lock reinforcement
     isolateWorkspaceUI("AGENT");
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
       if(snap.exists()) {
@@ -896,6 +906,8 @@ function listenToSessionState() {
       }
     });
   } else {
+    // NO ACTIVE SESSION DETECTED
+    isSupervisorAuthenticated = false;
     currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
