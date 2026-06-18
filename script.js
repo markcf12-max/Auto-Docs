@@ -1810,7 +1810,6 @@ const glassmorphicReminderModal = document.getElementById('loginReminderScreen')
 const metaTrackerDrawerSubPane = document.getElementById('metaTrackerDrawer');
 const closeMetaDrawerHeaderBtn = document.getElementById('closeMetaDrawerBtn');
 
-// Helper routine to safely handle UI display toggles for the floating orb
 function setOrbVisibility(isVisible) {
   if (!shiftCheckInOrb) return;
   if (isVisible) {
@@ -1828,7 +1827,6 @@ function setOrbVisibility(isVisible) {
   }
 }
 
-// Initial Core Setup Configuration for the Orb Layer
 if (shiftCheckInOrb) {
   shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
   
@@ -1839,13 +1837,10 @@ if (shiftCheckInOrb) {
   
   shiftCheckInOrb.className = "meta-orb-trigger login-unread";
 
-  // 🎯 THE ONLY ORB CLICK HANDLER IN THE ENTIRE SCRIPT
   shiftCheckInOrb.addEventListener('click', (e) => {
     e.stopPropagation();
-    
     if (metaTrackerDrawerSubPane) {
       const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-      
       if (isOpen) {
         shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
       } else {
@@ -1855,16 +1850,12 @@ if (shiftCheckInOrb) {
   });
 }
 
-// Hook up the close '×' action inside the PiP header to return the Orb back to a calm state
 if (closeMetaDrawerHeaderBtn) {
   closeMetaDrawerHeaderBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (metaTrackerDrawerSubPane) {
       metaTrackerDrawerSubPane.classList.remove('drawer-open');
-      
-      // Reset Orb state class visually without touching layout style parameters
       if (shiftCheckInOrb) {
         shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }
@@ -1877,7 +1868,6 @@ if (glassmorphicReminderModal) {
   glassmorphicReminderModal.style.opacity = '0';
 }
 
-// Global Shift Trigger Wrapper
 window.evaluateShiftCheckInModal = function() {
   if (!glassmorphicReminderModal) return;
 
@@ -1892,12 +1882,10 @@ window.evaluateShiftCheckInModal = function() {
       glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
       glassmorphicReminderModal.style.opacity = '1';
     }, 50);
-    
     if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
   }
 };
 
-// Connect the "Got it, View Tracker" Action Event
 const trackerActionBtn = document.getElementById('dismissReminderBtn');
 if (trackerActionBtn) {
   trackerActionBtn.addEventListener('click', (e) => {
@@ -1905,17 +1893,13 @@ if (trackerActionBtn) {
       e.preventDefault();
       e.stopPropagation();
     }
-
     glassmorphicReminderModal.style.transition = 'opacity 0.35s ease';
     glassmorphicReminderModal.style.opacity = '0';
-    
     localStorage.setItem("shift_reminder_cleared", "true");
-    
     setTimeout(() => {
       glassmorphicReminderModal.style.display = 'none';
       if (metaTrackerDrawerSubPane) {
         metaTrackerDrawerSubPane.classList.add('drawer-open');
-        
         if (shiftCheckInOrb) {
           shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
         }
@@ -1957,7 +1941,6 @@ $('historyContainer')?.addEventListener('click', (e) => {
   if (!button) return;
   const action = button.getAttribute('data-action');
   const index = parseInt(button.getAttribute('data-index'), 10);
-  
   if (action === 'recopy') {
     loadHistoryItem(index);
   } else if (action === 'delete') {
@@ -1971,15 +1954,12 @@ $("min")?.addEventListener("input", (e) => validateMinField(e.target));
 $("concernType")?.addEventListener("change", () => {
   const vocInput = $("voc");
   if (vocInput) vocInput.value = ""; 
-
   updateVocOptions(false);
   updateOutput();
-  
   const suggestionsBox = document.getElementById('suggestions');
   if (suggestionsBox) {
     suggestionsBox.innerHTML = "Select a new VOC option from the dropdown to view its playbook...";
   }
-  
   const spielContainer = document.getElementById('playbookSpielContainer');
   if (spielContainer) {
     spielContainer.innerHTML = `
@@ -2017,7 +1997,6 @@ $("themeToggle")?.addEventListener("click", toggleTheme);
 $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
 $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
 
-// 📊 Supervisor Telemetry Panel Inline Action Triggers
 const closeSupervisorBtn = document.getElementById('closeSupervisorBtn');
 const exitPortalBtn = document.getElementById('exitPortalBtn');
 const supervisorAdminPanel = document.getElementById('supervisorAdminPanel');
@@ -2033,7 +2012,6 @@ const hideExtractionModal = () => {
 if (closeSupervisorBtn) closeSupervisorBtn.addEventListener('click', hideExtractionModal);
 if (exitPortalBtn) exitPortalBtn.addEventListener('click', hideExtractionModal);
 
-// Global background window listener hooks
 document.addEventListener('click', (e) => {
   const drawer = $('playbookPanel');
   if (drawer && drawer.classList.contains('drawer-open') && !drawer.contains(e.target) && !$('drawerToggle')?.contains(e.target) && !$('drawerCloseBtn')?.contains(e.target)) {
@@ -2046,13 +2024,8 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Call persistent downstream network data feeds
 listenToOperationalBroadcasts();
 if (typeof listenToSessionState === "function") listenToSessionState();
-
-// 🎯 THE MISSING SAFETY BRACE RECONCILED BELOW
-
-}); // 🎯 COMPLETE CONTAINER CLOSURE WITHOUT SYNTAX DROPS
 
 
 /* ==========================================================================
