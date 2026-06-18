@@ -1417,7 +1417,13 @@ function copyDoc() {
   navigator.clipboard.writeText(outputText).then(() => {
     showToast("Notes copied to system clipboard!");
     const caseNum = $("case")?.value || "N/A";
+    
+    // 📂 Save record into your traditional daily stack array
     pushToHistory(caseNum, outputText);
+    
+    // ⚡ INTERCEPT ENTRYPOINT: Evaluates timers, routing channels, and folder structures
+    interceptAndRegisterCaseTracking(caseNum, outputText);
+    
   }).catch(err => {
     showToast("Clipboard routine blocked.", true);
   });
@@ -2128,4 +2134,254 @@ function listenToOperationalBroadcasts() {
   }, (error) => {
     console.warn("Broadcast listener network drop:", error);
   });
+}
+
+/* ==========================================================================
+   AGENT SHIFT ARCHIVE & LIVING QUEUE ENGINE Config
+   ========================================================================== */
+let activeUrgentQueueItems = [];
+let ongoingQueueTrackingLoop = null;
+
+// Audio context generator for the premium hardware notification chime
+function playNotificationHardwareChime() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Note 1 (High crisp click initialization)
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+    gain1.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start();
+    osc1.stop(audioCtx.currentTime + 0.1);
+
+    // Note 2 (Premium structural hardware confirmation chime)
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.05); // A5
+    gain2.gain.setValueAtTime(0.12, audioCtx.currentTime + 0.05);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime + 0.05);
+    osc2.stop(audioCtx.currentTime + 0.45);
+  } catch (audioException) {
+    console.warn("Audio Context pipeline blocked by safety layers:", audioException);
+  }
+}
+
+/**
+ * 🔔 Trigger Premium Hardware Notification Slider
+ */
+function triggerHardwarePillNotification(caseId, concernType) {
+  // Dynamically assemble toast layout elements on target frame if missing
+  let alertToastNode = document.getElementById('hardwareAlertToastInstance');
+  if (!alertToastNode) {
+    alertToastNode = document.createElement('div');
+    alertToastNode.id = 'hardwareAlertToastInstance';
+    alertToastNode.className = 'hardware-toast-notification';
+    alertToastNode.innerHTML = `
+      <div class="hardware-toast-icon-wrapper">
+        <i id="hardwareToastBellIcon" class="fas fa-bell"></i>
+      </div>
+      <div class="hardware-toast-content">
+        <p class="hardware-toast-header">🔔 Case Tracking Alert</p>
+        <p id="hardwareToastBodyPayload" class="hardware-toast-details"></p>
+      </div>
+    `;
+    document.body.appendChild(alertToastNode);
+  }
+
+  const payloadTextContainer = document.getElementById('hardwareToastBodyPayload');
+  const bellIconInstance = document.getElementById('hardwareToastBellIcon');
+  
+  if (payloadTextContainer) {
+    payloadTextContainer.innerHTML = `Case ID <strong>#${caseId}</strong> (${concernType}) requires immediate follow-up check.`;
+  }
+
+  // Trigger sound effect and ringing animations instantly
+  playNotificationHardwareChime();
+  if (bellIconInstance) bellIconInstance.classList.add('animate-vibrate-bell');
+  alertToastNode.classList.add('slide-in');
+
+  // Gracefully slide out of bounds after a brief window
+  setTimeout(() => {
+    alertToastNode.classList.remove('slide-in');
+    setTimeout(() => {
+      if (bellIconInstance) bellIconInstance.classList.remove('animate-vibrate-bell');
+    }, 450);
+  }, 6000);
+}
+
+/**
+ * 📂 Render File-Manager Chronological Archive Folders
+ */
+function renderChronologicalArchiveGrid() {
+  const targetArchivePanel = document.getElementById('archiveFolderPanelContainer');
+  if (!targetArchivePanel) return;
+
+  if (!globalShiftHistory || globalShiftHistory.length === 0) {
+    targetArchivePanel.innerHTML = `<div style="padding:16px; text-align:center; color:#94a3b8; font-style:italic; font-size:13px;">Personal shift journal archive storage empty...</div>`;
+    return;
+  }
+
+  // Group historical log segments by current shift date stamps
+  const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  const mappedGroups = {};
+
+  globalShiftHistory.forEach(item => {
+    const targetDateKey = item.savedDateStamp || localizedToday;
+    if (!mappedGroups[targetDateKey]) mappedGroups[targetDateKey] = [];
+    mappedGroups[targetDateKey].push(item);
+  });
+
+  let structuralHtml = `<div class="archive-folder-grid">`;
+  Object.keys(mappedGroups).forEach(dateKey => {
+    const totalVolume = mappedGroups[dateKey].length;
+    structuralHtml += `
+      <div class="archive-folder" onclick="drilldownArchiveFolderEntries('${dateKey}')">
+        <div class="folder-counter-badge">${totalVolume} Cases</div>
+        <i class="fas fa-folder"></i>
+        <div class="folder-date-label">${dateKey}</div>
+      </div>
+    `;
+  });
+  structuralHtml += `</div><div id="archiveDrilldownContainer" style="margin-top:12px;"></div>`;
+  
+  targetArchivePanel.innerHTML = structuralHtml;
+}
+
+/**
+ * 🔍 Dropdown Filter Drilldown for Archived Shifts
+ */
+window.drilldownArchiveFolderEntries = function(dateKey) {
+  const container = document.getElementById('archiveDrilldownContainer');
+  if (!container || !globalShiftHistory) return;
+
+  const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  const matches = globalShiftHistory.filter(item => (item.savedDateStamp || localizedToday) === dateKey);
+
+  if (matches.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  let html = `
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px;">
+      <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; margin-bottom: 8px;">Manifest: ${dateKey}</div>
+      <input type="text" id="archiveFolderSearchInput" placeholder="Filter this folder..." oninput="filterArchiveFolderResults('${dateKey}')" style="width:100%; padding:6px; font-size:12px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; margin-bottom:8px;">
+      <div id="archiveFolderItemsStack">
+  `;
+
+  matches.forEach((item, idx) => {
+    html += `
+      <div class="archive-drilldown-item" style="padding:6px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#cbd5e1;">#${item.id || 'N/A'} - <small style="color:#64748b;">${item.time || ''}</small></span>
+        <button data-action="recopy" data-index="${idx}" style="background:#2563eb; color:#fff; border:none; padding:2px 6px; border-radius:3px; cursor:pointer; font-size:11px;">View</button>
+      </div>
+    `;
+  });
+
+  html += `</div></div>`;
+  container.innerHTML = html;
+};
+
+/**
+ * ⏳ Core Queue Processing Loop
+ */
+function runActiveQueueCountdownEngine() {
+  if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
+
+  ongoingQueueTrackingLoop = setInterval(() => {
+    const trackingContainerUI = document.getElementById('liveQueueTrackingMonitorView');
+    if (!trackingContainerUI || activeUrgentQueueItems.length === 0) return;
+
+    let uiBufferHtml = ``;
+    const currentTimeStamp = Date.now();
+
+    // Loop through current item arrays backwards to permit deletions safely
+    for (let index = activeUrgentQueueItems.length - 1; index >= 0; index--) {
+      const item = activeUrgentQueueItems[index];
+      const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
+
+      if (remainingTimeDelta <= 0) {
+        // Expiration boundary broken! Trigger hardware warning slideout
+        triggerHardwarePillNotification(item.caseId, item.concernType);
+        activeUrgentQueueItems.splice(index, 1);
+        continue;
+      }
+
+      // Convert time delta into standard countdown clock formatting string
+      const hours = Math.floor(remainingTimeDelta / 3600000);
+      const minutes = Math.floor((remainingTimeDelta % 3600000) / 60000);
+      const seconds = Math.floor((remainingTimeDelta % 60000) / 1000);
+      const countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+      uiBufferHtml += `
+        <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:6px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-weight:700; color:#f87171; font-size:12px;">[${item.concernType}]</span>
+            <span style="color:#cbd5e1; font-size:12px; margin-left:6px;">Case: #${item.caseId}</span>
+          </div>
+          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#1e293b; color:#ef4444; padding:2px 8px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">
+            <i class="fas fa-clock" style="margin-right:4px; font-size:11px;"></i>${countdownClockString}
+          </div>
+        </div>
+      `;
+    }
+
+    if (activeUrgentQueueItems.length === 0) {
+      trackingContainerUI.innerHTML = `<div style="padding:10px; text-align:center; color:#64748b; font-size:12px; font-style:italic;">No active countdown parameters set for tracking.</div>`;
+    } else {
+      trackingContainerUI.innerHTML = uiBufferHtml;
+    }
+  }, 1000);
+}
+
+/**
+ * ⚡ Intercept Workspace Copy to Inject Archive & Trackers Automatically
+ */
+function interceptAndRegisterCaseTracking(caseId, outputText) {
+  // 🛡️ RE-MAPPED FIELD SELECTORS FOR SYSTEM ALIGNMENT
+  const routerDropdown = document.getElementById('trackUrgencyChannel');
+  const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
+  
+  const selectedChannelValue = routerDropdown ? routerDropdown.value : "Case Monitoring";
+  const rawTimerDurationString = urgencyTimerDropdown ? urgencyTimerDropdown.value : "";
+
+  // Append a strict runtime datestamp tracking metric to the newest item array reference
+  const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  if (globalShiftHistory && globalShiftHistory.length > 0) {
+    if (!globalShiftHistory[0].savedDateStamp) {
+      globalShiftHistory[0].savedDateStamp = localizedToday;
+    }
+  }
+
+  // If a time limit is specified, instantiate tracking state properties instantly
+  if (rawTimerDurationString && rawTimerDurationString.trim() !== "" && caseId && caseId.toUpperCase() !== "DRAFT" && caseId !== "N/A") {
+    let parsedMinutesWindow = parseFloat(rawTimerDurationString);
+    if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60; // Default fallback
+
+    const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
+    
+    // Push new structured queue elements into array stack
+    activeUrgentQueueItems.push({
+      caseId: caseId.trim().toUpperCase(),
+      concernType: selectedChannelValue,
+      expirationEpochTarget: targetExpirationTimestamp
+    });
+
+    showToast(`Case #${caseId} added to Living Queue countdown: [${selectedChannelValue}]`);
+    
+    // Run counting loop instantly
+    runActiveQueueCountdownEngine();
+  }
+
+  // Refresh data tables
+  renderChronologicalArchiveGrid();
 }
