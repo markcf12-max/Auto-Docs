@@ -2358,7 +2358,7 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Entry Processor Wrapper - Absolute Standalone Version
+ * ⚡ Intercept Entry Processor Wrapper - Visibility Target Version
  */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
   // Force recover data arrays from cache to prevent variables from being blanked out
@@ -2366,16 +2366,16 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
   }
   
-  // 🔍 Find your configuration layout pane explicitly
-  const subpaneContainer = document.querySelector('.monitor-config-subpane') || document;
+  // 🔍 Find your dropdown wrapper container explicitly
+  const dropdownContainer = document.getElementById('trackingDropdownFields');
   
-  // 🎯 THE DROPDOWN FIX: Read the actual follow-up tracking checkbox status directly right here!
-  // (Change '#enableCaseTrackingCheck' to match the exact ID of your configuration checkbox element if different)
-  const trackingCheckbox = document.getElementById('enableCaseTrackingCheck');
-  const actualTrackingPermission = trackingCheckbox ? trackingCheckbox.checked : isTrackingAuthorized;
+  // 🎯 THE DIRECT VISIBILITY CHECK: If the panel isn't hidden, the agent explicitly intends to track it!
+  const actualTrackingPermission = dropdownContainer && dropdownContainer.style.display !== 'none' 
+    ? true 
+    : isTrackingAuthorized;
 
-  const routerDropdown = subpaneContainer.querySelector('#trackUrgencyChannel') || document.getElementById('trackUrgencyChannel');
-  const urgencyTimerDropdown = subpaneContainer.querySelector('#urgencyTrackingTimerSelect') || document.getElementById('urgencyTrackingTimerSelect');
+  const routerDropdown = document.getElementById('trackUrgencyChannel');
+  const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
   
   let selectedChannelValue = "Case Monitoring";
   if (routerDropdown) {
@@ -2388,8 +2388,8 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
   }
 
-  console.log("🚀 Live Execution Trace ->", {
-    checkboxChecked: actualTrackingPermission,
+  console.log("🚀 Live Visibility Execution Trace ->", {
+    panelVisible: actualTrackingPermission,
     channel: selectedChannelValue,
     minutes: rawTimerDurationString,
     caseId: caseId
@@ -2413,7 +2413,7 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
-  // 🛡️ Process priority live countdown drawer injection limits using our fresh checked status
+  // 🛡️ Process priority live countdown drawer injection using our visibility check
   if (actualTrackingPermission) {
     let parsedMinutesWindow = parseFloat(rawTimerDurationString);
     if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
