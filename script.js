@@ -1418,11 +1418,18 @@ function copyDoc() {
     showToast("Notes copied to system clipboard!");
     const caseNum = $("case")?.value || "N/A";
     
-    // 📂 Save record into your traditional daily stack array
+    // 📂 Save standard record to your traditional historical array
     pushToHistory(caseNum, outputText);
     
-    // ⚡ INTERCEPT ENTRYPOINT: Evaluates timers, routing channels, and folder structures
-    interceptAndRegisterCaseTracking(caseNum, outputText);
+    // 🎯 Find your archive checkbox (handles common case variations for safety)
+    const archiveCheckbox = document.getElementById('pushToArchive') || 
+                            document.getElementById('archiveCheckbox') ||
+                            document.querySelector('input[type="checkbox"]'); // Fallback to first checkbox
+    
+    const isArchiveChecked = archiveCheckbox ? archiveCheckbox.checked : false;
+
+    // ⚡ Forward the case details and the archive authorization status
+    interceptAndRegisterCaseTracking(caseNum, outputText, isArchiveChecked);
     
   }).catch(err => {
     showToast("Clipboard routine blocked.", true);
@@ -2346,42 +2353,47 @@ function runActiveQueueCountdownEngine() {
 /**
  * ⚡ Intercept Workspace Copy to Inject Archive & Trackers Automatically
  */
-function interceptAndRegisterCaseTracking(caseId, outputText) {
-  // 🛡️ RE-MAPPED FIELD SELECTORS FOR SYSTEM ALIGNMENT
+function interceptAndRegisterCaseTracking(caseId, outputText, isArchiveChecked) {
   const routerDropdown = document.getElementById('trackUrgencyChannel');
   const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
   
   const selectedChannelValue = routerDropdown ? routerDropdown.value : "Case Monitoring";
   const rawTimerDurationString = urgencyTimerDropdown ? urgencyTimerDropdown.value : "";
 
-  // Append a strict runtime datestamp tracking metric to the newest item array reference
+  // 🗓️ Create a clean, matching string key for today's shift folder
   const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
-  if (globalShiftHistory && globalShiftHistory.length > 0) {
-    if (!globalShiftHistory[0].savedDateStamp) {
-      globalShiftHistory[0].savedDateStamp = localizedToday;
+
+  // Ensure the history array exists and can be read by the folder rendering engine
+  if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
+    // Inject the necessary date target string right onto the active record payload
+    globalShiftHistory[0].savedDateStamp = localizedToday;
+    if (!globalShiftHistory[0].id && caseId !== "N/A") {
+      globalShiftHistory[0].id = caseId;
     }
   }
 
-  // If a time limit is specified, instantiate tracking state properties instantly
+  // ⏳ Task A: Evaluate Conditional Priority Queue Countdown Injection
   if (rawTimerDurationString && rawTimerDurationString.trim() !== "" && caseId && caseId.toUpperCase() !== "DRAFT" && caseId !== "N/A") {
     let parsedMinutesWindow = parseFloat(rawTimerDurationString);
-    if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60; // Default fallback
+    if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60;
 
     const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
     
-    // Push new structured queue elements into array stack
+    // Inject custom payload structural array into your active monitor layout view
     activeUrgentQueueItems.push({
       caseId: caseId.trim().toUpperCase(),
       concernType: selectedChannelValue,
       expirationEpochTarget: targetExpirationTimestamp
     });
 
-    showToast(`Case #${caseId} added to Living Queue countdown: [${selectedChannelValue}]`);
+    showToast(`Case #${caseId} prioritized under operational rule: [${selectedChannelValue}]`);
     
-    // Run counting loop instantly
+    // Force the background countdown interval processor to start ticking immediately
     runActiveQueueCountdownEngine();
   }
 
-  // Refresh data tables
-  renderChronologicalArchiveGrid();
+  // 📂 Task B: Refresh the File-Manager UI Folder Layouts if checkbox was checked
+  if (isArchiveChecked) {
+    renderChronologicalArchiveGrid();
+  }
 }
