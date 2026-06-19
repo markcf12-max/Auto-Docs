@@ -2358,33 +2358,38 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Entry Processor Wrapper - Absolute State Isolation
+ * ⚡ Intercept Entry Processor Wrapper - Absolute Standalone Version
  */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
-  // Force recover data arrays from cache to prevent variables from being blanked out by app initialization
+  // Force recover data arrays from cache to prevent variables from being blanked out
   if (localStorage.getItem('workbench_queue_cache')) {
     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
   }
   
-  // 🎯 SCOPE ISOLATION: Find your specific container first to block duplicate ID collisions
+  // 🔍 Find your configuration layout pane explicitly
   const subpaneContainer = document.querySelector('.monitor-config-subpane') || document;
-  const routerDropdown = subpaneContainer.querySelector('#trackUrgencyChannel');
-  const urgencyTimerDropdown = subpaneContainer.querySelector('#urgencyTrackingTimerSelect');
+  
+  // 🎯 THE DROPDOWN FIX: Read the actual follow-up tracking checkbox status directly right here!
+  // (Change '#enableCaseTrackingCheck' to match the exact ID of your configuration checkbox element if different)
+  const trackingCheckbox = document.getElementById('enableCaseTrackingCheck');
+  const actualTrackingPermission = trackingCheckbox ? trackingCheckbox.checked : isTrackingAuthorized;
+
+  const routerDropdown = subpaneContainer.querySelector('#trackUrgencyChannel') || document.getElementById('trackUrgencyChannel');
+  const urgencyTimerDropdown = subpaneContainer.querySelector('#urgencyTrackingTimerSelect') || document.getElementById('urgencyTrackingTimerSelect');
   
   let selectedChannelValue = "Case Monitoring";
   if (routerDropdown) {
     selectedChannelValue = routerDropdown.value;
   }
 
-  // Read value directly from selection index
+  // Extract chosen countdown value directly from the selected option attributes
   let rawTimerDurationString = "60";
   if (urgencyTimerDropdown && urgencyTimerDropdown.selectedIndex !== -1) {
     rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
   }
 
-  // 📋 LOG TRACE: Check your console (F12) to see this work in real time!
-  console.log("🎯 Dynamic Value Check ->", {
-    authorized: isTrackingAuthorized,
+  console.log("🚀 Live Execution Trace ->", {
+    checkboxChecked: actualTrackingPermission,
     channel: selectedChannelValue,
     minutes: rawTimerDurationString,
     caseId: caseId
@@ -2392,14 +2397,11 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
   const currentNormalizedKey = getNormalizedSystemDateString();
 
-  // 📁 Sync local history state structures completely
+  // Sync historical structures completely
   if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
-    // 🎯 TARGET BOTH ENDS: Stamped record validation regardless of push/unshift mechanics
     const targetIndices = [0, globalShiftHistory.length - 1];
-    
     targetIndices.forEach(idx => {
       if (globalShiftHistory[idx]) {
-        // If the array item matches our active case number string target, bind it tightly!
         if (globalShiftHistory[idx].id === caseId || globalShiftHistory[idx].caseNum === caseId || idx === 0) {
           globalShiftHistory[idx].savedDateStamp = currentNormalizedKey;
           if (!globalShiftHistory[idx].id && caseId !== "N/A") {
@@ -2408,13 +2410,11 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
         }
       }
     });
-
-    // Commit instantly to hard storage
     localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
-  // Process priority live countdown drawer injection limits
-  if (isTrackingAuthorized) {
+  // 🛡️ Process priority live countdown drawer injection limits using our fresh checked status
+  if (actualTrackingPermission) {
     let parsedMinutesWindow = parseFloat(rawTimerDurationString);
     if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
       parsedMinutesWindow = 60; 
@@ -2422,7 +2422,7 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
     const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
     
-    // De-duplicate: If case timer is already tracking, remove old reference before updating
+    // De-duplicate running tracks
     activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== caseId.trim().toUpperCase());
 
     activeUrgentQueueItems.push({
@@ -2431,10 +2431,11 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
       expirationEpochTarget: targetExpirationTimestamp
     });
 
-    // Commit instantly to hard storage
     localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
 
-    showToast(`Tracked: #${caseId} for ${parsedMinutesWindow} min.`);
+    if (typeof showToast === 'function') {
+      showToast(`Tracked: #${caseId} for ${parsedMinutesWindow} min.`);
+    }
     runActiveQueueCountdownEngine();
   }
 
