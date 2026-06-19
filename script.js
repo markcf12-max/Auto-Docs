@@ -2327,15 +2327,39 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Entry Processor Wrapper
+ * ⚡ Intercept Entry Processor Wrapper - Collision Proof Version
  */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
-  const routerDropdown = document.getElementById('trackUrgencyChannel');
-  const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
+  // 🎯 SCOPE ISOLATION: Find your specific container first to block duplicate ID collisions
+  const subpaneContainer = document.querySelector('.monitor-config-subpane') || document;
   
-  // 🛡️ SECURITY FIX: Bypass browser display blockages by evaluating value parameters cleanly
-  const selectedChannelValue = (routerDropdown && routerDropdown.value) ? routerDropdown.value : "Case Monitoring";
-  let rawTimerDurationString = (urgencyTimerDropdown && urgencyTimerDropdown.value) ? urgencyTimerDropdown.value : "60";
+  // Hunt for the select dropdown fields explicitly within that subpane boundary
+  const routerDropdown = subpaneContainer.querySelector('#trackUrgencyChannel') || document.getElementById('trackUrgencyChannel');
+  const urgencyTimerDropdown = subpaneContainer.querySelector('#urgencyTrackingTimerSelect') || document.getElementById('urgencyTrackingTimerSelect');
+  
+  let selectedChannelValue = "Case Monitoring";
+  if (routerDropdown) {
+    selectedChannelValue = routerDropdown.value;
+  }
+
+  // 🛡️ Bulletproof Extract: Pull value directly, or parse it from the active chosen option string if values are jammed
+  let rawTimerDurationString = "60"; 
+  if (urgencyTimerDropdown) {
+    rawTimerDurationString = urgencyTimerDropdown.value;
+    
+    // Safety check: If it somehow reads a blank value, look at the selected index explicitly
+    if (!rawTimerDurationString && urgencyTimerDropdown.selectedIndex !== -1) {
+      rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
+    }
+  }
+
+  // 📋 LOG TRACE: Check your console (F12) to see this work in real time!
+  console.log("🎯 Dynamic Value Check ->", {
+    authorized: isTrackingAuthorized,
+    channel: selectedChannelValue,
+    minutes: rawTimerDurationString,
+    caseId: caseId
+  });
 
   const currentNormalizedKey = getNormalizedSystemDateString();
 
@@ -2344,13 +2368,14 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     if (!globalShiftHistory[0].id && caseId !== "N/A") {
       globalShiftHistory[0].id = caseId;
     }
-    // Deep cache your primary history records directly into local storage
-    localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory)); // Matches your backup storage keys
+    localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
   if (isTrackingAuthorized) {
     let parsedMinutesWindow = parseFloat(rawTimerDurationString);
-    if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60; 
+    if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
+      parsedMinutesWindow = 60; // Safe baseline fallback
+    }
 
     const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
     
@@ -2360,7 +2385,6 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
       expirationEpochTarget: targetExpirationTimestamp
     });
 
-    // Save tracking arrays straight into local storage
     localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
 
     showToast(`Tracked: #${caseId} for ${parsedMinutesWindow} min.`);
@@ -2368,12 +2392,4 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
   }
 
   renderChronologicalArchiveGrid();
-}
-
-// 🚀 Self-bootloader: Instantly start and draw items from local storage cache on load
-if (activeUrgentQueueItems.length > 0) {
-  // Ensure the engine starts counting down right out of the gate on page load
-  setTimeout(() => {
-    runActiveQueueCountdownEngine();
-  }, 200);
 }
