@@ -2358,46 +2358,39 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Entry Processor Wrapper - Visibility Target Version
+ * ⚡ Intercept Entry Processor Wrapper - Zero Layout Dependencies
  */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
-  // Force recover data arrays from cache to prevent variables from being blanked out
+  // 📁 Force restore active tracking queues directly from browser storage
   if (localStorage.getItem('workbench_queue_cache')) {
     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
   }
   
-  // 🔍 Find your dropdown wrapper container explicitly
-  const dropdownContainer = document.getElementById('trackingDropdownFields');
-  
-  // 🎯 THE DIRECT VISIBILITY CHECK: If the panel isn't hidden, the agent explicitly intends to track it!
-  const actualTrackingPermission = dropdownContainer && dropdownContainer.style.display !== 'none' 
-    ? true 
-    : isTrackingAuthorized;
-
+  // 🎯 THE BRUTE FORCE FIX: Target the dropdowns directly via document scope
   const routerDropdown = document.getElementById('trackUrgencyChannel');
   const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
   
   let selectedChannelValue = "Case Monitoring";
-  if (routerDropdown) {
+  if (routerDropdown && routerDropdown.value) {
     selectedChannelValue = routerDropdown.value;
   }
 
-  // Extract chosen countdown value directly from the selected option attributes
+  // Fall back to 1 hour (60 mins) if nothing is selected or readable
   let rawTimerDurationString = "60";
   if (urgencyTimerDropdown && urgencyTimerDropdown.selectedIndex !== -1) {
     rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
   }
 
-  console.log("🚀 Live Visibility Execution Trace ->", {
-    panelVisible: actualTrackingPermission,
-    channel: selectedChannelValue,
-    minutes: rawTimerDurationString,
-    caseId: caseId
+  // 📋 CONSOLE CHECK: Check your browser's Developer Console (F12) right when you copy!
+  console.log("🛠️ Brute Force Extraction Value Trace ->", {
+    caseId: caseId,
+    extractedChannel: selectedChannelValue,
+    extractedMinutes: rawTimerDurationString
   });
 
   const currentNormalizedKey = getNormalizedSystemDateString();
 
-  // Sync historical structures completely
+  // Keep shift history entries accurately mapped
   if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
     const targetIndices = [0, globalShiftHistory.length - 1];
     targetIndices.forEach(idx => {
@@ -2413,31 +2406,37 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
-  // 🛡️ Process priority live countdown drawer injection using our visibility check
-  if (actualTrackingPermission) {
-    let parsedMinutesWindow = parseFloat(rawTimerDurationString);
-    if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
-      parsedMinutesWindow = 60; 
-    }
+  // 🛡️ ALWAYS TRACK IF EXTRACTABLE: Bypass layout conditional flags entirely
+  let parsedMinutesWindow = parseFloat(rawTimerDurationString);
+  if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
+    parsedMinutesWindow = 60; 
+  }
 
-    const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
-    
-    // De-duplicate running tracks
-    activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== caseId.trim().toUpperCase());
+  const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
+  
+  // Strip duplicate tracker entries for this case ID if they exist
+  const normalizedCaseNum = (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE";
+  activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== normalizedCaseNum);
 
-    activeUrgentQueueItems.push({
-      caseId: (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE",
-      concernType: selectedChannelValue,
-      expirationEpochTarget: targetExpirationTimestamp
-    });
+  // Push straight into the tracking layout engine
+  activeUrgentQueueItems.push({
+    caseId: normalizedCaseNum,
+    concernType: selectedChannelValue,
+    expirationEpochTarget: targetExpirationTimestamp
+  });
 
-    localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+  // Commit changes immediately to hard browser storage
+  localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
 
-    if (typeof showToast === 'function') {
-      showToast(`Tracked: #${caseId} for ${parsedMinutesWindow} min.`);
-    }
+  if (typeof showToast === 'function') {
+    showToast(`Tracked: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
+  }
+  
+  // Fire off visual countdown cards to redraw sidebar dashboards
+  if (typeof runActiveQueueCountdownEngine === 'function') {
     runActiveQueueCountdownEngine();
   }
 
+  // Update folder metrics
   renderChronologicalArchiveGrid();
 }
