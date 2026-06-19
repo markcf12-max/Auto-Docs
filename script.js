@@ -1984,10 +1984,22 @@ $('historyContainer')?.addEventListener('click', (e) => {
   if (!button) return;
   const action = button.getAttribute('data-action');
   const index = parseInt(button.getAttribute('data-index'), 10);
+  
   if (action === 'recopy') {
     loadHistoryItem(index);
   } else if (action === 'delete') {
+    // 1. Run your original deletion routine to clean the UI table array
     deleteHistoryItem(index);
+    
+    // 🎯 THE CRITICAL PATCH: Overwrite the hard storage cache instantly with the updated array
+    if (typeof globalShiftHistory !== 'undefined') {
+      localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
+    }
+    
+    // 🔄 REPAINT REVOLUTION: Force the horizontal folder grid to update its numbers immediately
+    if (typeof renderChronologicalArchiveGrid === 'function') {
+      renderChronologicalArchiveGrid();
+    }
   }
 });
 
