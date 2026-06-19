@@ -1819,6 +1819,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+// 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
+  const trackingCheckbox = document.getElementById('enableCaseTrackingCheck');
+  const dropdownFieldsContainer = document.getElementById('trackingDropdownFields');
+
+  if (trackingCheckbox && dropdownFieldsContainer) {
+    // 1. Check initial state on page boot (in case browser caches form state)
+    dropdownFieldsContainer.style.display = trackingCheckbox.checked ? 'grid' : 'none';
+
+    // 2. Listen for clicks to open or close the selector deck in real-time
+    trackingCheckbox.addEventListener('change', () => {
+      if (trackingCheckbox.checked) {
+        dropdownFieldsContainer.style.display = 'grid'; // Instantly slide into view!
+      } else {
+        dropdownFieldsContainer.style.display = 'none'; // Clear from view
+      }
+    });
+  }
+   
 // 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
   // Note: We use "THEME_KEY" here to match your global variable name string
   const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
