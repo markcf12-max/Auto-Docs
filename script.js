@@ -1819,15 +1819,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  if (localStorage.getItem(THEME_KEY) === "dark") {
-    document.body.classList.add("dark-mode");
-    updateThemeIcon(true);
-  }
-   if (localStorage.getItem('shift_history_cache_key')) {
+// 📁 Force Sync History State Array Cache
+  if (localStorage.getItem('shift_history_cache_key')) {
      globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
   }
 
-  // Paint the folder counts matrix onto the workspace layout deck
+  // ⏱️ Force Sync Running Timer Drawer Queue Cache
+  if (localStorage.getItem('workbench_queue_cache')) {
+     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
+     if (activeUrgentQueueItems.length > 0) {
+        runActiveQueueCountdownEngine();
+     }
+  }
+
+  // Paint UI folder layouts
   if (typeof renderChronologicalArchiveGrid === 'function') {
     renderChronologicalArchiveGrid();
   }
@@ -2228,7 +2233,14 @@ function renderChronologicalArchiveGrid() {
   const deckSliderTarget = document.getElementById('horizontalSliderTarget');
   if (!deckSliderTarget) return;
 
-  // Make sure we pull the absolute latest values from local storage arrays if available
+  // 🎯 THE FIX: If global memory is empty, try to recover history from the hard storage cache first
+  if (typeof globalShiftHistory === 'undefined' || !globalShiftHistory || globalShiftHistory.length === 0) {
+    if (localStorage.getItem('shift_history_cache_key')) {
+      globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
+    }
+  }
+
+  // If both memory AND hard storage are completely empty, show the clean vault message
   if (typeof globalShiftHistory === 'undefined' || !globalShiftHistory || globalShiftHistory.length === 0) {
     deckSliderTarget.innerHTML = `<span style="font-size: 10px; color: var(--text-muted); font-style: italic; padding-left: 5px;">Vault clean...</span>`;
     return;
@@ -2327,30 +2339,28 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Entry Processor Wrapper - Collision Proof Version
+ * ⚡ Intercept Entry Processor Wrapper - Absolute State Isolation
  */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
+  // Force recover data arrays from cache to prevent variables from being blanked out by app initialization
+  if (localStorage.getItem('workbench_queue_cache')) {
+    activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
+  }
+  
   // 🎯 SCOPE ISOLATION: Find your specific container first to block duplicate ID collisions
   const subpaneContainer = document.querySelector('.monitor-config-subpane') || document;
-  
-  // Hunt for the select dropdown fields explicitly within that subpane boundary
-  const routerDropdown = subpaneContainer.querySelector('#trackUrgencyChannel') || document.getElementById('trackUrgencyChannel');
-  const urgencyTimerDropdown = subpaneContainer.querySelector('#urgencyTrackingTimerSelect') || document.getElementById('urgencyTrackingTimerSelect');
+  const routerDropdown = subpaneContainer.querySelector('#trackUrgencyChannel');
+  const urgencyTimerDropdown = subpaneContainer.querySelector('#urgencyTrackingTimerSelect');
   
   let selectedChannelValue = "Case Monitoring";
   if (routerDropdown) {
     selectedChannelValue = routerDropdown.value;
   }
 
-  // 🛡️ Bulletproof Extract: Pull value directly, or parse it from the active chosen option string if values are jammed
-  let rawTimerDurationString = "60"; 
-  if (urgencyTimerDropdown) {
-    rawTimerDurationString = urgencyTimerDropdown.value;
-    
-    // Safety check: If it somehow reads a blank value, look at the selected index explicitly
-    if (!rawTimerDurationString && urgencyTimerDropdown.selectedIndex !== -1) {
-      rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
-    }
+  // Read value directly from selection index
+  let rawTimerDurationString = "60";
+  if (urgencyTimerDropdown && urgencyTimerDropdown.selectedIndex !== -1) {
+    rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
   }
 
   // 📋 LOG TRACE: Check your console (F12) to see this work in real time!
@@ -2363,28 +2373,46 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
   const currentNormalizedKey = getNormalizedSystemDateString();
 
+  // 📁 Sync local history state structures completely
   if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
-    globalShiftHistory[0].savedDateStamp = currentNormalizedKey;
-    if (!globalShiftHistory[0].id && caseId !== "N/A") {
-      globalShiftHistory[0].id = caseId;
-    }
+    // 🎯 TARGET BOTH ENDS: Stamped record validation regardless of push/unshift mechanics
+    const targetIndices = [0, globalShiftHistory.length - 1];
+    
+    targetIndices.forEach(idx => {
+      if (globalShiftHistory[idx]) {
+        // If the array item matches our active case number string target, bind it tightly!
+        if (globalShiftHistory[idx].id === caseId || globalShiftHistory[idx].caseNum === caseId || idx === 0) {
+          globalShiftHistory[idx].savedDateStamp = currentNormalizedKey;
+          if (!globalShiftHistory[idx].id && caseId !== "N/A") {
+            globalShiftHistory[idx].id = caseId;
+          }
+        }
+      }
+    });
+
+    // Commit instantly to hard storage
     localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
+  // Process priority live countdown drawer injection limits
   if (isTrackingAuthorized) {
     let parsedMinutesWindow = parseFloat(rawTimerDurationString);
     if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
-      parsedMinutesWindow = 60; // Safe baseline fallback
+      parsedMinutesWindow = 60; 
     }
 
     const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
     
+    // De-duplicate: If case timer is already tracking, remove old reference before updating
+    activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== caseId.trim().toUpperCase());
+
     activeUrgentQueueItems.push({
       caseId: (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE",
       concernType: selectedChannelValue,
       expirationEpochTarget: targetExpirationTimestamp
     });
 
+    // Commit instantly to hard storage
     localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
 
     showToast(`Tracked: #${caseId} for ${parsedMinutesWindow} min.`);
