@@ -1819,7 +1819,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-// 📁 Force Sync History State Array Cache
+// 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
+  // Note: We use "THEME_KEY" here to match your global variable name string
+  const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
+  if (savedTheme === "dark") {
+    toggleTheme(); // Let your existing function run and paint the CSS rules instantly!
+  }
+
+  // 📁 Force Sync History State Array Cache
   if (localStorage.getItem('shift_history_cache_key')) {
      globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
   }
