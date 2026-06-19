@@ -1823,6 +1823,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.add("dark-mode");
     updateThemeIcon(true);
   }
+   if (localStorage.getItem('shift_history_cache_key')) {
+     globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
+  }
+
+  // Paint the folder counts matrix onto the workspace layout deck
+  if (typeof renderChronologicalArchiveGrid === 'function') {
+    renderChronologicalArchiveGrid();
+  }
 });
 
 // ==========================================================================
@@ -2141,37 +2149,31 @@ function listenToOperationalBroadcasts() {
 }
 
 /* ==========================================================================
-   AGENT SHIFT ARCHIVE & LIVING QUEUE ENGINE (OPTIMIZED MASTER PATCH)
+   AGENT SHIFT ARCHIVE & LIVING QUEUE ENGINE (PERSISTENT CORES)
    ========================================================================== */
-let activeUrgentQueueItems = [];
+// 📁 Read state arrays out of browser localStorage on initialization to prevent vanishing data
+let activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
 let ongoingQueueTrackingLoop = null;
 
 // Audio context generator for the premium hardware notification chime
 function playNotificationHardwareChime() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
     const osc1 = audioCtx.createOscillator();
     const gain1 = audioCtx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+    osc1.type = 'sine'; osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
     gain1.gain.setValueAtTime(0.08, audioCtx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-    osc1.connect(gain1);
-    gain1.connect(audioCtx.destination);
-    osc1.start();
-    osc1.stop(audioCtx.currentTime + 0.1);
+    osc1.connect(gain1); gain1.connect(audioCtx.destination);
+    osc1.start(); osc1.stop(audioCtx.currentTime + 0.1);
 
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.05); 
+    osc2.type = 'sine'; osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.05); 
     gain2.gain.setValueAtTime(0.12, audioCtx.currentTime + 0.05);
     gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-    osc2.connect(gain2);
-    gain2.connect(audioCtx.destination);
-    osc2.start(audioCtx.currentTime + 0.05);
-    osc2.stop(audioCtx.currentTime + 0.45);
+    osc2.connect(gain2); gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime + 0.05); osc2.stop(audioCtx.currentTime + 0.45);
   } catch (e) {
     console.warn("Audio context restricted:", e);
   }
@@ -2184,9 +2186,7 @@ function triggerHardwarePillNotification(caseId, concernType) {
     alertToastNode.id = 'hardwareAlertToastInstance';
     alertToastNode.className = 'hardware-toast-notification';
     alertToastNode.innerHTML = `
-      <div class="hardware-toast-icon-wrapper">
-        <i id="hardwareToastBellIcon" class="fas fa-bell"></i>
-      </div>
+      <div class="hardware-toast-icon-wrapper"><i id="hardwareToastBellIcon" class="fas fa-bell"></i></div>
       <div class="hardware-toast-content">
         <p class="hardware-toast-header">🔔 Case Tracking Alert</p>
         <p id="hardwareToastBodyPayload" class="hardware-toast-details"></p>
@@ -2197,7 +2197,6 @@ function triggerHardwarePillNotification(caseId, concernType) {
 
   const payloadTextContainer = document.getElementById('hardwareToastBodyPayload');
   const bellIconInstance = document.getElementById('hardwareToastBellIcon');
-  
   if (payloadTextContainer) {
     payloadTextContainer.innerHTML = `Case ID <strong>#${caseId}</strong> (${concernType}) requires immediate follow-up check.`;
   }
@@ -2214,9 +2213,6 @@ function triggerHardwarePillNotification(caseId, concernType) {
   }, 6000);
 }
 
-/**
- * 🗓️ Helper function to force absolute date key matching (MM/DD/YY)
- */
 function getNormalizedSystemDateString() {
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -2232,7 +2228,8 @@ function renderChronologicalArchiveGrid() {
   const deckSliderTarget = document.getElementById('horizontalSliderTarget');
   if (!deckSliderTarget) return;
 
-  if (!globalShiftHistory || globalShiftHistory.length === 0) {
+  // Make sure we pull the absolute latest values from local storage arrays if available
+  if (typeof globalShiftHistory === 'undefined' || !globalShiftHistory || globalShiftHistory.length === 0) {
     deckSliderTarget.innerHTML = `<span style="font-size: 10px; color: var(--text-muted); font-style: italic; padding-left: 5px;">Vault clean...</span>`;
     return;
   }
@@ -2241,13 +2238,11 @@ function renderChronologicalArchiveGrid() {
   const mappedGroups = {};
 
   globalShiftHistory.forEach(item => {
-    // Force clean historic entries matching text timestamps into normalized MM/DD/YY references
     let entryKey = item.savedDateStamp;
     if (!entryKey || entryKey.includes(",") || entryKey.length > 8) {
       entryKey = currentNormalizedKey;
-      item.savedDateStamp = currentNormalizedKey; // Convert old data on the fly
+      item.savedDateStamp = currentNormalizedKey;
     }
-    
     if (!mappedGroups[entryKey]) mappedGroups[entryKey] = [];
     mappedGroups[entryKey].push(item);
   });
@@ -2261,7 +2256,7 @@ function renderChronologicalArchiveGrid() {
       : 'background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);';
 
     horizontalDeckHtml += `
-      <div class="folder-node-btn ${isActiveClass}" data-date-bucket="${dateKey}" onclick="window.drilldownArchiveFolderEntries('${dateKey}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 85px; cursor: pointer; padding: 6px; ${activeBackground} border-radius: 6px; transition: transform 0.15s ease;">
+      <div class="folder-node-btn ${isActiveClass}" data-date-bucket="${dateKey}" onclick="window.drilldownArchiveFolderEntries('${dateKey}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 85px; cursor: pointer; padding: 6px; ${activeBackground} border-radius: 6px;">
         <i class="fas fa-folder" style="font-size: 24px; color: #f59e0b; pointer-events: none;"></i>
         <span style="font-size: 9px; font-weight: bold; margin-top: 4px; color: #fff; pointer-events: none;">${dateKey}</span>
         <span style="font-size: 9px; color: var(--text-muted); pointer-events: none;">(${totalVolume} cases)</span>
@@ -2272,13 +2267,8 @@ function renderChronologicalArchiveGrid() {
   deckSliderTarget.innerHTML = horizontalDeckHtml;
 }
 
-/**
- * 🔍 Window-Exposed Folder Click Drilldown Handler
- */
 window.drilldownArchiveFolderEntries = function(dateKey) {
-  // Show a notification showing the folder works! You can map this area to expand drawer elements
   showToast(`Reviewing journal entries for shift: ${dateKey}`);
-  console.log(`Archive Drilldown request fired for date pool: ${dateKey}`);
 };
 
 /**
@@ -2295,6 +2285,7 @@ function runActiveQueueCountdownEngine() {
       trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
       clearInterval(ongoingQueueTrackingLoop);
       ongoingQueueTrackingLoop = null;
+      localStorage.removeItem('workbench_queue_cache');
       return;
     }
 
@@ -2308,6 +2299,8 @@ function runActiveQueueCountdownEngine() {
       if (remainingTimeDelta <= 0) {
         triggerHardwarePillNotification(item.caseId, item.concernType);
         activeUrgentQueueItems.splice(index, 1);
+        // Persist slice cleanups automatically to database state trees
+        localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
         continue;
       }
 
@@ -2317,7 +2310,7 @@ function runActiveQueueCountdownEngine() {
       const countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
       uiBufferHtml += `
-        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center; backdrop-filter: blur(4px);">
+        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div style="font-weight:700; color:#60a5fa; font-size:11px; text-transform: uppercase;">${item.concernType}</div>
             <div style="color:#cbd5e1; font-size:12px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
@@ -2340,27 +2333,24 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
   const routerDropdown = document.getElementById('trackUrgencyChannel');
   const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
   
-  const selectedChannelValue = routerDropdown ? routerDropdown.value : "Case Monitoring";
-  const rawTimerDurationString = urgencyTimerDropdown ? urgencyTimerDropdown.value : "";
+  // 🛡️ SECURITY FIX: Bypass browser display blockages by evaluating value parameters cleanly
+  const selectedChannelValue = (routerDropdown && routerDropdown.value) ? routerDropdown.value : "Case Monitoring";
+  let rawTimerDurationString = (urgencyTimerDropdown && urgencyTimerDropdown.value) ? urgencyTimerDropdown.value : "60";
 
   const currentNormalizedKey = getNormalizedSystemDateString();
 
-  // Clean and map array history elements instantly
   if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
     globalShiftHistory[0].savedDateStamp = currentNormalizedKey;
     if (!globalShiftHistory[0].id && caseId !== "N/A") {
       globalShiftHistory[0].id = caseId;
     }
+    // Deep cache your primary history records directly into local storage
+    localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory)); // Matches your backup storage keys
   }
 
-  // 🛡️ FIX: If checkbox checked, process urgency timer tracking parameters immediately
   if (isTrackingAuthorized) {
     let parsedMinutesWindow = parseFloat(rawTimerDurationString);
-    
-    // If no timer was explicitly picked, provide a defensive 60-minute default fallback
-    if (!rawTimerDurationString || isNaN(parsedMinutesWindow)) {
-      parsedMinutesWindow = 60; 
-    }
+    if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60; 
 
     const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
     
@@ -2370,10 +2360,20 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
       expirationEpochTarget: targetExpirationTimestamp
     });
 
-    showToast(`Tracked: #${caseId} routed to active monitor deck.`);
+    // Save tracking arrays straight into local storage
+    localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+
+    showToast(`Tracked: #${caseId} for ${parsedMinutesWindow} min.`);
     runActiveQueueCountdownEngine();
   }
 
-  // Always refresh layout folders cleanly
   renderChronologicalArchiveGrid();
+}
+
+// 🚀 Self-bootloader: Instantly start and draw items from local storage cache on load
+if (activeUrgentQueueItems.length > 0) {
+  // Ensure the engine starts counting down right out of the gate on page load
+  setTimeout(() => {
+    runActiveQueueCountdownEngine();
+  }, 200);
 }
