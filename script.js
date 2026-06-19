@@ -1418,18 +1418,15 @@ function copyDoc() {
     showToast("Notes copied to system clipboard!");
     const caseNum = $("case")?.value || "N/A";
     
-    // 📂 Save standard record to your traditional historical array
+    // 📂 1. Push record into your default history stack array
     pushToHistory(caseNum, outputText);
     
-    // 🎯 Find your archive checkbox (handles common case variations for safety)
-    const archiveCheckbox = document.getElementById('pushToArchive') || 
-                            document.getElementById('archiveCheckbox') ||
-                            document.querySelector('input[type="checkbox"]'); // Fallback to first checkbox
-    
-    const isArchiveChecked = archiveCheckbox ? archiveCheckbox.checked : false;
+    // 🎯 2. Read your actual checkbox node identifier
+    const trackCheckbox = document.getElementById('enableCaseTrackingCheck');
+    const isTrackingAuthorized = trackCheckbox ? trackCheckbox.checked : false;
 
-    // ⚡ Forward the case details and the archive authorization status
-    interceptAndRegisterCaseTracking(caseNum, outputText, isArchiveChecked);
+    // ⚡ 3. Fire the intercept processor with authorization states
+    interceptAndRegisterCaseTracking(caseNum, outputText, isTrackingAuthorized);
     
   }).catch(err => {
     showToast("Clipboard routine blocked.", true);
@@ -2154,11 +2151,10 @@ function playNotificationHardwareChime() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
-    // Note 1 (High crisp click initialization)
     const osc1 = audioCtx.createOscillator();
     const gain1 = audioCtx.createGain();
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+    osc1.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
     gain1.gain.setValueAtTime(0.08, audioCtx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
     osc1.connect(gain1);
@@ -2166,27 +2162,22 @@ function playNotificationHardwareChime() {
     osc1.start();
     osc1.stop(audioCtx.currentTime + 0.1);
 
-    // Note 2 (Premium structural hardware confirmation chime)
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.05); // A5
+    osc2.frequency.setValueAtTime(880.00, audioCtx.currentTime + 0.05); 
     gain2.gain.setValueAtTime(0.12, audioCtx.currentTime + 0.05);
     gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
     osc2.connect(gain2);
     gain2.connect(audioCtx.destination);
     osc2.start(audioCtx.currentTime + 0.05);
     osc2.stop(audioCtx.currentTime + 0.45);
-  } catch (audioException) {
-    console.warn("Audio Context pipeline blocked by safety layers:", audioException);
+  } catch (e) {
+    console.warn("Audio context restricted:", e);
   }
 }
 
-/**
- * 🔔 Trigger Premium Hardware Notification Slider
- */
 function triggerHardwarePillNotification(caseId, concernType) {
-  // Dynamically assemble toast layout elements on target frame if missing
   let alertToastNode = document.getElementById('hardwareAlertToastInstance');
   if (!alertToastNode) {
     alertToastNode = document.createElement('div');
@@ -2211,12 +2202,10 @@ function triggerHardwarePillNotification(caseId, concernType) {
     payloadTextContainer.innerHTML = `Case ID <strong>#${caseId}</strong> (${concernType}) requires immediate follow-up check.`;
   }
 
-  // Trigger sound effect and ringing animations instantly
   playNotificationHardwareChime();
   if (bellIconInstance) bellIconInstance.classList.add('animate-vibrate-bell');
   alertToastNode.classList.add('slide-in');
 
-  // Gracefully slide out of bounds after a brief window
   setTimeout(() => {
     alertToastNode.classList.remove('slide-in');
     setTimeout(() => {
@@ -2226,124 +2215,96 @@ function triggerHardwarePillNotification(caseId, concernType) {
 }
 
 /**
- * 📂 Render File-Manager Chronological Archive Folders
+ * 📂 Task A: Render Horizontal Slider Target Folders
  */
 function renderChronologicalArchiveGrid() {
-  const targetArchivePanel = document.getElementById('archiveFolderPanelContainer');
-  if (!targetArchivePanel) return;
+  // 🎯 Targets your explicit horizontal slider deck wrapper container node
+  const deckSliderTarget = document.getElementById('horizontalSliderTarget');
+  if (!deckSliderTarget) return;
 
   if (!globalShiftHistory || globalShiftHistory.length === 0) {
-    targetArchivePanel.innerHTML = `<div style="padding:16px; text-align:center; color:#94a3b8; font-style:italic; font-size:13px;">Personal shift journal archive storage empty...</div>`;
+    deckSliderTarget.innerHTML = `<span style="font-size: 10px; color: var(--text-muted); font-style: italic; padding-left: 5px;">Vault clean...</span>`;
     return;
   }
 
-  // Group historical log segments by current shift date stamps
-  const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  // Format date to match your blueprint template style: MM/DD/YY
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const yy = String(today.getFullYear()).slice(-2);
+  const localizedTodayKey = `${mm}/${dd}/${yy}`;
+
   const mappedGroups = {};
 
+  // Map elements across targeted date bucket records safely
   globalShiftHistory.forEach(item => {
-    const targetDateKey = item.savedDateStamp || localizedToday;
+    const targetDateKey = item.savedDateStamp || localizedTodayKey;
     if (!mappedGroups[targetDateKey]) mappedGroups[targetDateKey] = [];
     mappedGroups[targetDateKey].push(item);
   });
 
-  let structuralHtml = `<div class="archive-folder-grid">`;
+  let horizontalDeckHtml = ``;
   Object.keys(mappedGroups).forEach(dateKey => {
     const totalVolume = mappedGroups[dateKey].length;
-    structuralHtml += `
-      <div class="archive-folder" onclick="drilldownArchiveFolderEntries('${dateKey}')">
-        <div class="folder-counter-badge">${totalVolume} Cases</div>
-        <i class="fas fa-folder"></i>
-        <div class="folder-date-label">${dateKey}</div>
+    const isActiveClass = (dateKey === localizedTodayKey) ? 'active' : '';
+    const activeBackground = (dateKey === localizedTodayKey) ? 'background: rgba(96, 165, 250, 0.15); border: 1px solid #60a5fa;' : 'background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);';
+
+    horizontalDeckHtml += `
+      <div class="folder-node-btn ${isActiveClass}" data-date-bucket="${dateKey}" onclick="drilldownArchiveFolderEntries('${dateKey}')" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 75px; cursor: pointer; padding: 6px; ${activeBackground} border-radius: 6px; transition: transform 0.15s ease;">
+        <i class="fas fa-folder" style="font-size: 24px; color: #f59e0b;"></i>
+        <span style="font-size: 9px; font-weight: bold; margin-top: 4px; color: #fff;">${dateKey}</span>
+        <span style="font-size: 9px; color: var(--text-muted);">(${totalVolume} cases)</span>
       </div>
     `;
   });
-  structuralHtml += `</div><div id="archiveDrilldownContainer" style="margin-top:12px;"></div>`;
   
-  targetArchivePanel.innerHTML = structuralHtml;
+  deckSliderTarget.innerHTML = horizontalDeckHtml;
 }
 
 /**
- * 🔍 Dropdown Filter Drilldown for Archived Shifts
- */
-window.drilldownArchiveFolderEntries = function(dateKey) {
-  const container = document.getElementById('archiveDrilldownContainer');
-  if (!container || !globalShiftHistory) return;
-
-  const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
-  const matches = globalShiftHistory.filter(item => (item.savedDateStamp || localizedToday) === dateKey);
-
-  if (matches.length === 0) {
-    container.innerHTML = "";
-    return;
-  }
-
-  let html = `
-    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px;">
-      <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; margin-bottom: 8px;">Manifest: ${dateKey}</div>
-      <input type="text" id="archiveFolderSearchInput" placeholder="Filter this folder..." oninput="filterArchiveFolderResults('${dateKey}')" style="width:100%; padding:6px; font-size:12px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; margin-bottom:8px;">
-      <div id="archiveFolderItemsStack">
-  `;
-
-  matches.forEach((item, idx) => {
-    html += `
-      <div class="archive-drilldown-item" style="padding:6px; border-bottom:1px solid rgba(255,255,255,0.05); font-size:12px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="color:#cbd5e1;">#${item.id || 'N/A'} - <small style="color:#64748b;">${item.time || ''}</small></span>
-        <button data-action="recopy" data-index="${idx}" style="background:#2563eb; color:#fff; border:none; padding:2px 6px; border-radius:3px; cursor:pointer; font-size:11px;">View</button>
-      </div>
-    `;
-  });
-
-  html += `</div></div>`;
-  container.innerHTML = html;
-};
-
-/**
- * ⏳ Core Queue Processing Loop
+ * ⏳ Task B: Core Queue Processing Loop (Targets #metaTrackerQueueBox)
  */
 function runActiveQueueCountdownEngine() {
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
   ongoingQueueTrackingLoop = setInterval(() => {
-    const trackingContainerUI = document.getElementById('liveQueueTrackingMonitorView');
+    // 🎯 Targets your priority monitor box profile tray structure
+    const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
     if (!trackingContainerUI || activeUrgentQueueItems.length === 0) return;
 
     let uiBufferHtml = ``;
     const currentTimeStamp = Date.now();
 
-    // Loop through current item arrays backwards to permit deletions safely
     for (let index = activeUrgentQueueItems.length - 1; index >= 0; index--) {
       const item = activeUrgentQueueItems[index];
       const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
 
       if (remainingTimeDelta <= 0) {
-        // Expiration boundary broken! Trigger hardware warning slideout
         triggerHardwarePillNotification(item.caseId, item.concernType);
         activeUrgentQueueItems.splice(index, 1);
         continue;
       }
 
-      // Convert time delta into standard countdown clock formatting string
       const hours = Math.floor(remainingTimeDelta / 3600000);
       const minutes = Math.floor((remainingTimeDelta % 3600000) / 60000);
       const seconds = Math.floor((remainingTimeDelta % 60000) / 1000);
       const countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
       uiBufferHtml += `
-        <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:6px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center; backdrop-filter: blur(4px);">
           <div>
-            <span style="font-weight:700; color:#f87171; font-size:12px;">[${item.concernType}]</span>
-            <span style="color:#cbd5e1; font-size:12px; margin-left:6px;">Case: #${item.caseId}</span>
+            <div style="font-weight:700; color:#60a5fa; font-size:11px; text-transform: uppercase;">${item.concernType}</div>
+            <div style="color:#cbd5e1; font-size:12px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
           </div>
-          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#1e293b; color:#ef4444; padding:2px 8px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">
-            <i class="fas fa-clock" style="margin-right:4px; font-size:11px;"></i>${countdownClockString}
+          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#0f172a; color:#ef4444; padding:4px 10px; border-radius:4px; border:1px solid rgba(239,68,68,0.2); display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-hourglass-half fa-spin" style="font-size:10px;"></i> ${countdownClockString}
           </div>
         </div>
       `;
     }
 
     if (activeUrgentQueueItems.length === 0) {
-      trackingContainerUI.innerHTML = `<div style="padding:10px; text-align:center; color:#64748b; font-size:12px; font-style:italic;">No active countdown parameters set for tracking.</div>`;
+      trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
     } else {
       trackingContainerUI.innerHTML = uiBufferHtml;
     }
@@ -2351,49 +2312,53 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Workspace Copy to Inject Archive & Trackers Automatically
+ * ⚡ Intercept Entry Processor Wrapper
  */
-function interceptAndRegisterCaseTracking(caseId, outputText, isArchiveChecked) {
+function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
   const routerDropdown = document.getElementById('trackUrgencyChannel');
   const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
   
   const selectedChannelValue = routerDropdown ? routerDropdown.value : "Case Monitoring";
   const rawTimerDurationString = urgencyTimerDropdown ? urgencyTimerDropdown.value : "";
 
-  // 🗓️ Create a clean, matching string key for today's shift folder
-  const localizedToday = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  // Dynamic initialization date string key mapping definitions (MM/DD/YY)
+  const today = new Date();
+  const localizedTodayKey = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${String(today.getFullYear()).slice(-2)}`;
 
-  // Ensure the history array exists and can be read by the folder rendering engine
+  // Stamp current active layout array reference with data models
   if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
-    // Inject the necessary date target string right onto the active record payload
-    globalShiftHistory[0].savedDateStamp = localizedToday;
+    if (!globalShiftHistory[0].savedDateStamp) {
+      globalShiftHistory[0].savedDateStamp = localizedTodayKey;
+    }
     if (!globalShiftHistory[0].id && caseId !== "N/A") {
       globalShiftHistory[0].id = caseId;
     }
   }
 
-  // ⏳ Task A: Evaluate Conditional Priority Queue Countdown Injection
-  if (rawTimerDurationString && rawTimerDurationString.trim() !== "" && caseId && caseId.toUpperCase() !== "DRAFT" && caseId !== "N/A") {
-    let parsedMinutesWindow = parseFloat(rawTimerDurationString);
-    if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60;
+  // Only inject into priority countdown queue drawer if tracking check is active
+  if (isTrackingAuthorized) {
+    if (rawTimerDurationString && rawTimerDurationString.trim() !== "" && caseId && caseId.toUpperCase() !== "DRAFT" && caseId !== "N/A") {
+      let parsedMinutesWindow = parseFloat(rawTimerDurationString);
+      if (isNaN(parsedMinutesWindow)) parsedMinutesWindow = 60;
 
-    const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
-    
-    // Inject custom payload structural array into your active monitor layout view
-    activeUrgentQueueItems.push({
-      caseId: caseId.trim().toUpperCase(),
-      concernType: selectedChannelValue,
-      expirationEpochTarget: targetExpirationTimestamp
-    });
+      const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
+      
+      activeUrgentQueueItems.push({
+        caseId: caseId.trim().toUpperCase(),
+        concernType: selectedChannelValue,
+        expirationEpochTarget: targetExpirationTimestamp
+      });
 
-    showToast(`Case #${caseId} prioritized under operational rule: [${selectedChannelValue}]`);
-    
-    // Force the background countdown interval processor to start ticking immediately
-    runActiveQueueCountdownEngine();
+      showToast(`Tracked: #${caseId} routed to active monitor deck.`);
+      runActiveQueueCountdownEngine();
+    }
   }
 
-  // 📂 Task B: Refresh the File-Manager UI Folder Layouts if checkbox was checked
-  if (isArchiveChecked) {
-    renderChronologicalArchiveGrid();
-  }
+  // Always refresh layout nodes instantly to show up-to-date folder counts
+  renderChronologicalArchiveGrid();
 }
+
+// Fire an initial layout paint on boot sequence initialization
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(renderChronologicalArchiveGrid, 800);
+});
