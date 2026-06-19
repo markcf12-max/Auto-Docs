@@ -2358,31 +2358,33 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * ⚡ Intercept Entry Processor Wrapper - Zero Layout Dependencies
+ * ⚡ Intercept Entry Processor Wrapper - Hierarchical Scope Version
  */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
-  // 📁 Force restore active tracking queues directly from browser storage
   if (localStorage.getItem('workbench_queue_cache')) {
     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
   }
   
-  // 🎯 THE BRUTE FORCE FIX: Target the dropdowns directly via document scope
-  const routerDropdown = document.getElementById('trackUrgencyChannel');
-  const urgencyTimerDropdown = document.getElementById('urgencyTrackingTimerSelect');
-  
+  // 🎯 THE FIX: Target the specific parent container first
+  const parentContainer = document.getElementById('trackingDropdownFields');
   let selectedChannelValue = "Case Monitoring";
-  if (routerDropdown && routerDropdown.value) {
-    selectedChannelValue = routerDropdown.value;
-  }
-
-  // Fall back to 1 hour (60 mins) if nothing is selected or readable
   let rawTimerDurationString = "60";
-  if (urgencyTimerDropdown && urgencyTimerDropdown.selectedIndex !== -1) {
-    rawTimerDurationString = urgencyTimerDropdown.options[urgencyTimerDropdown.selectedIndex].value;
+
+  if (parentContainer) {
+    // Look for select elements specifically inside this container tag
+    const selects = parentContainer.getElementsByTagName('select');
+    
+    // The first select is the channel router, the second select is the timer threshold
+    if (selects[0]) selectedChannelValue = selects[0].value;
+    if (selects[1]) rawTimerDurationString = selects[1].value;
+  } else {
+    // Absolute desperate fallback if the parent ID itself is missing or duplicated
+    const timerDropdown = document.getElementById('urgencyTrackingTimerSelect');
+    if (timerDropdown) rawTimerDurationString = timerDropdown.value;
   }
 
-  // 📋 CONSOLE CHECK: Check your browser's Developer Console (F12) right when you copy!
-  console.log("🛠️ Brute Force Extraction Value Trace ->", {
+  // 📋 CONSOLE TRACE
+  console.log("🛠️ Hierarchical Extraction Trace ->", {
     caseId: caseId,
     extractedChannel: selectedChannelValue,
     extractedMinutes: rawTimerDurationString
@@ -2390,7 +2392,6 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
   const currentNormalizedKey = getNormalizedSystemDateString();
 
-  // Keep shift history entries accurately mapped
   if (typeof globalShiftHistory !== 'undefined' && globalShiftHistory.length > 0) {
     const targetIndices = [0, globalShiftHistory.length - 1];
     targetIndices.forEach(idx => {
@@ -2406,37 +2407,31 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
-  // 🛡️ ALWAYS TRACK IF EXTRACTABLE: Bypass layout conditional flags entirely
   let parsedMinutesWindow = parseFloat(rawTimerDurationString);
   if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
     parsedMinutesWindow = 60; 
   }
 
   const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
-  
-  // Strip duplicate tracker entries for this case ID if they exist
   const normalizedCaseNum = (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE";
+  
   activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== normalizedCaseNum);
 
-  // Push straight into the tracking layout engine
   activeUrgentQueueItems.push({
     caseId: normalizedCaseNum,
     concernType: selectedChannelValue,
     expirationEpochTarget: targetExpirationTimestamp
   });
 
-  // Commit changes immediately to hard browser storage
   localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
 
   if (typeof showToast === 'function') {
     showToast(`Tracked: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
   }
   
-  // Fire off visual countdown cards to redraw sidebar dashboards
   if (typeof runActiveQueueCountdownEngine === 'function') {
     runActiveQueueCountdownEngine();
   }
 
-  // Update folder metrics
   renderChronologicalArchiveGrid();
 }
