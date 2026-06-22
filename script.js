@@ -1210,30 +1210,63 @@ async function deleteHistoryItem(index) {
   updateFloatingBanner();
 }
 
-async function renderHistoryView() {
+/* ==========================================================================
+   UPGRADED CORE RENDERING ROUTINE (REPLACES OLD RENDERHISTORYVIEW)
+   ========================================================================== */
+async function renderHistoryView(searchQuery = "") {
   const container = $('historyContainer');
   if (!container) return;
 
-  if (globalShiftHistory.length === 0) {
-    container.innerHTML = `<i style="color: #94a3b8; font-size: 13px;">No copied entries yet for this shift workbench run...</i>`;
+  if ((!globalShiftHistory || globalShiftHistory.length === 0) && localStorage.getItem('shift_history_cache_key')) {
+    globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
+  }
+
+  let visibleRecords = [...globalShiftHistory];
+
+  // 📁 Filter Layer 1: Date Bucket Sorting
+  if (activeFolderFilterBucket) {
+    visibleRecords = visibleRecords.filter(item => item.savedDateStamp === activeFolderFilterBucket);
+  } else {
+    const currentNormalizedKey = getNormalizedSystemDateString();
+    visibleRecords = visibleRecords.filter(item => !item.savedDateStamp || item.savedDateStamp === currentNormalizedKey);
+  }
+
+  // 🔍 Filter Layer 2: Live Search Text Matcher
+  if (searchQuery !== "") {
+    visibleRecords = visibleRecords.filter(item => {
+      const caseIdMatch = item.id && item.id.toLowerCase().includes(searchQuery);
+      const contentMatch = item.text && item.text.toLowerCase().includes(searchQuery);
+      return caseIdMatch || contentMatch;
+    });
+  }
+
+  if (visibleRecords.length === 0) {
+    container.innerHTML = `<i style="color: var(--text-muted); font-size: 11px; display: block; padding: 12px; text-align: center;">No shift manifest items match current criteria...</i>`;
     return;
   }
 
-  container.innerHTML = globalShiftHistory.map((item, index) => `
-    <div style="background: rgba(255,255,255,0.04); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.08);">
-      <span style="font-size: 13px; font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
-        <span style="color: #60a5fa;">[${item.time}]</span> ID: <strong>${item.id}</strong>
-      </span>
-      <div style="display: flex; gap: 4px;">
-        <button type="button" data-action="recopy" data-index="${index}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.4); padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">
-          Recopy
-        </button>
-        <button type="button" data-action="delete" data-index="${index}" title="Delete Entry" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;">
-          <i class="fas fa-trash-alt" style="pointer-events: none;"></i>
-        </button>
+  container.innerHTML = visibleRecords.map((item) => {
+    const trueIndexInGlobal = globalShiftHistory.findIndex(g => g.text === item.text && g.id === item.id);
+    
+    return `
+      <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
+        <span style="font-size: 12px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 50%;">
+          <span style="color: #60a5fa; font-family: monospace;">[${item.time || '00:00'}]</span> ID: <strong>${item.id || 'N/A'}</strong>
+        </span>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" onclick="window.spawnPictureInPictureNotes(${trueIndexInGlobal})" title="Spawn Dynamic View HUD" style="background: rgba(96,165,250,0.12); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer;">
+            <i class="fas fa-compress-alt"></i> PiP
+          </button>
+          <button type="button" data-action="recopy" data-index="${trueIndexInGlobal}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); padding: 2px 8px; border-radius: 3px; font-size: 10px; cursor: pointer;">
+            Recopy
+          </button>
+          <button type="button" data-action="delete" data-index="${trueIndexInGlobal}" style="background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer;">
+            <i class="fas fa-trash-alt" style="pointer-events: none;"></i>
+          </button>
+        </div>
       </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
 function loadHistoryItem(index) {
@@ -2316,8 +2349,50 @@ function renderChronologicalArchiveGrid() {
   deckSliderTarget.innerHTML = horizontalDeckHtml;
 }
 
+/* ==========================================================================
+   MODERNIZED SHIFT HISTORY SEARCH ROUTINE
+   ========================================================================== */
+function initializeHistorySearch() {
+  const searchInput = document.getElementById('historySearchInput') || $('historySearchInput');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('input', (e) => {
+    const queryStr = e.target.value.toLowerCase().trim();
+    renderHistoryView(queryStr);
+  });
+}
+
+/* ==========================================================================
+   STATE TRACKING & ARCHIVE FOLDER FILTER DRILLDOWN (REPLACEMENT)
+   ========================================================================== */
+let activeFolderFilterBucket = null;
+
 window.drilldownArchiveFolderEntries = function(dateKey) {
-  showToast(`Reviewing journal entries for shift: ${dateKey}`);
+  const currentNormalizedKey = getNormalizedSystemDateString();
+  
+  if (activeFolderFilterBucket === dateKey) {
+    activeFolderFilterBucket = null;
+    showToast("Returning to active shift view.");
+  } else {
+    activeFolderFilterBucket = dateKey;
+    showToast(`Viewing journal entries for shift: ${dateKey}`);
+  }
+
+  document.querySelectorAll('.folder-node-btn').forEach(btn => {
+    const bucket = btn.getAttribute('data-date-bucket');
+    if (bucket === activeFolderFilterBucket) {
+      btn.style.setProperty('background', 'rgba(16, 185, 129, 0.2)', 'important');
+      btn.style.setProperty('border', '1px solid #10b981', 'important');
+    } else if (bucket === currentNormalizedKey) {
+      btn.style.setProperty('background', 'rgba(96, 165, 250, 0.15)', 'important');
+      btn.style.setProperty('border', '1px solid #60a5fa', 'important');
+    } else {
+      btn.style.setProperty('background', 'rgba(255,255,255,0.02)', 'important');
+      btn.style.setProperty('border', '1px solid var(--border-color)', 'important');
+    }
+  });
+
+  renderHistoryView();
 };
 
 /**
@@ -2453,3 +2528,85 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
   renderChronologicalArchiveGrid();
 }
+/* ==========================================================================
+   GLASSMORPHIC TEXT-BASED PICTURE-IN-PICTURE (PiP) CONTROLLER
+   ========================================================================== */
+window.spawnPictureInPictureNotes = function(globalIndex) {
+  if (!globalShiftHistory[globalIndex]) return;
+  const entry = globalShiftHistory[globalIndex];
+
+  let pipFrame = document.getElementById('workbenchPipOverlayInstance');
+  
+  if (!pipFrame) {
+    pipFrame = document.createElement('div');
+    pipFrame.id = 'workbenchPipOverlayInstance';
+    pipFrame.style.cssText = `
+      position: fixed; bottom: 20px; right: 20px; width: 320px; height: 240px;
+      background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      z-index: 99999; display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 240px; min-height: 180px;
+    `;
+    
+    pipFrame.innerHTML = `
+      <div id="pipHeaderDragHandle" style="background: rgba(255,255,255,0.05); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; cursor: move; border-bottom: 1px solid rgba(255,255,255,0.08); user-select: none;">
+        <span id="pipHeaderTitleText" style="font-size: 11px; font-weight: bold; color: #60a5fa; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 80%;"></span>
+        <button type="button" onclick="document.getElementById('workbenchPipOverlayInstance').style.display='none'" style="background: transparent; color: #94a3b8; border: none; cursor: pointer; font-size: 12px;"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="flex: 1; padding: 10px; overflow-y: auto;">
+        <pre id="pipBodyContentContainer" style="margin: 0; white-space: pre-wrap; font-family: monospace; font-size: 11px; color: #e2e8f0; line-height: 1.4;"></pre>
+      </div>
+    `;
+    document.body.appendChild(pipFrame);
+    makePipFrameDraggable(pipFrame);
+  }
+
+  document.getElementById('pipHeaderTitleText').textContent = `🔲 Case PiP: #${entry.id || 'N/A'}`;
+  document.getElementById('pipBodyContentContainer').textContent = entry.text;
+  pipFrame.style.display = 'flex';
+  showToast("Notes shifted to overlay panel.");
+};
+
+function makePipFrameDraggable(elmnt) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  const handle = document.getElementById("pipHeaderDragHandle");
+  
+  if (handle) {
+    handle.onmousedown = dragMouseDown;
+  } else {
+    elmnt.onmousedown = dragMouseDown;
+  }
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    // Check if dragging was initiated from structural corner resize bounds
+    if (e.clientX > (elmnt.offsetLeft + elmnt.offsetWidth - 15) && e.clientY > (elmnt.offsetTop + elmnt.offsetHeight - 15)) return;
+    e.preventDefault();
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    elmnt.style.bottom = "auto";
+    elmnt.style.right = "auto";
+  }
+
+  function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
+}
+
+// Ensure search connects smoothly during initialization hook
+document.addEventListener("DOMContentLoaded", () => {
+  initializeHistorySearch();
+});
