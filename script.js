@@ -2225,13 +2225,76 @@ function listenToOperationalBroadcasts() {
 }
 
 /* ==========================================================================
-   AGENT SHIFT ARCHIVE & LIVING QUEUE ENGINE (PERSISTENT CORES)
+   🌐 CLOUD-SYNCED AGENT ARCHIVE & LIVING QUEUE ENGINE (FIRESTORE CORES)
    ========================================================================== */
-// 📁 Read state arrays out of browser localStorage on initialization to prevent vanishing data
-let activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
+// Centralized state arrays (No longer falling back exclusively to local hardware cache)
+let activeUrgentQueueItems = [];
 let ongoingQueueTrackingLoop = null;
 
-// Audio context generator for the premium hardware notification chime
+/**
+ * 📥 CORE SYNC: Pull active session data from Firestore on Agent Auth/Login
+ * This routine replaces your old localStorage initialization checks.
+ */
+window.syncAgentSessionFromCloud = async function(agentId) {
+  if (!agentId || typeof firestoreDb === 'undefined') {
+    console.warn("Cloud sync aborted: Missing Agent ID or Firestore Database reference.");
+    return;
+  }
+  
+  try {
+    const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+    const docSnap = await getDoc(agentRecordRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Pull and update global tracking arrays instantly across roaming profiles
+      if (typeof globalShiftHistory !== 'undefined') {
+        globalShiftHistory = data.shiftHistory || [];
+      } else {
+        window.globalShiftHistory = data.shiftHistory || [];
+      }
+      activeUrgentQueueItems = data.activeQueue || [];
+      
+      // Sync local hardware cache as a secondary redundant fallback
+      localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
+      localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+      
+      // Repaint user interface matching downloaded cloud metrics
+      renderChronologicalArchiveGrid();
+      if (typeof renderHistoryView === "function") renderHistoryView();
+      runActiveQueueCountdownEngine();
+      
+      console.log(`📡 Station Hot-Swap Success: Loaded data for Agent: ${agentId}`);
+    } else {
+      console.log("🆕 No previous cloud session found for this profile. Initializing clean slate.");
+      renderChronologicalArchiveGrid();
+    }
+  } catch (error) {
+    console.error("❌ Cloud sync retrieval engine failure:", error);
+  }
+};
+
+/**
+ * 📤 CORE SYNC: Push current workbench mutations directly up to Firestore
+ */
+async function dispatchWorkbenchPayloadToCloud() {
+  const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
+  if (!agentId || typeof firestoreDb === 'undefined') return;
+
+  try {
+    const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+    await setDoc(agentRecordRef, {
+      shiftHistory: globalShiftHistory || [],
+      activeQueue: activeUrgentQueueItems || [],
+      lastSyncedAt: Date.now()
+    }, { merge: true });
+  } catch (error) {
+    console.error("❌ Cloud push sync execution dropped:", error);
+  }
+}
+
+// Premium hardware notification audio chime generator
 function playNotificationHardwareChime() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2297,21 +2360,10 @@ function getNormalizedSystemDateString() {
   return `${mm}/${dd}/${yy}`;
 }
 
-/**
- * 📂 Task A: Render Horizontal Slider Target Folders
- */
 function renderChronologicalArchiveGrid() {
   const deckSliderTarget = document.getElementById('horizontalSliderTarget');
   if (!deckSliderTarget) return;
 
-  // 🎯 THE FIX: If global memory is empty, try to recover history from the hard storage cache first
-  if (typeof globalShiftHistory === 'undefined' || !globalShiftHistory || globalShiftHistory.length === 0) {
-    if (localStorage.getItem('shift_history_cache_key')) {
-      globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
-    }
-  }
-
-  // If both memory AND hard storage are completely empty, show the clean vault message
   if (typeof globalShiftHistory === 'undefined' || !globalShiftHistory || globalShiftHistory.length === 0) {
     deckSliderTarget.innerHTML = `<span style="font-size: 10px; color: var(--text-muted); font-style: italic; padding-left: 5px;">Vault clean...</span>`;
     return;
@@ -2350,34 +2402,28 @@ function renderChronologicalArchiveGrid() {
   deckSliderTarget.innerHTML = horizontalDeckHtml;
 }
 
-/* ==========================================================================
-   INITIALIZATION ENGINE - FIXED SEARCH MATCH IDENTIFIER
-   ========================================================================== */
 function initializeHistorySearch() {
-  // 🎯 FIXED: Updated string token to match your exact HTML element ID!
   const searchInput = document.getElementById('shiftHistorySearchInput') || $('shiftHistorySearchInput');
   if (!searchInput) return;
 
   searchInput.addEventListener('input', (e) => {
     const queryStr = e.target.value.toLowerCase().trim();
-    renderHistoryView(queryStr);
+    if (typeof renderHistoryView === "function") {
+      renderHistoryView(queryStr);
+    }
   });
 }
 
-/* ==========================================================================
-   STATE TRACKING & ARCHIVE FOLDER FILTER DRILLDOWN (REPLACEMENT)
-   ========================================================================== */
 let activeFolderFilterBucket = null;
-
 window.drilldownArchiveFolderEntries = function(dateKey) {
   const currentNormalizedKey = getNormalizedSystemDateString();
   
   if (activeFolderFilterBucket === dateKey) {
     activeFolderFilterBucket = null;
-    showToast("Returning to active shift view.");
+    if (typeof showToast === "function") showToast("Returning to active shift view.");
   } else {
     activeFolderFilterBucket = dateKey;
-    showToast(`Viewing journal entries for shift: ${dateKey}`);
+    if (typeof showToast === "function") showToast(`Viewing journal entries for shift: ${dateKey}`);
   }
 
   document.querySelectorAll('.folder-node-btn').forEach(btn => {
@@ -2394,12 +2440,11 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
     }
   });
 
-  renderHistoryView();
+  if (typeof renderHistoryView === "function") {
+    renderHistoryView();
+  }
 };
 
-/**
- * ⏳ Task B: Core Queue Processing Loop (Targets #metaTrackerQueueBox)
- */
 function runActiveQueueCountdownEngine() {
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
@@ -2411,12 +2456,12 @@ function runActiveQueueCountdownEngine() {
       trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
       clearInterval(ongoingQueueTrackingLoop);
       ongoingQueueTrackingLoop = null;
-      localStorage.removeItem('workbench_queue_cache');
       return;
     }
 
     let uiBufferHtml = ``;
     const currentTimeStamp = Date.now();
+    let structureChanged = false;
 
     for (let index = activeUrgentQueueItems.length - 1; index >= 0; index--) {
       const item = activeUrgentQueueItems[index];
@@ -2425,8 +2470,7 @@ function runActiveQueueCountdownEngine() {
       if (remainingTimeDelta <= 0) {
         triggerHardwarePillNotification(item.caseId, item.concernType);
         activeUrgentQueueItems.splice(index, 1);
-        // Persist slice cleanups automatically to database state trees
-        localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+        structureChanged = true;
         continue;
       }
 
@@ -2448,38 +2492,31 @@ function runActiveQueueCountdownEngine() {
       `;
     }
 
+    // Push state delta modifications to cloud automatically when timers complete
+    if (structureChanged) {
+      localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+      dispatchWorkbenchPayloadToCloud();
+    }
+
     trackingContainerUI.innerHTML = uiBufferHtml;
   }, 1000);
 }
 
-/**
- * ⚡ Intercept Entry Processor Wrapper - Hierarchical Scope Version
- */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
-  if (localStorage.getItem('workbench_queue_cache')) {
-    activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
-  }
-  
-  // 🎯 THE FIX: Target the specific parent container first
   const parentContainer = document.getElementById('trackingDropdownFields');
   let selectedChannelValue = "Case Monitoring";
   let rawTimerDurationString = "60";
 
   if (parentContainer) {
-    // Look for select elements specifically inside this container tag
     const selects = parentContainer.getElementsByTagName('select');
-    
-    // The first select is the channel router, the second select is the timer threshold
-    if (selects[0]) selectedChannelValue = selects[0].value;
-    if (selects[1]) rawTimerDurationString = selects[1].value;
+    if (selects) selectedChannelValue = selects.value;
+    if (selects) rawTimerDurationString = selects.value;
   } else {
-    // Absolute desperate fallback if the parent ID itself is missing or duplicated
     const timerDropdown = document.getElementById('urgencyTrackingTimerSelect');
     if (timerDropdown) rawTimerDurationString = timerDropdown.value;
   }
 
-  // 📋 CONSOLE TRACE
-  console.log("🛠️ Hierarchical Extraction Trace ->", {
+  console.log("🛠️ Cloud-Backed Hierarchical Extraction Trace ->", {
     caseId: caseId,
     extractedChannel: selectedChannelValue,
     extractedMinutes: rawTimerDurationString
@@ -2519,9 +2556,12 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
   });
 
   localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+  
+  // Fire-and-forget push up to Firestore for immediate terminal parity
+  dispatchWorkbenchPayloadToCloud();
 
   if (typeof showToast === 'function') {
-    showToast(`Tracked: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
+    showToast(`Tracked Cloud-Wide: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
   }
   
   if (typeof runActiveQueueCountdownEngine === 'function') {
@@ -2530,11 +2570,9 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
   renderChronologicalArchiveGrid();
 }
-/* ==========================================================================
-   GLASSMORPHIC TEXT-BASED PICTURE-IN-PICTURE (PiP) CONTROLLER
-   ========================================================================== */
+
 window.spawnPictureInPictureNotes = function(globalIndex) {
-  if (!globalShiftHistory[globalIndex]) return;
+  if (typeof globalShiftHistory === 'undefined' || !globalShiftHistory[globalIndex]) return;
   const entry = globalShiftHistory[globalIndex];
 
   let pipFrame = document.getElementById('workbenchPipOverlayInstance');
@@ -2565,7 +2603,7 @@ window.spawnPictureInPictureNotes = function(globalIndex) {
   document.getElementById('pipHeaderTitleText').textContent = `🔲 Case PiP: #${entry.id || 'N/A'}`;
   document.getElementById('pipBodyContentContainer').textContent = entry.text;
   pipFrame.style.display = 'flex';
-  showToast("Notes shifted to overlay panel.");
+  if (typeof showToast === "function") showToast("Notes shifted to overlay panel.");
 };
 
 function makePipFrameDraggable(elmnt) {
@@ -2580,7 +2618,6 @@ function makePipFrameDraggable(elmnt) {
 
   function dragMouseDown(e) {
     e = e || window.event;
-    // Check if dragging was initiated from structural corner resize bounds
     if (e.clientX > (elmnt.offsetLeft + elmnt.offsetWidth - 15) && e.clientY > (elmnt.offsetTop + elmnt.offsetHeight - 15)) return;
     e.preventDefault();
     pos3 = e.clientX;
@@ -2608,7 +2645,11 @@ function makePipFrameDraggable(elmnt) {
   }
 }
 
-// Ensure search connects smoothly during initialization hook
+// Global exposure of save hooks soPart 4 configuration script catches deletions instantly
+window.saveDataCloudInterface = function() {
+  dispatchWorkbenchPayloadToCloud();
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   initializeHistorySearch();
 });
