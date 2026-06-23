@@ -2381,49 +2381,100 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
 
 /**
  * ⏳ Task B: Core Queue Processing Loop (Targets #metaTrackerQueueBox)
+ * REFACTORED: Items no longer vanish at 0. They freeze as actionable crimson alert cards.
  */
 function runActiveQueueCountdownEngine() {
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
   ongoingQueueTrackingLoop = setInterval(() => {
     const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
+    
+    // 📊 REAL-TIME ORB METRICS: Update the RGB orb combination totals every single second
+    if (typeof synchronizeOrbDynamicTally === 'function') {
+      synchronizeOrbDynamicTally();
+    }
+
     if (!trackingContainerUI) return;
 
     if (activeUrgentQueueItems.length === 0) {
       trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
       clearInterval(ongoingQueueTrackingLoop);
       ongoingQueueTrackingLoop = null;
+      if (typeof stopContinuousHardwareBellAlarm === 'function') stopContinuousHardwareBellAlarm();
       localStorage.removeItem('workbench_queue_cache');
       return;
     }
 
     let uiBufferHtml = ``;
     const currentTimeStamp = Date.now();
+    let breachFoundInCycle = false;
 
+    // Iterate backwards through the live queue array safely
     for (let index = activeUrgentQueueItems.length - 1; index >= 0; index--) {
       const item = activeUrgentQueueItems[index];
       const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
+      const isExpired = remainingTimeDelta <= 0;
 
-      if (remainingTimeDelta <= 0) {
-        triggerHardwarePillNotification(item.caseId, item.concernType);
-        activeUrgentQueueItems.splice(index, 1);
-        // Persist slice cleanups automatically to database state trees
-        localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
+      // STAGE 1: Hard Breach Evaluation Window (Timer has run out)
+      if (isExpired) {
+        breachFoundInCycle = true;
+        
+        // 🎯 FIX: Instead of splicing/deleting the item here, we lock it onto the screen with action controls
+        uiBufferHtml += `
+          <div class="priority-timer-card alert-state" style="background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; border-radius: 6px; padding: 12px; margin-bottom: 8px; box-shadow: 0 0 15px rgba(239, 68, 68, 0.25); animation: pulse 2s infinite;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight:900; color:#ef4444; font-size:11px; text-transform: uppercase; letter-spacing:0.5px;">⚠️ OVERDUE ACTION</div>
+                <div style="color:#ffffff; font-size:13px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
+                <div style="font-size:11px; color:#cbd5e1; margin-top:1px;">${item.concernType}</div>
+              </div>
+              <div style="font-family:monospace; font-size:11px; font-weight:900; background:#0f172a; color:#ef4444; padding:4px 8px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">
+                BREACH
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 6px; margin-top: 12px;">
+              <button type="button" onclick="window.actionFailsafeQueueItem('${item.caseId}', 'done')" style="flex: 1; padding: 6px; background: #10b981; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.1s;">
+                <i class="fas fa-check"></i> Done
+              </button>
+              <button type="button" onclick="window.actionFailsafeQueueItem('${item.caseId}', 'extend')" style="flex: 1; padding: 6px; background: #2563eb; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.1s;">
+                <i class="fas fa-history"></i> +15M
+              </button>
+            </div>
+          </div>
+        `;
+
+        // Launch full-screen system interrupt block modal and loop the audio context bell
+        if (typeof triggerHardBreachInterruptModal === 'function') {
+          const modalInstance = document.getElementById('hardBreachInterruptModal');
+          if (!modalInstance || modalInstance.style.display === 'none') {
+            triggerHardBreachInterruptModal(item.caseId, item.concernType);
+          }
+        }
         continue;
       }
 
+      // STAGE 2: Soft 15-Minute Structural Threshold Intercept Warning (Top-Left Toast)
+      if (remainingTimeDelta <= 15 * 60 * 1000 && typeof triggerTopLeft15MinWarningToast === 'function') {
+        if (typeof explicitDismissed15MinWarnings !== 'undefined' && !explicitDismissed15MinWarnings.has(item.caseId)) {
+          explicitDismissed15MinWarnings.add(item.caseId);
+          triggerTopLeft15MinWarningToast(item.caseId, item.concernType);
+        }
+      }
+
+      // Standard Active Clock Render Profile
       const hours = Math.floor(remainingTimeDelta / 3600000);
       const minutes = Math.floor((remainingTimeDelta % 3600000) / 60000);
       const seconds = Math.floor((remainingTimeDelta % 60000) / 1000);
       const countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
       uiBufferHtml += `
-        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
+        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #60a5fa; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div style="font-weight:700; color:#60a5fa; font-size:11px; text-transform: uppercase;">${item.concernType}</div>
             <div style="color:#cbd5e1; font-size:12px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
           </div>
-          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#0f172a; color:#ef4444; padding:4px 10px; border-radius:4px; border:1px solid rgba(239,68,68,0.2); display: flex; align-items: center; gap: 6px;">
+          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#0f172a; color:#60a5fa; padding:4px 10px; border-radius:4px; border:1px solid rgba(96,165,250,0.2); display: flex; align-items: center; gap: 6px;">
             <i class="fas fa-hourglass-half fa-spin" style="font-size:10px;"></i> ${countdownClockString}
           </div>
         </div>
@@ -2431,6 +2482,11 @@ function runActiveQueueCountdownEngine() {
     }
 
     trackingContainerUI.innerHTML = uiBufferHtml;
+    
+    // Silence alarms automatically if no active unmitigated breaches remain across the scan
+    if (!breachFoundInCycle && typeof stopContinuousHardwareBellAlarm === 'function') {
+      stopContinuousHardwareBellAlarm();
+    }
   }, 1000);
 }
 
@@ -2442,25 +2498,19 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
   }
   
-  // 🎯 THE FIX: Target the specific parent container first
   const parentContainer = document.getElementById('trackingDropdownFields');
   let selectedChannelValue = "Case Monitoring";
   let rawTimerDurationString = "60";
 
   if (parentContainer) {
-    // Look for select elements specifically inside this container tag
     const selects = parentContainer.getElementsByTagName('select');
-    
-    // The first select is the channel router, the second select is the timer threshold
     if (selects[0]) selectedChannelValue = selects[0].value;
     if (selects[1]) rawTimerDurationString = selects[1].value;
   } else {
-    // Absolute desperate fallback if the parent ID itself is missing or duplicated
     const timerDropdown = document.getElementById('urgencyTrackingTimerSelect');
     if (timerDropdown) rawTimerDurationString = timerDropdown.value;
   }
 
-  // 📋 CONSOLE TRACE
   console.log("🛠️ Hierarchical Extraction Trace ->", {
     caseId: caseId,
     extractedChannel: selectedChannelValue,
@@ -2492,7 +2542,11 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
   const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
   const normalizedCaseNum = (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE";
   
+  // Clear any existing active trackers tracking the exact same case identity string
   activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== normalizedCaseNum);
+  if (typeof explicitDismissed15MinWarnings !== 'undefined') {
+    explicitDismissed15MinWarnings.delete(normalizedCaseNum);
+  }
 
   activeUrgentQueueItems.push({
     caseId: normalizedCaseNum,
@@ -2506,11 +2560,18 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     showToast(`Tracked: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
   }
   
+  // Force instantaneous visual layout pipeline refreshes across UI tiers
+  if (typeof synchronizeOrbDynamicTally === 'function') {
+    synchronizeOrbDynamicTally();
+  }
+  
   if (typeof runActiveQueueCountdownEngine === 'function') {
     runActiveQueueCountdownEngine();
   }
 
-  renderChronologicalArchiveGrid();
+  if (typeof renderChronologicalArchiveGrid === 'function') {
+    renderChronologicalArchiveGrid();
+  }
 }
 /* ==========================================================================
    GLASSMORPHIC TEXT-BASED PICTURE-IN-PICTURE (PiP) CONTROLLER
