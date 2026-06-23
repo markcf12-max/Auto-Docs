@@ -1211,7 +1211,7 @@ async function deleteHistoryItem(index) {
 }
 
 /* ==========================================================================
-   UPGRADED CORE RENDERING ROUTINE (CLICKABLE CASE ID & REMOVED PIP BUTTON)
+   UPGRADED CORE RENDERING ROUTINE (GLOBAL ARCHIVE SEARCH & LIGHT-MODE VISIBILITY)
    ========================================================================== */
 async function renderHistoryView(searchQuery = "") {
   const container = $('historyContainer');
@@ -1223,21 +1223,22 @@ async function renderHistoryView(searchQuery = "") {
 
   let visibleRecords = [...globalShiftHistory];
 
-  // 📁 Filter Layer 1: Date Bucket Sorting
-  if (activeFolderFilterBucket) {
-    visibleRecords = visibleRecords.filter(item => item.savedDateStamp === activeFolderFilterBucket);
-  } else {
-    const currentNormalizedKey = getNormalizedSystemDateString();
-    visibleRecords = visibleRecords.filter(item => !item.savedDateStamp || item.savedDateStamp === currentNormalizedKey);
-  }
-
-  // 🔍 Filter Layer 2: Live Search Text Matcher
+  // 🔍 Layer 1: Live Search Text Matcher (GLOBAL SCOPE BYPASS)
   if (searchQuery !== "") {
+    // If user is searching, filter the entire history array completely ignoring date limitations
     visibleRecords = visibleRecords.filter(item => {
       const caseIdMatch = item.id && item.id.toLowerCase().includes(searchQuery);
       const contentMatch = item.text && item.text.toLowerCase().includes(searchQuery);
       return caseIdMatch || contentMatch;
     });
+  } else {
+    // 📁 Layer 2: Standard Date Bucket Sorting (Only active when NOT searching)
+    if (activeFolderFilterBucket) {
+      visibleRecords = visibleRecords.filter(item => item.savedDateStamp === activeFolderFilterBucket);
+    } else {
+      const currentNormalizedKey = getNormalizedSystemDateString();
+      visibleRecords = visibleRecords.filter(item => !item.savedDateStamp || item.savedDateStamp === currentNormalizedKey);
+    }
   }
 
   if (visibleRecords.length === 0) {
@@ -1252,7 +1253,7 @@ async function renderHistoryView(searchQuery = "") {
       <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
         <span style="font-size: 12px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
           <span style="color: #60a5fa; font-family: monospace; margin-right: 4px;">[${item.time || '00:00'}]</span> 
-          <a href="javascript:void(0)" onclick="window.spawnPictureInPictureNotes(${trueIndexInGlobal})" title="Click to view notes in floating PiP HUD" style="color: #ffffff; text-decoration: none; font-weight: bold; border-bottom: 1px dashed rgba(255,255,255,0.4); padding-bottom: 1px; cursor: pointer; transition: color 0.15s, border-color 0.15s;" onmouseover="this.style.color='#60a5fa'; this.style.borderColor='#60a5fa';" onmouseout="this.style.color='#ffffff'; this.style.borderColor='rgba(255,255,255,0.4)';">
+          <a href="javascript:void(0)" onclick="window.spawnPictureInPictureNotes(${trueIndexInGlobal})" title="Click to view notes in floating PiP HUD" style="color: var(--text-main, currentColor); text-decoration: none; font-weight: bold; border-bottom: 1px dashed var(--text-muted, rgba(128,128,128,0.5)); padding-bottom: 1px; cursor: pointer; transition: color 0.15s, border-color 0.15s;" onmouseover="this.style.color='#60a5fa'; this.style.borderColor='#60a5fa';" onmouseout="this.style.color='var(--text-main, currentColor)'; this.style.borderColor='var(--text-muted, rgba(128,128,128,0.5))';">
             ID: ${item.id || 'N/A'}
           </a>
         </span>
