@@ -1,14 +1,3 @@
-// ==========================================================================
-// 🚀 STATE & MEMORY INITIALIZATION (MUST BE TOP OF FILE)
-// ==========================================================================
-let activeFolderFilterBucket = "ALL"; 
-let activeUrgentQueueItems = []; // Safe baseline array initialization
-let ongoingQueueTrackingLoop = null;
-
-if (typeof explicitDismissed15MinWarnings === 'undefined') {
-  window.explicitDismissed15MinWarnings = new Set();
-}
-
 /* ==========================================================================
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
@@ -317,14 +306,14 @@ function isolateWorkspaceUI(role) {
   const supervisorAdminPanel = $('supervisorAdminPanel'); // Extraction Report Modal
   const supervisorPanel = $('supervisorPanel');           // CMS Portal Panel
   const outputPanel = document.querySelector('.outputPanel'); // Agent Note Output/History Panel
-  const playbookPanel = $('playbookPanel');                  // The Interactive Knowledge Map Section
+  const playbookPanel = $('playbookPanel');                 // The Interactive Knowledge Map Section
 
   if (role === "SUPERVISOR") {
     // 1. Keep the workspace layout grid fully visible so the supervisor can view & choose options
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid"; 
     
     // 2. Clear paths for interactive playbooks to reveal on command
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; 
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; // Changed from block to flex
     if (playbookPanel) playbookPanel.style.display = "block";
     
     // 3. Hide agent-specific functional panels that supervisors don't need
@@ -341,7 +330,7 @@ function isolateWorkspaceUI(role) {
   } else {
     // Standard Agent routing logic
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; 
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; // Changed from block to flex
     if (playbookPanel) playbookPanel.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "flex";
     if (outputPanel) outputPanel.style.display = "block";
@@ -1794,8 +1783,8 @@ async function resetForm(event) {
 }
 
 /* ==========================================================================
-   📁 INITIALIZATION ENGINE & LOOPS (MUST BE AT THE VERY BOTTOM OF SCRIPT.JS)
-   ========================================================================== */
+   INITIALIZATION ENGINE & LOOPS
+========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
@@ -1864,7 +1853,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
+// 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
   const trackingCheckbox = document.getElementById('enableCaseTrackingCheck');
   const dropdownFieldsContainer = document.getElementById('trackingDropdownFields');
 
@@ -1882,23 +1871,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
    
-  // 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
+// 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
+  // Note: We use "THEME_KEY" here to match your global variable name string
   const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
   if (savedTheme === "dark") {
     toggleTheme(); // Let your existing function run and paint the CSS rules instantly!
   }
 
-  // ==========================================================================
-  // 🔐 SAFE BOOT SEQUENCE LINK
-  // ==========================================================================
-  // FIX: Fires the uniform session verification state checker safely
-  if (typeof window.hydrateAndRenderSavedSessionCaches === 'function') {
-    window.hydrateAndRenderSavedSessionCaches();
+  // 📁 Force Sync History State Array Cache
+  if (localStorage.getItem('shift_history_cache_key')) {
+     globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
   }
-}); // 🟢 Closes document.addEventListener cleanly exactly once at the absolute end.
+
+  // ⏱️ Force Sync Running Timer Drawer Queue Cache
+  if (localStorage.getItem('workbench_queue_cache')) {
+     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
+     if (activeUrgentQueueItems.length > 0) {
+        runActiveQueueCountdownEngine();
+     }
+  }
+
+  // Paint UI folder layouts
+  if (typeof renderChronologicalArchiveGrid === 'function') {
+    renderChronologicalArchiveGrid();
+  }
+});
 
 // ==========================================================================
-// 🛡️ UNIFIED BLUEPRINT ENGINE: INITIALIZATION, LISTENERS & CORE CONFIG
+// 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
 // ==========================================================================
 const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
 const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
@@ -1923,23 +1923,23 @@ function setOrbVisibility(isVisible) {
 }
 
 if (shiftCheckInOrb) {
-  shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease, top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+  shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
   
   const orbIcon = shiftCheckInOrb.querySelector('i');
   if (orbIcon) {
     orbIcon.className = "fas fa-folder-open meta-orb-icon";
   }
+  
+  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
 
-  // Bind click action safely to open up your meta tracker panels
   shiftCheckInOrb.addEventListener('click', (e) => {
     e.stopPropagation();
     if (metaTrackerDrawerSubPane) {
       const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-      if (!isOpen) {
-        // Safe check execution: only runs if global alignment function exists
-        if (typeof window.synchronizeOrbDynamicTally === 'function') {
-          window.synchronizeOrbDynamicTally();
-        }
+      if (isOpen) {
+        shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
+      } else {
+        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }
     }
   });
@@ -1951,8 +1951,8 @@ if (closeMetaDrawerHeaderBtn) {
     e.stopPropagation();
     if (metaTrackerDrawerSubPane) {
       metaTrackerDrawerSubPane.classList.remove('drawer-open');
-      if (typeof window.synchronizeOrbDynamicTally === 'function') {
-        window.synchronizeOrbDynamicTally();
+      if (shiftCheckInOrb) {
+        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }
     }
   });
@@ -1969,9 +1969,7 @@ window.evaluateShiftCheckInModal = function() {
   if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
     glassmorphicReminderModal.style.display = 'none';
     setOrbVisibility(true);
-    if (typeof window.synchronizeOrbDynamicTally === 'function') {
-      window.synchronizeOrbDynamicTally();
-    }
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
   } else {
     glassmorphicReminderModal.style.display = 'flex';
     setOrbVisibility(true);
@@ -1979,9 +1977,7 @@ window.evaluateShiftCheckInModal = function() {
       glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
       glassmorphicReminderModal.style.opacity = '1';
     }, 50);
-    if (typeof window.synchronizeOrbDynamicTally === 'function') {
-      window.synchronizeOrbDynamicTally();
-    }
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
   }
 };
 
@@ -1999,8 +1995,8 @@ if (trackerActionBtn) {
       glassmorphicReminderModal.style.display = 'none';
       if (metaTrackerDrawerSubPane) {
         metaTrackerDrawerSubPane.classList.add('drawer-open');
-        if (typeof window.synchronizeOrbDynamicTally === 'function') {
-          window.synchronizeOrbDynamicTally();
+        if (shiftCheckInOrb) {
+          shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
         }
       }
     }, 350);
@@ -2033,6 +2029,30 @@ trackingFields.forEach(id => {
   
   freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
   freshElement.addEventListener("blur", () => { saveData(true); });
+});
+
+$('historyContainer')?.addEventListener('click', (e) => {
+  const button = e.target.closest('button');
+  if (!button) return;
+  const action = button.getAttribute('data-action');
+  const index = parseInt(button.getAttribute('data-index'), 10);
+  
+  if (action === 'recopy') {
+    loadHistoryItem(index);
+  } else if (action === 'delete') {
+    // 1. Run your original deletion routine to clean the UI table array
+    deleteHistoryItem(index);
+    
+    // 🎯 THE CRITICAL PATCH: Overwrite the hard storage cache instantly with the updated array
+    if (typeof globalShiftHistory !== 'undefined') {
+      localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
+    }
+    
+    // 🔄 REPAINT REVOLUTION: Force the horizontal folder grid to update its numbers immediately
+    if (typeof renderChronologicalArchiveGrid === 'function') {
+      renderChronologicalArchiveGrid();
+    }
+  }
 });
 
 $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
@@ -2108,18 +2128,6 @@ document.addEventListener('click', (e) => {
       if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
       if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
     }
-  }
-});
-
-// Fire up listeners, handle layouts, and kickstart the countdown clock loop
-listenToOperationalBroadcasts();
-if (typeof listenToSessionState === "function") listenToSessionState();
-
-// Ensure the real-time layout engine fires immediately on system load
-document.addEventListener("DOMContentLoaded", () => {
-  synchronizeOrbDynamicTally();
-  if (typeof runActiveQueueCountdownEngine === 'function') {
-    runActiveQueueCountdownEngine();
   }
 });
 
@@ -2219,9 +2227,9 @@ function listenToOperationalBroadcasts() {
 /* ==========================================================================
    AGENT SHIFT ARCHIVE & LIVING QUEUE ENGINE (PERSISTENT CORES)
    ========================================================================== */
-// 🎯 FIX: Stripped 'let' keyword and redundant assignment since it's declared at the top
-// and hydrated automatically by window.hydrateAndRenderSavedSessionCaches()
-ongoingQueueTrackingLoop = null; 
+// 📁 Read state arrays out of browser localStorage on initialization to prevent vanishing data
+let activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
+let ongoingQueueTrackingLoop = null;
 
 // Audio context generator for the premium hardware notification chime
 function playNotificationHardwareChime() {
@@ -2391,100 +2399,49 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
 
 /**
  * ⏳ Task B: Core Queue Processing Loop (Targets #metaTrackerQueueBox)
- * REFACTORED: Items no longer vanish at 0. They freeze as actionable crimson alert cards.
  */
 function runActiveQueueCountdownEngine() {
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
   ongoingQueueTrackingLoop = setInterval(() => {
     const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
-    
-    // 📊 REAL-TIME ORB METRICS: Update the RGB orb combination totals every single second
-    if (typeof synchronizeOrbDynamicTally === 'function') {
-      synchronizeOrbDynamicTally();
-    }
-
     if (!trackingContainerUI) return;
 
     if (activeUrgentQueueItems.length === 0) {
       trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
       clearInterval(ongoingQueueTrackingLoop);
       ongoingQueueTrackingLoop = null;
-      if (typeof stopContinuousHardwareBellAlarm === 'function') stopContinuousHardwareBellAlarm();
       localStorage.removeItem('workbench_queue_cache');
       return;
     }
 
     let uiBufferHtml = ``;
     const currentTimeStamp = Date.now();
-    let breachFoundInCycle = false;
 
-    // Iterate backwards through the live queue array safely
     for (let index = activeUrgentQueueItems.length - 1; index >= 0; index--) {
       const item = activeUrgentQueueItems[index];
       const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
-      const isExpired = remainingTimeDelta <= 0;
 
-      // STAGE 1: Hard Breach Evaluation Window (Timer has run out)
-      if (isExpired) {
-        breachFoundInCycle = true;
-        
-        // 🎯 FIX: Instead of splicing/deleting the item here, we lock it onto the screen with action controls
-        uiBufferHtml += `
-          <div class="priority-timer-card alert-state" style="background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; border-radius: 6px; padding: 12px; margin-bottom: 8px; box-shadow: 0 0 15px rgba(239, 68, 68, 0.25); animation: pulse 2s infinite;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <div style="font-weight:900; color:#ef4444; font-size:11px; text-transform: uppercase; letter-spacing:0.5px;">⚠️ OVERDUE ACTION</div>
-                <div style="color:#ffffff; font-size:13px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
-                <div style="font-size:11px; color:#cbd5e1; margin-top:1px;">${item.concernType}</div>
-              </div>
-              <div style="font-family:monospace; font-size:11px; font-weight:900; background:#0f172a; color:#ef4444; padding:4px 8px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">
-                BREACH
-              </div>
-            </div>
-            
-            <div style="display: flex; gap: 6px; margin-top: 12px;">
-              <button type="button" onclick="window.actionFailsafeQueueItem('${item.caseId}', 'done')" style="flex: 1; padding: 6px; background: #10b981; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.1s;">
-                <i class="fas fa-check"></i> Done
-              </button>
-              <button type="button" onclick="window.actionFailsafeQueueItem('${item.caseId}', 'extend')" style="flex: 1; padding: 6px; background: #2563eb; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: background 0.1s;">
-                <i class="fas fa-history"></i> +15M
-              </button>
-            </div>
-          </div>
-        `;
-
-        // Launch full-screen system interrupt block modal and loop the audio context bell
-        if (typeof triggerHardBreachInterruptModal === 'function') {
-          const modalInstance = document.getElementById('hardBreachInterruptModal');
-          if (!modalInstance || modalInstance.style.display === 'none') {
-            triggerHardBreachInterruptModal(item.caseId, item.concernType);
-          }
-        }
+      if (remainingTimeDelta <= 0) {
+        triggerHardwarePillNotification(item.caseId, item.concernType);
+        activeUrgentQueueItems.splice(index, 1);
+        // Persist slice cleanups automatically to database state trees
+        localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
         continue;
       }
 
-      // STAGE 2: Soft 15-Minute Structural Threshold Intercept Warning (Top-Left Toast)
-      if (remainingTimeDelta <= 15 * 60 * 1000 && typeof triggerTopLeft15MinWarningToast === 'function') {
-        if (typeof explicitDismissed15MinWarnings !== 'undefined' && !explicitDismissed15MinWarnings.has(item.caseId)) {
-          explicitDismissed15MinWarnings.add(item.caseId);
-          triggerTopLeft15MinWarningToast(item.caseId, item.concernType);
-        }
-      }
-
-      // Standard Active Clock Render Profile
       const hours = Math.floor(remainingTimeDelta / 3600000);
       const minutes = Math.floor((remainingTimeDelta % 3600000) / 60000);
       const seconds = Math.floor((remainingTimeDelta % 60000) / 1000);
       const countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
       uiBufferHtml += `
-        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #60a5fa; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
+        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div style="font-weight:700; color:#60a5fa; font-size:11px; text-transform: uppercase;">${item.concernType}</div>
             <div style="color:#cbd5e1; font-size:12px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
           </div>
-          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#0f172a; color:#60a5fa; padding:4px 10px; border-radius:4px; border:1px solid rgba(96,165,250,0.2); display: flex; align-items: center; gap: 6px;">
+          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#0f172a; color:#ef4444; padding:4px 10px; border-radius:4px; border:1px solid rgba(239,68,68,0.2); display: flex; align-items: center; gap: 6px;">
             <i class="fas fa-hourglass-half fa-spin" style="font-size:10px;"></i> ${countdownClockString}
           </div>
         </div>
@@ -2492,11 +2449,6 @@ function runActiveQueueCountdownEngine() {
     }
 
     trackingContainerUI.innerHTML = uiBufferHtml;
-    
-    // Silence alarms automatically if no active unmitigated breaches remain across the scan
-    if (!breachFoundInCycle && typeof stopContinuousHardwareBellAlarm === 'function') {
-      stopContinuousHardwareBellAlarm();
-    }
   }, 1000);
 }
 
@@ -2508,19 +2460,25 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
   }
   
+  // 🎯 THE FIX: Target the specific parent container first
   const parentContainer = document.getElementById('trackingDropdownFields');
   let selectedChannelValue = "Case Monitoring";
   let rawTimerDurationString = "60";
 
   if (parentContainer) {
+    // Look for select elements specifically inside this container tag
     const selects = parentContainer.getElementsByTagName('select');
+    
+    // The first select is the channel router, the second select is the timer threshold
     if (selects[0]) selectedChannelValue = selects[0].value;
     if (selects[1]) rawTimerDurationString = selects[1].value;
   } else {
+    // Absolute desperate fallback if the parent ID itself is missing or duplicated
     const timerDropdown = document.getElementById('urgencyTrackingTimerSelect');
     if (timerDropdown) rawTimerDurationString = timerDropdown.value;
   }
 
+  // 📋 CONSOLE TRACE
   console.log("🛠️ Hierarchical Extraction Trace ->", {
     caseId: caseId,
     extractedChannel: selectedChannelValue,
@@ -2552,11 +2510,7 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
   const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
   const normalizedCaseNum = (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE";
   
-  // Clear any existing active trackers tracking the exact same case identity string
   activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== normalizedCaseNum);
-  if (typeof explicitDismissed15MinWarnings !== 'undefined') {
-    explicitDismissed15MinWarnings.delete(normalizedCaseNum);
-  }
 
   activeUrgentQueueItems.push({
     caseId: normalizedCaseNum,
@@ -2570,18 +2524,11 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     showToast(`Tracked: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
   }
   
-  // Force instantaneous visual layout pipeline refreshes across UI tiers
-  if (typeof synchronizeOrbDynamicTally === 'function') {
-    synchronizeOrbDynamicTally();
-  }
-  
   if (typeof runActiveQueueCountdownEngine === 'function') {
     runActiveQueueCountdownEngine();
   }
 
-  if (typeof renderChronologicalArchiveGrid === 'function') {
-    renderChronologicalArchiveGrid();
-  }
+  renderChronologicalArchiveGrid();
 }
 /* ==========================================================================
    GLASSMORPHIC TEXT-BASED PICTURE-IN-PICTURE (PiP) CONTROLLER
@@ -2665,52 +2612,3 @@ function makePipFrameDraggable(elmnt) {
 document.addEventListener("DOMContentLoaded", () => {
   initializeHistorySearch();
 });
-
-
-
-// ==========================================================================
-// 🔒 SECURE LIFECYCLE BOOTSTRAPPER (MUST BE AT THE VERY END OF FILE)
-// ==========================================================================
-window.hydrateAndRenderSavedSessionCaches = function() {
-  // If the security identity variables aren't initialized yet, defer loading safely
-  if (typeof currentAgentId === 'undefined' || !currentAgentId) {
-    console.log("⏳ Session authorization pending... delaying cache pipeline sync.");
-    setTimeout(window.hydrateAndRenderSavedSessionCaches, 200);
-    return;
-  }
-
-  console.log(`🚀 Security cleared for: [${currentAgentId}]. Hydrating local data stores.`);
-
-  // Recover active running timers
-  const savedQueueCache = localStorage.getItem('workbench_queue_cache');
-  if (savedQueueCache) {
-    try { activeUrgentQueueItems = JSON.parse(savedQueueCache); } catch (e) { activeUrgentQueueItems = []; }
-  }
-
-  // Recover historical cases logs list array
-  const savedHistoryCache = localStorage.getItem('shift_history_cache_key');
-  if (savedHistoryCache) {
-    try {
-      const parsedHistory = JSON.parse(savedHistoryCache);
-      if (Array.isArray(parsedHistory)) window.globalShiftHistory = parsedHistory;
-    } catch (e) { console.error("History tree load failure", e); }
-  }
-
-  // Force synchronous UI generation loops
-  window.synchronizeOrbDynamicTally();
-  if (typeof runActiveQueueCountdownEngine === 'function') runActiveQueueCountdownEngine();
-  
-  // Paint tracking views immediately without empty flashes
-  if (typeof renderHistoryView === 'function') {
-    renderHistoryView();
-  } else if (typeof renderChronologicalArchiveGrid === 'function') {
-    renderChronologicalArchiveGrid();
-  }
-};
-
-// Bind lifecycle listener safely
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", window.hydrateAndRenderSavedSessionCaches);
-} else {
-  window.hydrateAndRenderSavedSessionCaches();
-}
