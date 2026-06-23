@@ -245,12 +245,14 @@
           </div>
         </div>
 
-<div style="margin-bottom: 14px; position: relative;">
-  <input type="text" id="shiftHistorySearchInput" placeholder="Search entries instantly by ID, customer name, segment tags..." 
-    style="width: 100%; box-sizing: border-box; padding: 10px 38px 10px 14px; font-family: inherit; font-size: 12px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: #ffffff; outline: none; transition: all 0.2s ease; box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);"
-    onfocus="this.style.borderColor='#60a5fa'; this.style.boxShadow='0 0 0 3px rgba(96, 165, 250, 0.15), inset 0 1px 2px rgba(0,0,0,0.4)';" 
-    onblur="this.style.borderColor='rgba(255, 255, 255, 0.1)'; this.style.boxShadow='inset 0 1px 2px rgba(0,0,0,0.4)';">
-  <span class="history-search-icon" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 12px;">
+<!-- SHIFT HISTORY SEARCH BAR -->
+        
+<div class="history-search-control-deck" style="margin-bottom: 14px; position: relative; width: 100%;">
+  <input type="text" id="shiftHistorySearchInput" placeholder="Search entries instantly across all dates by ID or notes..." 
+    style="width: 100%; box-sizing: border-box; padding: 10px 38px 10px 14px; font-family: inherit; font-size: 12px; background: rgba(128, 128, 128, 0.08); border: 1px solid var(--border-color, rgba(128,128,128,0.2)); border-radius: 6px; color: var(--text-main, inherit); outline: none; transition: all 0.2s ease-in-out;"
+    onfocus="this.style.borderColor='#60a5fa'; this.style.boxShadow='0 0 0 3px rgba(96, 165, 250, 0.18)';" 
+    onblur="this.style.borderColor='var(--border-color, rgba(128,128,128,0.2))'; this.style.boxShadow='none';">
+  <span class="history-search-icon" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted, #64748b); pointer-events: none; font-size: 12px;">
     <i class="fas fa-search"></i>
   </span>
 </div>
