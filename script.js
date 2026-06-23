@@ -863,7 +863,7 @@ const updateData = {
 }
 
 /* ==========================================================================
-   SESSION SYSTEM MONITOR & PORTAL ROUTERS (TIMING & SECURITY FIXED)
+   🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (TIMING & SECURITY FIXED)
    ========================================================================== */
 function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
@@ -889,11 +889,17 @@ function listenToSessionState() {
 
   const select = $("concernType");
   if (select) select.selectedIndex = 0;
-  updateVocOptions(false);
-  globalShiftHistory = [];
+  if (typeof updateVocOptions === "function") updateVocOptions(false);
+  
+  if (typeof globalShiftHistory !== 'undefined') {
+    globalShiftHistory = [];
+  } else {
+    window.globalShiftHistory = [];
+  }
 
   if (cachedId) {
     currentAgentId = cachedId;
+    window.currentAgentId = cachedId; // Secure global window namespace
     
     // 🔒 EVALUATING CACHED SUPERVISOR ROUTE
     if (cachedId === "SUPERVISOR") {
@@ -904,13 +910,15 @@ function listenToSessionState() {
       isSupervisorAuthenticated = true; 
       
       // Configure workspace layout views for supervisor actions
-      isolateWorkspaceUI("SUPERVISOR");
+      if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("SUPERVISOR");
       
       if ($('authModal')) $('authModal').style.display = "none";
       if ($('logoutBtn')) $('logoutBtn').style.display = "block";
       
       // 🚀 NOW THIS WILL PASS SAFELY: The flag is true, unlocking elements cleanly
-      bypassLockForAuthenticatedSupervisor();
+      if (typeof bypassLockForAuthenticatedSupervisor === "function") {
+        bypassLockForAuthenticatedSupervisor();
+      }
       
       // Update system status badge to show online
       if (typeof updateSyncStatusUI === "function") {
@@ -921,56 +929,70 @@ function listenToSessionState() {
     
     // 🔒 EVALUATING CACHED AGENT ROUTE
     isSupervisorAuthenticated = false; // Explicit lock reinforcement
-    isolateWorkspaceUI("AGENT");
+    if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("AGENT");
+    
     getDoc(doc(firestoreDb, "agent_profiles", cachedId)).then(snap => {
       if(snap.exists()) {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
         currentAgentLob = snap.data().lob || "UNKNOWN";
-        handleSessionLoginTransition();
+        
+        // 🛰️ ROAMING PROFILE TRIGGER: Sync the active workbench session from the cloud instantly
+        if (typeof window.syncAgentSessionFromCloud === "function") {
+          window.syncAgentSessionFromCloud(cachedId);
+        }
+        
+        if (typeof handleSessionLoginTransition === "function") {
+          handleSessionLoginTransition();
+        }
       } else {
         localStorage.removeItem("active_agent_session_id");
         showLoginGateway(false);
       }
+    }).catch(err => {
+      console.error("Critical gateway failure reading agent database index:", err);
+      showLoginGateway(false);
     });
   } else {
     // NO ACTIVE SESSION DETECTED
     isSupervisorAuthenticated = false;
     currentAgentId = null;
+    window.currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
-    isolateWorkspaceUI("AGENT");
+    if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("AGENT");
     showLoginGateway(false);
-    updateOutput();
+    if (typeof updateOutput === "function") updateOutput();
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
+    
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
-    renderHistoryView();
+    if (typeof renderHistoryView === "function") renderHistoryView();
   }
 }
 
 function showLoginGateway(isRegisterMode = false) {
-  $('authModal').style.display = "flex";
+  if ($('authModal')) $('authModal').style.display = "flex";
   if ($('logoutBtn')) $('logoutBtn').style.display = "none";
   
   // Clear credential entry containers cleanly on displaying the gateway view
-  $('authEmail').value = "";
-  $('authPassword').value = "";
+  if ($('authEmail')) $('authEmail').value = "";
+  if ($('authPassword')) $('authPassword').value = "";
   if ($('authName')) $('authName').value = "";
 
   if (isRegisterMode) {
     currentAuthMode = "REGISTER";
-    $('authTitle').textContent = "Register Agent Profile";
-    $('authSubtitle').textContent = "Configure secure numeric credential tokens";
-    $('authSubmitBtn').textContent = "Provision Account";
-    $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
+    if ($('authTitle')) $('authTitle').textContent = "Register Agent Profile";
+    if ($('authSubtitle')) $('authSubtitle').textContent = "Configure secure numeric credential tokens";
+    if ($('authSubmitBtn')) $('authSubmitBtn').textContent = "Provision Account";
+    if ($('authToggleAnchor')) $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
     if ($('authNameContainer')) $('authNameContainer').style.display = "flex";
     if ($('authLobContainer')) $('authLobContainer').style.display = "flex";
   } else {
     currentAuthMode = "LOGIN";
-    $('authTitle').textContent = "Agent Workbench Sign In";
-    $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
-    $('authSubmitBtn').textContent = "Authorize Session";
-    $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
+    if ($('authTitle')) $('authTitle').textContent = "Agent Workbench Sign In";
+    if ($('authSubtitle')) $('authSubtitle').textContent = "Enter your credentials to clear network gateway";
+    if ($('authSubmitBtn')) $('authSubmitBtn').textContent = "Authorize Session";
+    if ($('authToggleAnchor')) $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
     if ($('authNameContainer')) $('authNameContainer').style.display = "none";
     if ($('authLobContainer')) $('authLobContainer').style.display = "none";
   }
@@ -2502,21 +2524,31 @@ function runActiveQueueCountdownEngine() {
   }, 1000);
 }
 
+/**
+ * ⚡ Intercept Entry Processor Wrapper - Explicit Element Mapping Version
+ */
 function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthorized) {
-  const parentContainer = document.getElementById('trackingDropdownFields');
+  // Sync the local representation with cloud queue data structures
+  if (localStorage.getItem('workbench_queue_cache')) {
+    activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
+  }
+  
+  // 🎯 EXPLICIT FIX: Target the dropdown element IDs straight from your HTML directly
+  const channelDropdown = document.getElementById('trackUrgencyChannel');
+  const timerDropdown = document.getElementById('urgencyTrackingTimerSelect');
+  
   let selectedChannelValue = "Case Monitoring";
   let rawTimerDurationString = "60";
 
-  if (parentContainer) {
-    const selects = parentContainer.getElementsByTagName('select');
-    if (selects) selectedChannelValue = selects.value;
-    if (selects) rawTimerDurationString = selects.value;
-  } else {
-    const timerDropdown = document.getElementById('urgencyTrackingTimerSelect');
-    if (timerDropdown) rawTimerDurationString = timerDropdown.value;
+  if (channelDropdown) {
+    selectedChannelValue = channelDropdown.value;
+  }
+  if (timerDropdown) {
+    rawTimerDurationString = timerDropdown.value;
   }
 
-  console.log("🛠️ Cloud-Backed Hierarchical Extraction Trace ->", {
+  // 📋 CONSOLE EXTRACTION VERIFICATION
+  console.log("🛠️ Cloud-Backed Explicit Extraction Trace ->", {
     caseId: caseId,
     extractedChannel: selectedChannelValue,
     extractedMinutes: rawTimerDurationString
@@ -2539,16 +2571,19 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
   }
 
+  // Parse out the custom threshold duration
   let parsedMinutesWindow = parseFloat(rawTimerDurationString);
   if (isNaN(parsedMinutesWindow) || parsedMinutesWindow <= 0) {
-    parsedMinutesWindow = 60; 
+    parsedMinutesWindow = 60; // Safe ultimate fallback configuration
   }
 
   const targetExpirationTimestamp = Date.now() + (parsedMinutesWindow * 60 * 1000);
   const normalizedCaseNum = (caseId && caseId !== "N/A") ? caseId.trim().toUpperCase() : "TRACK-CASE";
   
+  // De-duplicate existing items matching the current Case/SR payload key
   activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== normalizedCaseNum);
 
+  // Appending the fresh parameters onto our collection block
   activeUrgentQueueItems.push({
     caseId: normalizedCaseNum,
     concernType: selectedChannelValue,
@@ -2557,8 +2592,10 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
 
   localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
   
-  // Fire-and-forget push up to Firestore for immediate terminal parity
-  dispatchWorkbenchPayloadToCloud();
+  // Fire data sync up to Firestore for terminal cross-compatibility
+  if (typeof dispatchWorkbenchPayloadToCloud === "function") {
+    dispatchWorkbenchPayloadToCloud();
+  }
 
   if (typeof showToast === 'function') {
     showToast(`Tracked Cloud-Wide: #${normalizedCaseNum} for ${parsedMinutesWindow} min.`);
@@ -2568,7 +2605,9 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
     runActiveQueueCountdownEngine();
   }
 
-  renderChronologicalArchiveGrid();
+  if (typeof renderChronologicalArchiveGrid === 'function') {
+    renderChronologicalArchiveGrid();
+  }
 }
 
 window.spawnPictureInPictureNotes = function(globalIndex) {
