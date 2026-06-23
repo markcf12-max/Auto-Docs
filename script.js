@@ -28,7 +28,7 @@ import {
   orderBy // 🎯 INJECTED: Fixes "Pipeline processing broke: orderBy is not defined"
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
-const firebaseConfig = {
+const firebaseConfig = {a
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
   authDomain: "auto-docs-4ad35.firebaseapp.com",
   projectId: "auto-docs-4ad35",
@@ -2219,9 +2219,9 @@ function listenToOperationalBroadcasts() {
 /* ==========================================================================
    AGENT SHIFT ARCHIVE & LIVING QUEUE ENGINE (PERSISTENT CORES)
    ========================================================================== */
-// 📁 Read state arrays out of browser localStorage on initialization to prevent vanishing data
-let activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
-let ongoingQueueTrackingLoop = null;
+// 🎯 FIX: Stripped 'let' keyword and redundant assignment since it's declared at the top
+// and hydrated automatically by window.hydrateAndRenderSavedSessionCaches()
+ongoingQueueTrackingLoop = null; 
 
 // Audio context generator for the premium hardware notification chime
 function playNotificationHardwareChime() {
