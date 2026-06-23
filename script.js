@@ -1891,30 +1891,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================================
   // 🔐 SAFE BOOT SEQUENCE LINK
   // ==========================================================================
-  // FIX: This calls your centralized recovery pipeline safely, waiting for auth to clear
+  // FIX: Fires the uniform session verification state checker safely
   if (typeof window.hydrateAndRenderSavedSessionCaches === 'function') {
     window.hydrateAndRenderSavedSessionCaches();
   }
-});
-
-  // 📁 Force Sync History State Array Cache
-  if (localStorage.getItem('shift_history_cache_key')) {
-     globalShiftHistory = JSON.parse(localStorage.getItem('shift_history_cache_key'));
-  }
-
-  // ⏱️ Force Sync Running Timer Drawer Queue Cache
-  if (localStorage.getItem('workbench_queue_cache')) {
-     activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
-     if (activeUrgentQueueItems.length > 0) {
-        runActiveQueueCountdownEngine();
-     }
-  }
-
-  // Paint UI folder layouts
-  if (typeof renderChronologicalArchiveGrid === 'function') {
-    renderChronologicalArchiveGrid();
-  }
-});
+}); // 🟢 Closes document.addEventListener cleanly exactly once at the absolute end.
 
 // ==========================================================================
 // 🛡️ UNIFIED BLUEPRINT ENGINE: INITIALIZATION, LISTENERS & CORE CONFIG
