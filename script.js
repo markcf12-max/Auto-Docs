@@ -1211,7 +1211,7 @@ async function deleteHistoryItem(index) {
 }
 
 /* ==========================================================================
-   UPGRADED CORE RENDERING ROUTINE (REPLACES OLD RENDERHISTORYVIEW)
+   UPGRADED CORE RENDERING ROUTINE (CLICKABLE CASE ID & REMOVED PIP BUTTON)
    ========================================================================== */
 async function renderHistoryView(searchQuery = "") {
   const container = $('historyContainer');
@@ -1250,13 +1250,13 @@ async function renderHistoryView(searchQuery = "") {
     
     return `
       <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);">
-        <span style="font-size: 12px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 50%;">
-          <span style="color: #60a5fa; font-family: monospace;">[${item.time || '00:00'}]</span> ID: <strong>${item.id || 'N/A'}</strong>
+        <span style="font-size: 12px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
+          <span style="color: #60a5fa; font-family: monospace; margin-right: 4px;">[${item.time || '00:00'}]</span> 
+          <a href="javascript:void(0)" onclick="window.spawnPictureInPictureNotes(${trueIndexInGlobal})" title="Click to view notes in floating PiP HUD" style="color: #ffffff; text-decoration: none; font-weight: bold; border-bottom: 1px dashed rgba(255,255,255,0.4); padding-bottom: 1px; cursor: pointer; transition: color 0.15s, border-color 0.15s;" onmouseover="this.style.color='#60a5fa'; this.style.borderColor='#60a5fa';" onmouseout="this.style.color='#ffffff'; this.style.borderColor='rgba(255,255,255,0.4)';">
+            ID: ${item.id || 'N/A'}
+          </a>
         </span>
         <div style="display: flex; gap: 4px;">
-          <button type="button" onclick="window.spawnPictureInPictureNotes(${trueIndexInGlobal})" title="Spawn Dynamic View HUD" style="background: rgba(96,165,250,0.12); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); padding: 2px 6px; border-radius: 3px; font-size: 10px; cursor: pointer;">
-            <i class="fas fa-compress-alt"></i> PiP
-          </button>
           <button type="button" data-action="recopy" data-index="${trueIndexInGlobal}" style="background: transparent; color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); padding: 2px 8px; border-radius: 3px; font-size: 10px; cursor: pointer;">
             Recopy
           </button>
@@ -2350,10 +2350,11 @@ function renderChronologicalArchiveGrid() {
 }
 
 /* ==========================================================================
-   MODERNIZED SHIFT HISTORY SEARCH ROUTINE
+   INITIALIZATION ENGINE - FIXED SEARCH MATCH IDENTIFIER
    ========================================================================== */
 function initializeHistorySearch() {
-  const searchInput = document.getElementById('historySearchInput') || $('historySearchInput');
+  // 🎯 FIXED: Updated string token to match your exact HTML element ID!
+  const searchInput = document.getElementById('shiftHistorySearchInput') || $('shiftHistorySearchInput');
   if (!searchInput) return;
 
   searchInput.addEventListener('input', (e) => {
