@@ -1,3 +1,14 @@
+// ==========================================================================
+// 🚀 STATE & MEMORY INITIALIZATION (MUST BE TOP OF FILE)
+// ==========================================================================
+let activeFolderFilterBucket = "ALL"; 
+let activeUrgentQueueItems = []; // Safe baseline array initialization
+let ongoingQueueTrackingLoop = null;
+
+if (typeof explicitDismissed15MinWarnings === 'undefined') {
+  window.explicitDismissed15MinWarnings = new Set();
+}
+
 /* ==========================================================================
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
@@ -1783,8 +1794,8 @@ async function resetForm(event) {
 }
 
 /* ==========================================================================
-   INITIALIZATION ENGINE & LOOPS
-========================================================================== */
+   📁 INITIALIZATION ENGINE & LOOPS (MUST BE AT THE VERY BOTTOM OF SCRIPT.JS)
+   ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
   $('authToggleAnchor')?.addEventListener('click', toggleAuthMode);
@@ -1853,7 +1864,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-// 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
+  // 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
   const trackingCheckbox = document.getElementById('enableCaseTrackingCheck');
   const dropdownFieldsContainer = document.getElementById('trackingDropdownFields');
 
@@ -1871,12 +1882,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
    
-// 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
-  // Note: We use "THEME_KEY" here to match your global variable name string
+  // 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
   const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
   if (savedTheme === "dark") {
     toggleTheme(); // Let your existing function run and paint the CSS rules instantly!
   }
+
+  // ==========================================================================
+  // 🔐 SAFE BOOT SEQUENCE LINK
+  // ==========================================================================
+  // FIX: This calls your centralized recovery pipeline safely, waiting for auth to clear
+  if (typeof window.hydrateAndRenderSavedSessionCaches === 'function') {
+    window.hydrateAndRenderSavedSessionCaches();
+  }
+});
 
   // 📁 Force Sync History State Array Cache
   if (localStorage.getItem('shift_history_cache_key')) {
@@ -1936,8 +1955,10 @@ if (shiftCheckInOrb) {
     if (metaTrackerDrawerSubPane) {
       const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
       if (!isOpen) {
-        // Force refresh tally indicators instantly when panel cycles
-        synchronizeOrbDynamicTally();
+        // Safe check execution: only runs if global alignment function exists
+        if (typeof window.synchronizeOrbDynamicTally === 'function') {
+          window.synchronizeOrbDynamicTally();
+        }
       }
     }
   });
@@ -1949,7 +1970,9 @@ if (closeMetaDrawerHeaderBtn) {
     e.stopPropagation();
     if (metaTrackerDrawerSubPane) {
       metaTrackerDrawerSubPane.classList.remove('drawer-open');
-      synchronizeOrbDynamicTally();
+      if (typeof window.synchronizeOrbDynamicTally === 'function') {
+        window.synchronizeOrbDynamicTally();
+      }
     }
   });
 }
@@ -1965,7 +1988,9 @@ window.evaluateShiftCheckInModal = function() {
   if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
     glassmorphicReminderModal.style.display = 'none';
     setOrbVisibility(true);
-    synchronizeOrbDynamicTally();
+    if (typeof window.synchronizeOrbDynamicTally === 'function') {
+      window.synchronizeOrbDynamicTally();
+    }
   } else {
     glassmorphicReminderModal.style.display = 'flex';
     setOrbVisibility(true);
@@ -1973,7 +1998,9 @@ window.evaluateShiftCheckInModal = function() {
       glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
       glassmorphicReminderModal.style.opacity = '1';
     }, 50);
-    synchronizeOrbDynamicTally();
+    if (typeof window.synchronizeOrbDynamicTally === 'function') {
+      window.synchronizeOrbDynamicTally();
+    }
   }
 };
 
@@ -1991,7 +2018,9 @@ if (trackerActionBtn) {
       glassmorphicReminderModal.style.display = 'none';
       if (metaTrackerDrawerSubPane) {
         metaTrackerDrawerSubPane.classList.add('drawer-open');
-        synchronizeOrbDynamicTally();
+        if (typeof window.synchronizeOrbDynamicTally === 'function') {
+          window.synchronizeOrbDynamicTally();
+        }
       }
     }, 350);
   });
@@ -2655,3 +2684,52 @@ function makePipFrameDraggable(elmnt) {
 document.addEventListener("DOMContentLoaded", () => {
   initializeHistorySearch();
 });
+
+
+
+// ==========================================================================
+// 🔒 SECURE LIFECYCLE BOOTSTRAPPER (MUST BE AT THE VERY END OF FILE)
+// ==========================================================================
+window.hydrateAndRenderSavedSessionCaches = function() {
+  // If the security identity variables aren't initialized yet, defer loading safely
+  if (typeof currentAgentId === 'undefined' || !currentAgentId) {
+    console.log("⏳ Session authorization pending... delaying cache pipeline sync.");
+    setTimeout(window.hydrateAndRenderSavedSessionCaches, 200);
+    return;
+  }
+
+  console.log(`🚀 Security cleared for: [${currentAgentId}]. Hydrating local data stores.`);
+
+  // Recover active running timers
+  const savedQueueCache = localStorage.getItem('workbench_queue_cache');
+  if (savedQueueCache) {
+    try { activeUrgentQueueItems = JSON.parse(savedQueueCache); } catch (e) { activeUrgentQueueItems = []; }
+  }
+
+  // Recover historical cases logs list array
+  const savedHistoryCache = localStorage.getItem('shift_history_cache_key');
+  if (savedHistoryCache) {
+    try {
+      const parsedHistory = JSON.parse(savedHistoryCache);
+      if (Array.isArray(parsedHistory)) window.globalShiftHistory = parsedHistory;
+    } catch (e) { console.error("History tree load failure", e); }
+  }
+
+  // Force synchronous UI generation loops
+  window.synchronizeOrbDynamicTally();
+  if (typeof runActiveQueueCountdownEngine === 'function') runActiveQueueCountdownEngine();
+  
+  // Paint tracking views immediately without empty flashes
+  if (typeof renderHistoryView === 'function') {
+    renderHistoryView();
+  } else if (typeof renderChronologicalArchiveGrid === 'function') {
+    renderChronologicalArchiveGrid();
+  }
+};
+
+// Bind lifecycle listener safely
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", window.hydrateAndRenderSavedSessionCaches);
+} else {
+  window.hydrateAndRenderSavedSessionCaches();
+}
