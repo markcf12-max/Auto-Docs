@@ -28,7 +28,7 @@ import {
   orderBy // 🎯 INJECTED: Fixes "Pipeline processing broke: orderBy is not defined"
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
-const firebaseConfig = {a
+const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
   authDomain: "auto-docs-4ad35.firebaseapp.com",
   projectId: "auto-docs-4ad35",
@@ -317,14 +317,14 @@ function isolateWorkspaceUI(role) {
   const supervisorAdminPanel = $('supervisorAdminPanel'); // Extraction Report Modal
   const supervisorPanel = $('supervisorPanel');           // CMS Portal Panel
   const outputPanel = document.querySelector('.outputPanel'); // Agent Note Output/History Panel
-  const playbookPanel = $('playbookPanel');                 // The Interactive Knowledge Map Section
+  const playbookPanel = $('playbookPanel');                  // The Interactive Knowledge Map Section
 
   if (role === "SUPERVISOR") {
     // 1. Keep the workspace layout grid fully visible so the supervisor can view & choose options
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid"; 
     
     // 2. Clear paths for interactive playbooks to reveal on command
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; // Changed from block to flex
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; 
     if (playbookPanel) playbookPanel.style.display = "block";
     
     // 3. Hide agent-specific functional panels that supervisors don't need
@@ -341,7 +341,7 @@ function isolateWorkspaceUI(role) {
   } else {
     // Standard Agent routing logic
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; // Changed from block to flex
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; 
     if (playbookPanel) playbookPanel.style.display = "block";
     if (mobileActionDock) mobileActionDock.style.display = "flex";
     if (outputPanel) outputPanel.style.display = "block";
