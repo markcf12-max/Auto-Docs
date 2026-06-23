@@ -1898,7 +1898,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================================================
-// 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
+// 🛡️ UNIFIED BLUEPRINT ENGINE: INITIALIZATION, LISTENERS & CORE CONFIG
 // ==========================================================================
 const shiftCheckInOrb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
 const glassmorphicReminderModal = document.getElementById('loginReminderScreen');
@@ -1923,23 +1923,21 @@ function setOrbVisibility(isVisible) {
 }
 
 if (shiftCheckInOrb) {
-  shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+  shiftCheckInOrb.style.transition = "opacity 0.2s ease, transform 0.2s ease, top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
   
   const orbIcon = shiftCheckInOrb.querySelector('i');
   if (orbIcon) {
     orbIcon.className = "fas fa-folder-open meta-orb-icon";
   }
-  
-  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
 
+  // Bind click action safely to open up your meta tracker panels
   shiftCheckInOrb.addEventListener('click', (e) => {
     e.stopPropagation();
     if (metaTrackerDrawerSubPane) {
       const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
-      if (isOpen) {
-        shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
-      } else {
-        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+      if (!isOpen) {
+        // Force refresh tally indicators instantly when panel cycles
+        synchronizeOrbDynamicTally();
       }
     }
   });
@@ -1951,9 +1949,7 @@ if (closeMetaDrawerHeaderBtn) {
     e.stopPropagation();
     if (metaTrackerDrawerSubPane) {
       metaTrackerDrawerSubPane.classList.remove('drawer-open');
-      if (shiftCheckInOrb) {
-        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
-      }
+      synchronizeOrbDynamicTally();
     }
   });
 }
@@ -1969,7 +1965,7 @@ window.evaluateShiftCheckInModal = function() {
   if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
     glassmorphicReminderModal.style.display = 'none';
     setOrbVisibility(true);
-    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+    synchronizeOrbDynamicTally();
   } else {
     glassmorphicReminderModal.style.display = 'flex';
     setOrbVisibility(true);
@@ -1977,7 +1973,7 @@ window.evaluateShiftCheckInModal = function() {
       glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
       glassmorphicReminderModal.style.opacity = '1';
     }, 50);
-    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+    synchronizeOrbDynamicTally();
   }
 };
 
@@ -1995,9 +1991,7 @@ if (trackerActionBtn) {
       glassmorphicReminderModal.style.display = 'none';
       if (metaTrackerDrawerSubPane) {
         metaTrackerDrawerSubPane.classList.add('drawer-open');
-        if (shiftCheckInOrb) {
-          shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
-        }
+        synchronizeOrbDynamicTally();
       }
     }, 350);
   });
@@ -2029,30 +2023,6 @@ trackingFields.forEach(id => {
   
   freshElement.addEventListener("change", () => { updateOutput(); updateSuggestions(); saveData(true); });
   freshElement.addEventListener("blur", () => { saveData(true); });
-});
-
-$('historyContainer')?.addEventListener('click', (e) => {
-  const button = e.target.closest('button');
-  if (!button) return;
-  const action = button.getAttribute('data-action');
-  const index = parseInt(button.getAttribute('data-index'), 10);
-  
-  if (action === 'recopy') {
-    loadHistoryItem(index);
-  } else if (action === 'delete') {
-    // 1. Run your original deletion routine to clean the UI table array
-    deleteHistoryItem(index);
-    
-    // 🎯 THE CRITICAL PATCH: Overwrite the hard storage cache instantly with the updated array
-    if (typeof globalShiftHistory !== 'undefined') {
-      localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
-    }
-    
-    // 🔄 REPAINT REVOLUTION: Force the horizontal folder grid to update its numbers immediately
-    if (typeof renderChronologicalArchiveGrid === 'function') {
-      renderChronologicalArchiveGrid();
-    }
-  }
 });
 
 $("case")?.addEventListener("input", (e) => validateCaseField(e.target));
@@ -2128,6 +2098,18 @@ document.addEventListener('click', (e) => {
       if (toggleBtn.querySelector('span')) toggleBtn.querySelector('span').textContent = "View Playbooks";
       if (toggleBtn.querySelector('i')) toggleBtn.querySelector('i').className = "fas fa-book-open";
     }
+  }
+});
+
+// Fire up listeners, handle layouts, and kickstart the countdown clock loop
+listenToOperationalBroadcasts();
+if (typeof listenToSessionState === "function") listenToSessionState();
+
+// Ensure the real-time layout engine fires immediately on system load
+document.addEventListener("DOMContentLoaded", () => {
+  synchronizeOrbDynamicTally();
+  if (typeof runActiveQueueCountdownEngine === 'function') {
+    runActiveQueueCountdownEngine();
   }
 });
 
