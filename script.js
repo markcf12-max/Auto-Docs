@@ -2498,15 +2498,28 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
   }
 };
 
+/**
+ * ⏱️ UPGRADED PRIORITY MONITOR COUNTDOWN ENGINE
+ * Maintains expired cases in view, manages the Messenger orb notification, and calculates 24H SLA markers.
+ */
+let globalNotificationAcknowledgedLock = false;
+
 function runActiveQueueCountdownEngine() {
+  // Clear any conflicting legacy intervals cleanly
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
   ongoingQueueTrackingLoop = setInterval(() => {
     const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
     if (!trackingContainerUI) return;
 
+    // Sync current execution array with local storage to capture cross-station cloud updates
+    if (localStorage.getItem('workbench_queue_cache')) {
+      activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
+    }
+
     if (activeUrgentQueueItems.length === 0) {
       trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
+      dismissMessengerAlertUI(false);
       clearInterval(ongoingQueueTrackingLoop);
       ongoingQueueTrackingLoop = null;
       return;
@@ -2514,46 +2527,145 @@ function runActiveQueueCountdownEngine() {
 
     let uiBufferHtml = ``;
     const currentTimeStamp = Date.now();
-    let structureChanged = false;
+    let priorityExpirationDetected = false;
+    let expiredCaseIdentifier = "";
 
-    for (let index = activeUrgentQueueItems.length - 1; index >= 0; index--) {
+    // Loop through active cases (Normal forward loop works perfectly here since we aren't splicing/deleting items automatically anymore!)
+    for (let index = 0; index < activeUrgentQueueItems.length; index++) {
       const item = activeUrgentQueueItems[index];
       const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
+      
+      // Calculate age of the case in the tracking matrix to detect >24 hour holds
+      const totalAgeMs = currentTimeStamp - (item.createdEpochTimestamp || currentTimeStamp);
+      const isSlaBreached = totalAgeMs > 24 * 60 * 60 * 1000; 
 
-      if (remainingTimeDelta <= 0) {
-        triggerHardwarePillNotification(item.caseId, item.concernType);
-        activeUrgentQueueItems.splice(index, 1);
-        structureChanged = true;
-        continue;
+      let countdownClockString = "00:00:00";
+      let isExpired = false;
+
+      if (remainingTimeDelta > 0) {
+        const hours = Math.floor(remainingTimeDelta / 3600000);
+        const minutes = Math.floor((remainingTimeDelta % 3600000) / 60000);
+        const seconds = Math.floor((remainingTimeDelta % 60000) / 1000);
+        countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        isExpired = true;
+        countdownClockString = "EXPIRED";
+        priorityExpirationDetected = true;
+        expiredCaseIdentifier = item.caseId;
       }
 
-      const hours = Math.floor(remainingTimeDelta / 3600000);
-      const minutes = Math.floor((remainingTimeDelta % 3600000) / 60000);
-      const seconds = Math.floor((remainingTimeDelta % 60000) / 1000);
-      const countdownClockString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
+      // Append structural case tracking cards into the UI drawer buffer string
       uiBufferHtml += `
-        <div class="priority-timer-card" style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(96, 165, 250, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; padding: 10px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:700; color:#60a5fa; font-size:11px; text-transform: uppercase;">${item.concernType}</div>
-            <div style="color:#cbd5e1; font-size:12px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
+        <div class="priority-timer-card ${isExpired ? 'expired-card-highlight' : ''}" style="background: rgba(15, 23, 42, 0.4); border: 1px solid ${isExpired ? '#ef4444' : 'rgba(96, 165, 250, 0.15)'}; border-left: 4px solid ${isExpired ? '#ef4444' : '#60a5fa'}; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div>
+              <div style="font-weight:700; color:#60a5fa; font-size:11px; text-transform: uppercase;">${item.concernType}</div>
+              <div style="color:#cbd5e1; font-size:12px; font-weight: bold; margin-top: 2px;">ID: #${item.caseId}</div>
+              <div style="display: flex; gap: 4px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+                ${isSlaBreached ? `<span class="sla-breached-badge"><i class="fas fa-exclamation-triangle"></i> >24H STALE</span>` : ''}
+              </div>
+            </div>
+            <div style="font-family:monospace; font-size:12px; font-weight:700; background:#0f172a; color:${isExpired ? '#ef4444' : '#10b981'}; padding:4px 8px; border-radius:4px; border:1px solid ${isExpired ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.2)'}; display: flex; align-items: center; gap: 6px;">
+              <i class="${isExpired ? 'fas fa-bell animate-pulse' : 'fas fa-hourglass-half fa-spin'}" style="font-size:10px;"></i> ${countdownClockString}
+            </div>
           </div>
-          <div style="font-family:monospace; font-size:13px; font-weight:700; background:#0f172a; color:#ef4444; padding:4px 10px; border-radius:4px; border:1px solid rgba(239,68,68,0.2); display: flex; align-items: center; gap: 6px;">
-            <i class="fas fa-hourglass-half fa-spin" style="font-size:10px;"></i> ${countdownClockString}
+          
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button onclick="resolveCaseQueueNode('${item.caseId}')" style="flex: 1; padding: 6px; background: #10b981; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;"><i class="fas fa-check"></i> Done</button>
+            <button onclick="extendCaseQueueNode('${item.caseId}', 1440)" style="flex: 1; padding: 6px; background: #3b82f6; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;"><i class="fas fa-history"></i> +24H</button>
+            <button onclick="extendCaseQueueNode('${item.caseId}', 30)" style="flex: 0.4; padding: 6px; background: #475569; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;" title="Extend 30 Minutes">+30M</button>
           </div>
         </div>
       `;
     }
 
-    // Push state delta modifications to cloud automatically when timers complete
-    if (structureChanged) {
-      localStorage.setItem('workbench_queue_cache', JSON.stringify(activeUrgentQueueItems));
-      dispatchWorkbenchPayloadToCloud();
+    trackingContainerUI.innerHTML = uiBufferHtml;
+
+    // 🔔 INTERACTIVE MESSENGER POPUP NOTIFICATION ROUTER
+    const bubble = document.getElementById('messengerNotificationBubble');
+    const txtDisplay = document.getElementById('messengerNotificationText');
+    const orbControl = document.getElementById('metaTrackerOrb');
+
+    if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
+      if (txtDisplay) txtDisplay.textContent = `Hey there! Case #${expiredCaseIdentifier} expired and needs an immediate checking.`;
+      
+      if (bubble && bubble.style.display === "none") {
+        bubble.style.display = "block";
+        setTimeout(() => {
+          bubble.style.transform = "translateY(0) scale(1)";
+          bubble.style.opacity = "1";
+        }, 50);
+      }
+      if (orbControl) orbControl.classList.add('tracker-orb-alert-active');
+    } else {
+      if (!priorityExpirationDetected) {
+        globalNotificationAcknowledgedLock = false; // Reset lock state automatically when all items are cleared or extended
+      }
+      dismissMessengerAlertUI(false);
     }
 
-    trackingContainerUI.innerHTML = uiBufferHtml;
   }, 1000);
 }
+
+/**
+ * Cleanly hides messenger alerts and optionally handles drawer toggles
+ */
+function dismissMessengerAlertUI(forceDrawerOpen = false) {
+  const bubble = document.getElementById('messengerNotificationBubble');
+  const orbControl = document.getElementById('metaTrackerOrb');
+  const drawer = document.getElementById('metaTrackerDrawer');
+
+  if (bubble) {
+    bubble.style.transform = "translateY(15px) scale(0.95)";
+    bubble.style.opacity = "0";
+    setTimeout(() => { bubble.style.display = "none"; }, 300);
+  }
+  
+  if (orbControl) orbControl.classList.remove('tracker-orb-alert-active');
+
+  // Slide open full case monitoring drawer if bubble text is explicitly clicked
+  if (forceDrawerOpen && drawer) {
+    drawer.classList.add('open-drawer'); 
+  }
+}
+
+// 🛫 GLOBAL CONTEXT WINDOW MAPPINGS FOR INLINE BUTTON HANDLING
+window.resolveCaseQueueNode = function(caseId) {
+  let items = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
+  items = items.filter(i => i.caseId !== caseId);
+  localStorage.setItem('workbench_queue_cache', JSON.stringify(items));
+  pushUpdatedQueueStateToNetwork();
+};
+
+window.extendCaseQueueNode = function(caseId, minutesToExtend) {
+  let items = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
+  items = items.map(i => {
+    if (i.caseId === caseId) {
+      i.expirationEpochTarget = Date.now() + (minutesToExtend * 60 * 1000);
+    }
+    return i;
+  });
+  localStorage.setItem('workbench_queue_cache', JSON.stringify(items));
+  pushUpdatedQueueStateToNetwork();
+};
+
+function pushUpdatedQueueStateToNetwork() {
+  globalNotificationAcknowledgedLock = false; // Reset visual locks
+  if (typeof dispatchWorkbenchPayloadToCloud === "function") dispatchWorkbenchPayloadToCloud();
+  if (typeof window.refreshGlobalBadgeCounters === "function") window.refreshGlobalBadgeCounters();
+  runActiveQueueCountdownEngine();
+}
+
+// 🔗 INITIALIZE POPUP OBSERVERS ON APP STARTUP
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById('messengerNotificationBubble')?.addEventListener('click', () => {
+    globalNotificationAcknowledgedLock = true; // Set lock to stop popup until next cycle
+    dismissMessengerAlertUI(true); // Hide popup window and open side tracking board
+  });
+  
+  // Fire off baseline loop sequence execution
+  runActiveQueueCountdownEngine();
+});
 
 /**
  * ⚡ Intercept Entry Processor Wrapper - Explicit Element Mapping Version
@@ -2614,10 +2726,11 @@ function interceptAndRegisterCaseTracking(caseId, outputText, isTrackingAuthoriz
   // De-duplicate existing items matching the current Case/SR payload key
   activeUrgentQueueItems = activeUrgentQueueItems.filter(item => item.caseId !== normalizedCaseNum);
 
-  // Appending the fresh parameters onto our collection block
+  // 💎 FIXED COUPLING: Appending parameters with locked baseline creation timestamp
   activeUrgentQueueItems.push({
     caseId: normalizedCaseNum,
     concernType: selectedChannelValue,
+    createdEpochTimestamp: Date.now(), // 🔒 LOCKED CREATION MARKER (Added for >24H Stale checks!)
     expirationEpochTarget: targetExpirationTimestamp
   });
 
