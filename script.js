@@ -2623,28 +2623,49 @@ if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
         `;
       }
       
-      if (bubble) {
-        // 💬 MESSENGER POPUP AESTHETIC PINNED BELOW THE ORB
+if (bubble) {
+        // 📏 Smart Layout Math: Check where the Orb is positioned on the screen canvas
+        const orbRect = orbControl.getBoundingClientRect();
+        const screenWidth = window.innerWidth;
+        
+        let bubblePlacementStyle = ``;
+        let caretPlacementStyle = ``;
+
+        // If the Orb is pinned to the right side of the screen
+        if (orbRect.left > screenWidth - 280) {
+          bubblePlacementStyle = `right: 0px; top: 62px; transform-origin: top right;`;
+          caretPlacementStyle = `right: 16px; top: -6px; border-bottom: 7px solid #ffffff;`;
+        } 
+        // If the Orb is pinned to the left side of the screen
+        else if (orbRect.left < 280) {
+          bubblePlacementStyle = `left: 0px; top: 62px; transform-origin: top left;`;
+          caretPlacementStyle = `left: 16px; top: -6px; border-bottom: 7px solid #ffffff;`;
+        } 
+        // Default: Center it safely underneath
+        else {
+          bubblePlacementStyle = `left: 50%; transform: translateX(-50%); top: 62px; transform-origin: top center;`;
+          caretPlacementStyle = `left: 50%; transform: translateX(-50%); top: -6px; border-bottom: 7px solid #ffffff;`;
+        }
+
+        // 💬 APPLIED MESSENGER FLOW CANVAS LAYOUT
         bubble.style.cssText = `
           display: block;
           position: absolute;
-          top: 62px; 
-          left: 50%;
-          transform: translateX(-50%) scale(1);
-          width: 240px;
+          width: 250px;
           padding: 12px 14px;
           background: #ffffff; 
-          border-radius: 12px; 
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+          border-radius: 14px; 
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           z-index: 99999;
           cursor: pointer;
           animation: messengerSpring 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
           transition: opacity 0.2s ease;
           opacity: 1;
+          ${bubblePlacementStyle}
         `;
 
-        // 🔺 Inject the dynamic pointing caret tail if it doesn't already exist
+        // 🔺 Dynamic Caret Placement Vector
         let caret = document.getElementById('messengerBubbleCaret');
         if (!caret) {
           caret = document.createElement('div');
@@ -2653,15 +2674,12 @@ if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
         }
         caret.style.cssText = `
           position: absolute;
-          top: -6px;
-          left: 50%;
-          transform: translateX(-50%);
           width: 0;
           height: 0;
           border-left: 7px solid transparent;
           border-right: 7px solid transparent;
-          border-bottom: 7px solid #ffffff;
           pointer-events: none;
+          ${caretPlacementStyle}
         `;
       }
       
@@ -2978,4 +2996,97 @@ window.saveDataCloudInterface = function() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeHistorySearch();
+});
+
+/* ==========================================================================
+   🕹️ FLOATING WORKSPACE ENGINE: DRAGGABLE TRACKER ORB SETUP
+   ========================================================================== */
+function makeOrbFullyDraggable() {
+  const orb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+  if (!orb) return;
+
+  let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+  let isDraggingState = false;
+
+  // Visual Indicator: Set cursor properties to show it can be grabbed
+  orb.style.cursor = "grab";
+  orb.style.position = "fixed"; // Prevents layout snapping issues
+
+  orb.addEventListener('mousedown', dragStartProcess);
+  orb.addEventListener('touchstart', dragStartProcess, { passive: false });
+
+  function dragStartProcess(e) {
+    // If clicking an inner button/link, let standard clicks execute normally
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+    
+    isDraggingState = false;
+    orb.style.cursor = "grabbing";
+
+    // Handle touch vs mouse event data
+    const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+    mouseX = clientX;
+    mouseY = clientY;
+
+    if (e.type === 'mousedown') {
+      document.onmouseup = closeDragRoutine;
+      document.onmousemove = elementDragRoutine;
+    } else {
+      document.addEventListener('touchend', closeDragRoutine);
+      document.addEventListener('touchmove', elementDragRoutine, { passive: false });
+    }
+  }
+
+  function elementDragRoutine(e) {
+    if (e) e.preventDefault(); // Stop page scrolling during drags
+    isDraggingState = true;
+
+    const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+    posX = mouseX - clientX;
+    posY = mouseY - clientY;
+    mouseX = clientX;
+    mouseY = clientY;
+
+    // Calculate boundary limits
+    let targetTopPosition = orb.offsetTop - posY;
+    let targetLeftPosition = orb.offsetLeft - posX;
+
+    // Boundary constraints (Keep within viewport canvas boundaries)
+    if (targetTopPosition < 10) targetTopPosition = 10;
+    if (targetLeftPosition < 10) targetLeftPosition = 10;
+    if (targetTopPosition > window.innerHeight - 70) targetTopPosition = window.innerHeight - 70;
+    if (targetLeftPosition > window.innerWidth - 70) targetLeftPosition = window.innerWidth - 70;
+
+    orb.style.top = targetTopPosition + "px";
+    orb.style.left = targetLeftPosition + "px";
+    orb.style.bottom = "auto";
+    orb.style.right = "auto";
+  }
+
+  function closeDragRoutine(e) {
+    orb.style.cursor = "grab";
+    
+    // Clear the document listeners cleanly
+    document.onmouseup = null;
+    document.onmousemove = null;
+    document.removeEventListener('touchend', closeDragRoutine);
+    document.removeEventListener('touchmove', elementDragRoutine);
+
+    // 🧠 DRAG SAFEGUARD: Intercept accidental clicks if the user was actually dragging the orb
+    if (isDraggingState) {
+      const stopPropagationTrap = (captureEvent) => {
+        captureEvent.stopImmediatePropagation();
+        orb.removeEventListener('click', stopPropagationTrap, true);
+      };
+      orb.addEventListener('click', stopPropagationTrap, true);
+    }
+  }
+}
+
+// 🎬 Run tracking engine hook on document layout resolution
+document.addEventListener("DOMContentLoaded", () => {
+  makeOrbFullyDraggable();
 });
