@@ -863,7 +863,7 @@ const updateData = {
 }
 
 /* ==========================================================================
-   🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (TIMING & SECURITY FIXED)
+   🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (STATION SYNC FIXES EMBEDDED)
    ========================================================================== */
 function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
@@ -936,6 +936,12 @@ function listenToSessionState() {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
         currentAgentLob = snap.data().lob || "UNKNOWN";
         
+        // 🧼 🚨 THE ANTI-STALE CACHE PURGE
+        // Completely flush out old priority tracking records stored locally on this physical station
+        // before dragging down the accurate array matrices from the Firestore database.
+        localStorage.removeItem('workbench_queue_cache');
+        localStorage.removeItem('shift_history_cache_key');
+        
         // 🛰️ ROAMING PROFILE TRIGGER: Sync the active workbench session from the cloud instantly
         if (typeof window.syncAgentSessionFromCloud === "function") {
           window.syncAgentSessionFromCloud(cachedId);
@@ -997,7 +1003,6 @@ function showLoginGateway(isRegisterMode = false) {
     if ($('authLobContainer')) $('authLobContainer').style.display = "none";
   }
 }
-
 /* ==========================================================================
    CORE CLOUD WORKSPACE ENGINE
    ========================================================================= */
