@@ -2504,15 +2504,42 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
  */
 let globalNotificationAcknowledgedLock = false;
 
+/* ==========================================================================
+   🔄 UPGRADED COUNTDOWN ENGINE WITH REAL-TIME CLOUD-SYNC & CLOUD NOTIFICATIONS
+   ========================================================================== */
 function runActiveQueueCountdownEngine() {
   // Clear any conflicting legacy intervals cleanly
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
-  ongoingQueueTrackingLoop = setInterval(() => {
+  ongoingQueueTrackingLoop = setInterval(async () => {
     const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
     if (!trackingContainerUI) return;
 
-    // Sync current execution array with local storage to capture cross-station cloud updates
+    // 📡 STATION HOT-SWAP GATEWAY: Fetch real-time updates directly from Firestore
+    const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
+    if (agentId && typeof firestoreDb !== 'undefined') {
+      try {
+        const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+        const docSnap = await getDoc(agentRecordRef);
+        
+        if (docSnap.exists()) {
+          const remoteData = docSnap.data();
+          const cloudQueue = remoteData.activeQueue || [];
+          const localQueueStr = localStorage.getItem('workbench_queue_cache') || "[]";
+          
+          // If Station 1 updated Firestore, pull it into Station 2 immediately without a refresh
+          if (JSON.stringify(cloudQueue) !== localQueueStr) {
+            activeUrgentQueueItems = cloudQueue;
+            localStorage.setItem('workbench_queue_cache', JSON.stringify(cloudQueue));
+            console.log("🛰️ Roaming Station Sync: Pulled 10+ cases automatically from your cloud profile.");
+          }
+        }
+      } catch (cloudError) {
+        console.warn("Background network synchronization throttled:", cloudError);
+      }
+    }
+
+    // Fallback locally if network is clearing out
     if (localStorage.getItem('workbench_queue_cache')) {
       activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
     }
@@ -2530,7 +2557,7 @@ function runActiveQueueCountdownEngine() {
     let priorityExpirationDetected = false;
     let expiredCaseIdentifier = "";
 
-    // Loop through active cases (Normal forward loop works perfectly here since we aren't splicing/deleting items automatically anymore!)
+    // Loop through active cases 
     for (let index = 0; index < activeUrgentQueueItems.length; index++) {
       const item = activeUrgentQueueItems[index];
       const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
@@ -2554,7 +2581,7 @@ function runActiveQueueCountdownEngine() {
         expiredCaseIdentifier = item.caseId;
       }
 
-      // Append structural case tracking cards into the UI drawer buffer string
+      // Append structural case tracking cards into UI buffer
       uiBufferHtml += `
         <div class="priority-timer-card ${isExpired ? 'expired-card-highlight' : ''}" style="background: rgba(15, 23, 42, 0.4); border: 1px solid ${isExpired ? '#ef4444' : 'rgba(96, 165, 250, 0.15)'}; border-left: 4px solid ${isExpired ? '#ef4444' : '#60a5fa'}; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
@@ -2581,36 +2608,47 @@ function runActiveQueueCountdownEngine() {
 
     trackingContainerUI.innerHTML = uiBufferHtml;
 
-// 🔔 INTERACTIVE MESSENGER POPUP NOTIFICATION ROUTER (WITH DYNAMIC ICON SWITCHING)
+    // 🔔 INTERACTIVE POPUP ROUTER
     const bubble = document.getElementById('messengerNotificationBubble');
     const txtDisplay = document.getElementById('messengerNotificationText');
     const orbControl = document.getElementById('metaTrackerOrb');
-    
-    // Target the icon element inside your Orb structure cleanly
     const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
 
     if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
-      if (txtDisplay) txtDisplay.textContent = `Hey there! Case #${expiredCaseIdentifier} expired and needs an immediate checking.`;
+      if (txtDisplay) txtDisplay.innerHTML = `☁️ <strong>SLA Notification</strong><br>Case ID #${expiredCaseIdentifier} has hit its threshold limit and requires checking.`;
       
-      if (bubble && bubble.style.display === "none") {
-        bubble.style.display = "block";
-        setTimeout(() => {
-          bubble.style.transform = "translateY(0) scale(1)";
-          bubble.style.opacity = "1";
-        }, 50);
+      if (bubble) {
+        // ⛅ DYNAMIC POSITIONING BELOW THE ORB WITH PREMIUM GLASS COAT FINISH
+        bubble.style.cssText = `
+          display: block;
+          position: absolute;
+          top: 65px; 
+          left: 50%;
+          transform: translateX(-50%) translateY(0) scale(1);
+          width: 250px;
+          padding: 12px 14px;
+          background: rgba(240, 246, 255, 0.88); 
+          backdrop-filter: blur(12px) saturate(140%);
+          -webkit-backdrop-filter: blur(12px) saturate(140%);
+          border: 1px solid rgba(255, 255, 255, 0.65);
+          border-radius: 16px; 
+          box-shadow: 0 10px 30px rgba(147, 197, 253, 0.35), inset 0 2px 4px rgba(255,255,255,0.9);
+          color: #1e3a8a; 
+          font-size: 11px;
+          line-height: 1.4;
+          z-index: 99999;
+          opacity: 1;
+          transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        `;
       }
       
-      // 🚨 Alert State: Apply crimson pulse background and switch to exclamation triangle
       if (orbControl) orbControl.classList.add('tracker-orb-alert-active');
-      if (orbIcon) {
-        orbIcon.className = "fas fa-exclamation-triangle meta-orb-icon";
-      }
+      if (orbIcon) orbIcon.className = "fas fa-exclamation-triangle meta-orb-icon";
     } else {
       if (!priorityExpirationDetected) {
-        globalNotificationAcknowledgedLock = false; // Reset visual locks automatically when all items are clear
+        globalNotificationAcknowledgedLock = false; 
       }
       
-      // 📂 Safe State: Remove alert flashes and switch back cleanly to folder open icon
       if (orbIcon) {
         orbIcon.className = "fas fa-folder-open meta-orb-icon";
       }
