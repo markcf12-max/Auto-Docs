@@ -3053,13 +3053,13 @@ function makeOrbFullyDraggable() {
 }
 
 /* ==========================================================================
-   📡 GLOBAL COORDINATE SYNC ENGINE (Extracted to window level for loop visibility)
+   📡 GLOBAL COORDINATE SYNC ENGINE (Snaps Bubble Relative to Master Orb)
    ========================================================================== */
-window.syncBubblePlacementCoordinates = function(leftOffset) {
+window.syncBubblePlacementCoordinates = function() {
+  const orb = document.getElementById('metaTrackerOrb');
   const bubble = document.getElementById('messengerNotificationBubble');
-  if (!bubble || bubble.style.display === "none") return;
+  if (!orb || !bubble || bubble.style.display === "none") return;
 
-  // 🛠️ CARET GENERATOR SAFEGUARD: Ensure the caret element exists dynamically 
   let caret = document.getElementById('messengerBubbleCaret');
   if (!caret) {
     caret = document.createElement('div');
@@ -3067,23 +3067,24 @@ window.syncBubblePlacementCoordinates = function(leftOffset) {
     bubble.appendChild(caret);
   }
 
+  const orbRect = orb.getBoundingClientRect();
   const screenWidth = window.innerWidth;
   
-  const baseBubbleStyles = "display: block !important; position: absolute !important; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; top: 62px; transform: none !important;";
-  const baseCaretStyles = "position: absolute !important; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; top: -6px; transform: none !important;";
+  // Clean base styles that position the bubble exactly 12px below the orb
+  const baseBubbleStyles = "display: block !important; position: absolute !important; width: 280px; padding: 12px 16px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #ef4444; border-radius: 14px; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4); color: #fff; z-index: 99999; top: 62px; transform: none !important;";
+  const baseCaretStyles = "position: absolute !important; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ef4444; pointer-events: none; top: -8px; transform: none !important;";
 
-  // Right edge constraint mapping
-  if (leftOffset > screenWidth - 160) {
-    bubble.style.cssText = `${baseBubbleStyles} right: -10px; left: auto;`;
-    caret.style.cssText = `${baseCaretStyles} right: 24px; left: auto;`;
-  } 
-  // Left edge constraint mapping
-  else if (leftOffset < 160) {
-    bubble.style.cssText = `${baseBubbleStyles} left: -10px; right: auto;`;
-    caret.style.cssText = `${baseCaretStyles} left: 24px; right: auto;`;
-  } 
-  // Standard float center option
-  else {
+  // Edge detection based on the orb's screen location
+  if (orbRect.left > screenWidth - 180) {
+    // Snap to the right side of the orb
+    bubble.style.cssText = `${baseBubbleStyles} right: 0px; left: auto;`;
+    caret.style.cssText = `${baseCaretStyles} right: 16px; left: auto;`;
+  } else if (orbRect.left < 180) {
+    // Snap to the left side of the orb
+    bubble.style.cssText = `${baseBubbleStyles} left: 0px; right: auto;`;
+    caret.style.cssText = `${baseCaretStyles} left: 16px; right: auto;`;
+  } else {
+    // Center alignment
     bubble.style.cssText = `${baseBubbleStyles} left: 50%; right: auto; transform: translateX(-50%) !important;`;
     caret.style.cssText = `${baseCaretStyles} left: 50%; right: auto; transform: translateX(-50%) !important;`;
   }
