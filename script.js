@@ -2948,24 +2948,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH ACTIVE LIVE-FOLLOW
+   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH CLICK THRESHOLD
    ========================================================================== */
 function makeOrbFullyDraggable() {
   const orb = document.getElementById('metaTrackerOrb');
-  if (!orb) {
-    console.warn("Drag Engine Aborted: Element #metaTrackerOrb not found in DOM.");
-    return;
-  }
+  if (!orb) return;
 
   let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+  let startX = 0, startY = 0; // 🎯 Tracks original click down location
   let isDraggingState = false;
 
-  // Force clean fixed layout structures onto the parent wrapper
   orb.style.position = "fixed";
   orb.style.cursor = "grab";
-  orb.style.zIndex = "99998";
+  orb.style.zIndex = "999999";
 
-  // Stabilize boot-up baseline coordinates
   const currentRect = orb.getBoundingClientRect();
   orb.style.top = currentRect.top + "px";
   orb.style.left = currentRect.left + "px";
@@ -2981,7 +2977,6 @@ function makeOrbFullyDraggable() {
     isDraggingState = false;
     orb.style.cursor = "grabbing";
 
-    // 🛑 TEXT SELECTION HIGHLIGHT FIX: Prevents selecting elements on drag
     document.body.style.userSelect = "none";
     document.body.style.webkitUserSelect = "none";
 
@@ -2990,6 +2985,10 @@ function makeOrbFullyDraggable() {
 
     mouseX = clientX;
     mouseY = clientY;
+    
+    // 🧠 Store baseline starting pixels
+    startX = clientX;
+    startY = clientY;
 
     if (e.type === 'mousedown') {
       document.onmouseup = closeDragRoutine;
@@ -3002,10 +3001,17 @@ function makeOrbFullyDraggable() {
 
   function elementDragRoutine(e) {
     if (e) e.preventDefault(); 
-    isDraggingState = true;
 
     const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+    // 🎯 THRESHOLD SAFETY CHECK: Only flag as a drag if moved more than 3 pixels
+    if (Math.abs(clientX - startX) > 3 || Math.abs(clientY - startY) > 3) {
+      isDraggingState = true;
+    }
+
+    // Stop calculation processing if user is just clicking down statically
+    if (!isDraggingState) return;
 
     posX = mouseX - clientX;
     posY = mouseY - clientY;
@@ -3015,7 +3021,6 @@ function makeOrbFullyDraggable() {
     let targetTopPosition = parseInt(orb.style.top || 0, 10) - posY;
     let targetLeftPosition = parseInt(orb.style.left || 0, 10) - posX;
 
-    // Keep within page viewport boundaries
     if (targetTopPosition < 10) targetTopPosition = 10;
     if (targetLeftPosition < 10) targetLeftPosition = 10;
     if (targetTopPosition > window.innerHeight - 70) targetTopPosition = window.innerHeight - 70;
@@ -3024,16 +3029,14 @@ function makeOrbFullyDraggable() {
     orb.style.top = targetTopPosition + "px";
     orb.style.left = targetLeftPosition + "px";
 
-    // ✅ Move the bubble instantly along with the orb's movement coordinates
     if (typeof window.syncBubblePlacementCoordinates === 'function') {
-      window.syncBubblePlacementCoordinates(targetLeftPosition);
+      window.syncBubblePlacementCoordinates();
     }
   }
 
   function closeDragRoutine() {
     orb.style.cursor = "grab";
     
-    // 🔓 Restore normal highlighting permissions when released
     document.body.style.userSelect = "auto";
     document.body.style.webkitUserSelect = "auto";
 
@@ -3042,6 +3045,7 @@ function makeOrbFullyDraggable() {
     document.removeEventListener('touchend', closeDragRoutine);
     document.removeEventListener('touchmove', elementDragRoutine);
 
+    // 🛡️ CLICK PROTECTOR TRAP
     if (isDraggingState) {
       const stopPropagationTrap = (captureEvent) => {
         captureEvent.stopImmediatePropagation();
