@@ -1475,20 +1475,34 @@ function copyDoc() {
     const caseNum = $("case")?.value || "N/A";
     
     // 📂 1. Push record into your default history stack array
-    pushToHistory(caseNum, outputText);
+    if (typeof pushToHistory === "function") {
+      pushToHistory(caseNum, outputText);
+    }
     
     // 🎯 2. Read your actual checkbox node identifier
     const trackCheckbox = document.getElementById('enableCaseTrackingCheck');
     const isTrackingAuthorized = trackCheckbox ? trackCheckbox.checked : false;
 
-    // ⚡ 3. Fire the intercept processor with authorization states
-    interceptAndRegisterCaseTracking(caseNum, outputText, isTrackingAuthorized);
+    // ⚡ 3. ONLY fire priority tracking if the agent explicitly authorized it!
+    if (isTrackingAuthorized) {
+      interceptAndRegisterCaseTracking(caseNum, outputText, true);
+      
+      // 🛰️ 4. Force global badge metrics to refresh on screen immediately
+      if (typeof window.refreshGlobalBadgeCounters === "function") {
+        window.refreshGlobalBadgeCounters();
+      }
+    } else {
+      // If checkbox is unchecked, just save the standard shift history change globally
+      if (typeof dispatchWorkbenchPayloadToCloud === "function") {
+        dispatchWorkbenchPayloadToCloud();
+      }
+    }
     
   }).catch(err => {
+    console.error("Clipboard routing restriction:", err);
     showToast("Clipboard routine blocked.", true);
   });
 }
-
 /* ==========================================================================
    SUPERVISOR OPERATIONS PORTAL WITH DATE RANGE FILTERS (.CSV)
    ========================================================================== */
@@ -2060,19 +2074,31 @@ $('historyContainer')?.addEventListener('click', (e) => {
   const index = parseInt(button.getAttribute('data-index'), 10);
   
   if (action === 'recopy') {
-    loadHistoryItem(index);
+    if (typeof loadHistoryItem === "function") loadHistoryItem(index);
   } else if (action === 'delete') {
     // 1. Run your original deletion routine to clean the UI table array
-    deleteHistoryItem(index);
+    if (typeof deleteHistoryItem === "function") deleteHistoryItem(index);
     
-    // 🎯 THE CRITICAL PATCH: Overwrite the hard storage cache instantly with the updated array
+    // 🎯 LOCAL MIRROR FIX: Overwrite the hard storage cache instantly with the updated array
     if (typeof globalShiftHistory !== 'undefined') {
       localStorage.setItem('shift_history_cache_key', JSON.stringify(globalShiftHistory));
+    }
+    
+    // 🛰️ CLOUD SYNC PATCH: Force the deletion up to Firestore immediately so roaming stations match
+    if (typeof window.saveDataCloudInterface === 'function') {
+      window.saveDataCloudInterface();
+    } else if (typeof dispatchWorkbenchPayloadToCloud === 'function') {
+      dispatchWorkbenchPayloadToCloud();
     }
     
     // 🔄 REPAINT REVOLUTION: Force the horizontal folder grid to update its numbers immediately
     if (typeof renderChronologicalArchiveGrid === 'function') {
       renderChronologicalArchiveGrid();
+    }
+
+    // 📋 UPDATE BADGES: Keep all counter metrics accurate across the screen canvas
+    if (typeof window.refreshGlobalBadgeCounters === "function") {
+      window.refreshGlobalBadgeCounters();
     }
   }
 });
