@@ -2581,10 +2581,13 @@ function runActiveQueueCountdownEngine() {
 
     trackingContainerUI.innerHTML = uiBufferHtml;
 
-    // 🔔 INTERACTIVE MESSENGER POPUP NOTIFICATION ROUTER
+// 🔔 INTERACTIVE MESSENGER POPUP NOTIFICATION ROUTER (WITH DYNAMIC ICON SWITCHING)
     const bubble = document.getElementById('messengerNotificationBubble');
     const txtDisplay = document.getElementById('messengerNotificationText');
     const orbControl = document.getElementById('metaTrackerOrb');
+    
+    // Target the icon element inside your Orb structure cleanly
+    const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
 
     if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
       if (txtDisplay) txtDisplay.textContent = `Hey there! Case #${expiredCaseIdentifier} expired and needs an immediate checking.`;
@@ -2596,10 +2599,20 @@ function runActiveQueueCountdownEngine() {
           bubble.style.opacity = "1";
         }, 50);
       }
+      
+      // 🚨 Alert State: Apply crimson pulse background and switch to exclamation triangle
       if (orbControl) orbControl.classList.add('tracker-orb-alert-active');
+      if (orbIcon) {
+        orbIcon.className = "fas fa-exclamation-triangle meta-orb-icon";
+      }
     } else {
       if (!priorityExpirationDetected) {
-        globalNotificationAcknowledgedLock = false; // Reset lock state automatically when all items are cleared or extended
+        globalNotificationAcknowledgedLock = false; // Reset visual locks automatically when all items are clear
+      }
+      
+      // 📂 Safe State: Remove alert flashes and switch back cleanly to folder open icon
+      if (orbIcon) {
+        orbIcon.className = "fas fa-folder-open meta-orb-icon";
       }
       dismissMessengerAlertUI(false);
     }
@@ -2608,11 +2621,12 @@ function runActiveQueueCountdownEngine() {
 }
 
 /**
- * Cleanly hides messenger alerts and optionally handles drawer toggles
+ * Cleanly hides messenger alerts and ensures orb structural layers reset
  */
 function dismissMessengerAlertUI(forceDrawerOpen = false) {
   const bubble = document.getElementById('messengerNotificationBubble');
   const orbControl = document.getElementById('metaTrackerOrb');
+  const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
   const drawer = document.getElementById('metaTrackerDrawer');
 
   if (bubble) {
@@ -2622,6 +2636,15 @@ function dismissMessengerAlertUI(forceDrawerOpen = false) {
   }
   
   if (orbControl) orbControl.classList.remove('tracker-orb-alert-active');
+  
+  // Safe Fallback: Force reset icon back to folder if no other cases are active
+  let cache = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
+  let currentTimestamp = Date.now();
+  let anyExpiredRemaining = cache.some(item => (item.expirationEpochTarget - currentTimestamp) <= 0);
+
+  if (!anyExpiredRemaining && orbIcon) {
+    orbIcon.className = "fas fa-folder-open meta-orb-icon";
+  }
 
   // Slide open full case monitoring drawer if bubble text is explicitly clicked
   if (forceDrawerOpen && drawer) {
