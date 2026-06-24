@@ -2982,7 +2982,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH AUTO-COORDINATES
+   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH ACTIVE LIVE-FOLLOW
    ========================================================================== */
 function makeOrbFullyDraggable() {
   const orb = document.getElementById('metaTrackerOrb');
@@ -2994,12 +2994,12 @@ function makeOrbFullyDraggable() {
   let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
   let isDraggingState = false;
 
-  // 🛠️ FORCE FLOATING STATE: Convert relative positioning to fixed window placement
+  // Force clean fixed layout structures onto the parent wrapper
   orb.style.position = "fixed";
   orb.style.cursor = "grab";
   orb.style.zIndex = "99998";
 
-  // Capture current render slot coordinates immediately to stabilize coordinate readings
+  // Stabilize boot-up baseline coordinates
   const currentRect = orb.getBoundingClientRect();
   orb.style.top = currentRect.top + "px";
   orb.style.left = currentRect.left + "px";
@@ -3010,7 +3010,6 @@ function makeOrbFullyDraggable() {
   orb.addEventListener('touchstart', dragStartProcess, { passive: false });
 
   function dragStartProcess(e) {
-    // Drop execution out if interacting with an inner actionable form element
     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.classList.contains('clickable')) return;
     
     isDraggingState = false;
@@ -3046,7 +3045,7 @@ function makeOrbFullyDraggable() {
     let targetTopPosition = parseInt(orb.style.top || 0, 10) - posY;
     let targetLeftPosition = parseInt(orb.style.left || 0, 10) - posX;
 
-    // Viewport workspace limits
+    // Keep within page viewport boundaries
     if (targetTopPosition < 10) targetTopPosition = 10;
     if (targetLeftPosition < 10) targetLeftPosition = 10;
     if (targetTopPosition > window.innerHeight - 70) targetTopPosition = window.innerHeight - 70;
@@ -3055,27 +3054,36 @@ function makeOrbFullyDraggable() {
     orb.style.top = targetTopPosition + "px";
     orb.style.left = targetLeftPosition + "px";
 
-    // Dynamic notification bubble realignment follow loop
+    // Execute instant realignment synchronization check
+    syncBubblePlacementCoordinates(targetLeftPosition);
+  }
+
+  // 📡 ACTIVE COORDINATE SYNC ENGINE: Re-calculates alignment relative to the screen edge
+  function syncBubblePlacementCoordinates(leftOffset) {
     const bubble = document.getElementById('messengerNotificationBubble');
     const caret = document.getElementById('messengerBubbleCaret');
+    if (!bubble) return;
+
+    const screenWidth = window.innerWidth;
     
-    if (bubble && caret) {
-      const screenWidth = window.innerWidth;
-      // Right edge boundary adjustments
-      if (targetLeftPosition > screenWidth - 280) {
-        bubble.style.cssText = `display: block; position: absolute; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; right: 0px; top: 62px;`;
-        caret.style.cssText = `position: absolute; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; right: 16px; top: -6px;`;
-      } 
-      // Left edge boundary adjustments
-      else if (targetLeftPosition < 280) {
-        bubble.style.cssText = `display: block; position: absolute; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; left: 0px; top: 62px;`;
-        caret.style.cssText = `position: absolute; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; left: 16px; top: -6px;`;
-      } 
-      // Standard center configuration
-      else {
-        bubble.style.cssText = `display: block; position: absolute; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; left: 50%; transform: translateX(-50%); top: 62px;`;
-        caret.style.cssText = `position: absolute; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; left: 50%; transform: translateX(-50%); top: -6px;`;
-      }
+    // Core design variables
+    const baseBubbleStyles = "display: block !important; position: absolute !important; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; top: 62px;";
+    const baseCaretStyles = "position: absolute !important; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; top: -6px;";
+
+    // If orb moves close to the right edge of the screen
+    if (leftOffset > screenWidth - 280) {
+      bubble.style.cssText = `${baseBubbleStyles} right: 0px; left: auto; transform: none;`;
+      if (caret) caret.style.cssText = `${baseCaretStyles} right: 16px; left: auto; transform: none;`;
+    } 
+    // If orb moves close to the left edge of the screen
+    else if (leftOffset < 280) {
+      bubble.style.cssText = `${baseBubbleStyles} left: 0px; right: auto; transform: none;`;
+      if (caret) caret.style.cssText = `${baseCaretStyles} left: 16px; right: auto; transform: none;`;
+    } 
+    // Safe standard center docking configuration
+    else {
+      bubble.style.cssText = `${baseBubbleStyles} left: 50%; right: auto; transform: translateX(-50%);`;
+      if (caret) caret.style.cssText = `${baseCaretStyles} left: 50%; right: auto; transform: translateX(-50%);`;
     }
   }
 
