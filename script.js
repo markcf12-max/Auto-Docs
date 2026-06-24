@@ -2505,41 +2505,35 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
 let globalNotificationAcknowledgedLock = false;
 
 /* ==========================================================================
-   🔄 UPGRADED COUNTDOWN ENGINE WITH REAL-TIME CLOUD-SYNC & CLOUD NOTIFICATIONS
+   🔄 COUNTDOWN ENGINE: PERSISTENT NOTIFICATIONS & DYNAMIC FOLLOW PIPELINE
    ========================================================================== */
 function runActiveQueueCountdownEngine() {
-  // Clear any conflicting legacy intervals cleanly
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
   ongoingQueueTrackingLoop = setInterval(async () => {
     const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
     if (!trackingContainerUI) return;
 
-    // 📡 STATION HOT-SWAP GATEWAY: Fetch real-time updates directly from Firestore
+    // 📡 Cross-Station Firestore Sync Gateway
     const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
     if (agentId && typeof firestoreDb !== 'undefined') {
       try {
         const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
         const docSnap = await getDoc(agentRecordRef);
-        
         if (docSnap.exists()) {
           const remoteData = docSnap.data();
           const cloudQueue = remoteData.activeQueue || [];
           const localQueueStr = localStorage.getItem('workbench_queue_cache') || "[]";
-          
-          // If Station 1 updated Firestore, pull it into Station 2 immediately without a refresh
           if (JSON.stringify(cloudQueue) !== localQueueStr) {
             activeUrgentQueueItems = cloudQueue;
             localStorage.setItem('workbench_queue_cache', JSON.stringify(cloudQueue));
-            console.log("🛰️ Roaming Station Sync: Pulled 10+ cases automatically from your cloud profile.");
           }
         }
-      } catch (cloudError) {
-        console.warn("Background network synchronization throttled:", cloudError);
+      } catch (e) {
+        console.warn("Sync throttled:", e);
       }
     }
 
-    // Fallback locally if network is clearing out
     if (localStorage.getItem('workbench_queue_cache')) {
       activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
     }
@@ -2557,12 +2551,9 @@ function runActiveQueueCountdownEngine() {
     let priorityExpirationDetected = false;
     let expiredCaseIdentifier = "";
 
-    // Loop through active cases 
     for (let index = 0; index < activeUrgentQueueItems.length; index++) {
       const item = activeUrgentQueueItems[index];
       const remainingTimeDelta = item.expirationEpochTarget - currentTimeStamp;
-      
-      // Calculate age of the case in the tracking matrix to detect >24 hour holds
       const totalAgeMs = currentTimeStamp - (item.createdEpochTimestamp || currentTimeStamp);
       const isSlaBreached = totalAgeMs > 24 * 60 * 60 * 1000; 
 
@@ -2581,7 +2572,6 @@ function runActiveQueueCountdownEngine() {
         expiredCaseIdentifier = item.caseId;
       }
 
-      // Append structural case tracking cards into UI buffer
       uiBufferHtml += `
         <div class="priority-timer-card ${isExpired ? 'expired-card-highlight' : ''}" style="background: rgba(15, 23, 42, 0.4); border: 1px solid ${isExpired ? '#ef4444' : 'rgba(96, 165, 250, 0.15)'}; border-left: 4px solid ${isExpired ? '#ef4444' : '#60a5fa'}; border-radius: 6px; padding: 12px; margin-bottom: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
@@ -2596,7 +2586,6 @@ function runActiveQueueCountdownEngine() {
               <i class="${isExpired ? 'fas fa-bell animate-pulse' : 'fas fa-hourglass-half fa-spin'}" style="font-size:10px;"></i> ${countdownClockString}
             </div>
           </div>
-          
           <div style="display: flex; gap: 6px; margin-top: 10px;">
             <button onclick="resolveCaseQueueNode('${item.caseId}')" style="flex: 1; padding: 6px; background: #10b981; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;"><i class="fas fa-check"></i> Done</button>
             <button onclick="extendCaseQueueNode('${item.caseId}', 1440)" style="flex: 1; padding: 6px; background: #3b82f6; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;"><i class="fas fa-history"></i> +24H</button>
@@ -2608,46 +2597,44 @@ function runActiveQueueCountdownEngine() {
 
     trackingContainerUI.innerHTML = uiBufferHtml;
 
-    // 🔔 INTERACTIVE POPUP ROUTER
+    // 🔔 INTERACTIVE MESSENGER NOTIFICATION HANDLER
     const bubble = document.getElementById('messengerNotificationBubble');
     const txtDisplay = document.getElementById('messengerNotificationText');
     const orbControl = document.getElementById('metaTrackerOrb');
     const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
 
-if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
+    if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
       if (txtDisplay) {
-        // Messenger-style clean typography layout
         txtDisplay.innerHTML = `
           <div style="font-weight: 700; font-size: 13px; color: #050505; margin-bottom: 2px;">SLA Priority Monitor</div>
           <div style="font-weight: 400; font-size: 12px; color: #65676B; line-height: 1.3;">Case <span style="font-weight: 600; color: #050505;">#${expiredCaseIdentifier}</span> has expired and needs immediate checking.</div>
         `;
       }
       
-if (bubble) {
-        // 📏 Smart Layout Math: Check where the Orb is positioned on the screen canvas
+      if (bubble) {
+        // Find screen width to calculate side-dock flow directions
         const orbRect = orbControl.getBoundingClientRect();
         const screenWidth = window.innerWidth;
         
         let bubblePlacementStyle = ``;
         let caretPlacementStyle = ``;
 
-        // If the Orb is pinned to the right side of the screen
+        // Right side screen detection
         if (orbRect.left > screenWidth - 280) {
           bubblePlacementStyle = `right: 0px; top: 62px; transform-origin: top right;`;
           caretPlacementStyle = `right: 16px; top: -6px; border-bottom: 7px solid #ffffff;`;
         } 
-        // If the Orb is pinned to the left side of the screen
+        // Left side screen detection
         else if (orbRect.left < 280) {
           bubblePlacementStyle = `left: 0px; top: 62px; transform-origin: top left;`;
           caretPlacementStyle = `left: 16px; top: -6px; border-bottom: 7px solid #ffffff;`;
         } 
-        // Default: Center it safely underneath
+        // Pinned center option
         else {
           bubblePlacementStyle = `left: 50%; transform: translateX(-50%); top: 62px; transform-origin: top center;`;
           caretPlacementStyle = `left: 50%; transform: translateX(-50%); top: -6px; border-bottom: 7px solid #ffffff;`;
         }
 
-        // 💬 APPLIED MESSENGER FLOW CANVAS LAYOUT
         bubble.style.cssText = `
           display: block;
           position: absolute;
@@ -2655,17 +2642,14 @@ if (bubble) {
           padding: 12px 14px;
           background: #ffffff; 
           border-radius: 14px; 
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           z-index: 99999;
           cursor: pointer;
-          animation: messengerSpring 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-          transition: opacity 0.2s ease;
           opacity: 1;
           ${bubblePlacementStyle}
         `;
 
-        // 🔺 Dynamic Caret Placement Vector
         let caret = document.getElementById('messengerBubbleCaret');
         if (!caret) {
           caret = document.createElement('div');
@@ -2673,26 +2657,25 @@ if (bubble) {
           bubble.appendChild(caret);
         }
         caret.style.cssText = `
-          position: absolute;
-          width: 0;
-          height: 0;
-          border-left: 7px solid transparent;
-          border-right: 7px solid transparent;
-          pointer-events: none;
-          ${caretPlacementStyle}
+          position: absolute; width: 0; height: 0;
+          border-left: 7px solid transparent; border-right: 7px solid transparent;
+          pointer-events: none; ${caretPlacementStyle}
         `;
       }
-      
+    }
+
+    // 🛡️ CRITICAL FIX: Retain the alerting "!" icon if ANY case in the queue remains expired
+    let currentTimestampCheck = Date.now();
+    let hasAnyUnresolvedExpiredCases = activeUrgentQueueItems.some(i => i.expirationEpochTarget <= currentTimestampCheck);
+
+    if (hasAnyUnresolvedExpiredCases) {
       if (orbControl) orbControl.classList.add('tracker-orb-alert-active');
       if (orbIcon) orbIcon.className = "fas fa-exclamation-triangle meta-orb-icon";
     } else {
-      if (!priorityExpirationDetected) {
-        globalNotificationAcknowledgedLock = false; 
-      }
-      
-      if (orbIcon) {
-        orbIcon.className = "fas fa-folder-open meta-orb-icon";
-      }
+      // Return cleanly to folder icon ONLY when completely caught up
+      if (orbControl) orbControl.classList.remove('tracker-orb-alert-active');
+      if (orbIcon) orbIcon.className = "fas fa-folder-open meta-orb-icon";
+      globalNotificationAcknowledgedLock = false; 
       dismissMessengerAlertUI(false);
     }
 
@@ -2999,7 +2982,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   🕹️ FLOATING WORKSPACE ENGINE: DRAGGABLE TRACKER ORB SETUP
+   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH TRACKING FOLLOW
    ========================================================================== */
 function makeOrbFullyDraggable() {
   const orb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
@@ -3008,21 +2991,18 @@ function makeOrbFullyDraggable() {
   let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
   let isDraggingState = false;
 
-  // Visual Indicator: Set cursor properties to show it can be grabbed
   orb.style.cursor = "grab";
-  orb.style.position = "fixed"; // Prevents layout snapping issues
+  orb.style.position = "fixed"; 
 
   orb.addEventListener('mousedown', dragStartProcess);
   orb.addEventListener('touchstart', dragStartProcess, { passive: false });
 
   function dragStartProcess(e) {
-    // If clicking an inner button/link, let standard clicks execute normally
     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
     
     isDraggingState = false;
     orb.style.cursor = "grabbing";
 
-    // Handle touch vs mouse event data
     const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
 
@@ -3039,7 +3019,7 @@ function makeOrbFullyDraggable() {
   }
 
   function elementDragRoutine(e) {
-    if (e) e.preventDefault(); // Stop page scrolling during drags
+    if (e) e.preventDefault(); 
     isDraggingState = true;
 
     const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
@@ -3050,11 +3030,10 @@ function makeOrbFullyDraggable() {
     mouseX = clientX;
     mouseY = clientY;
 
-    // Calculate boundary limits
     let targetTopPosition = orb.offsetTop - posY;
     let targetLeftPosition = orb.offsetLeft - posX;
 
-    // Boundary constraints (Keep within viewport canvas boundaries)
+    // Viewport bounds restrictions
     if (targetTopPosition < 10) targetTopPosition = 10;
     if (targetLeftPosition < 10) targetLeftPosition = 10;
     if (targetTopPosition > window.innerHeight - 70) targetTopPosition = window.innerHeight - 70;
@@ -3064,18 +3043,33 @@ function makeOrbFullyDraggable() {
     orb.style.left = targetLeftPosition + "px";
     orb.style.bottom = "auto";
     orb.style.right = "auto";
+
+    // 📡 DYNAMIC RE-ALIGNER: Direct the text bubble to shift flows mid-drag near screen limits
+    const bubble = document.getElementById('messengerNotificationBubble');
+    const caret = document.getElementById('messengerBubbleCaret');
+    if (bubble && caret) {
+      const screenWidth = window.innerWidth;
+      if (targetLeftPosition > screenWidth - 280) {
+        bubble.style.left = "auto"; bubble.style.right = "0px"; bubble.style.transform = "none";
+        caret.style.left = "auto"; caret.style.right = "16px"; caret.style.transform = "none";
+      } else if (targetLeftPosition < 280) {
+        bubble.style.right = "auto"; bubble.style.left = "0px"; bubble.style.transform = "none";
+        caret.style.right = "auto"; caret.style.left = "16px"; caret.style.transform = "none";
+      } else {
+        bubble.style.right = "auto"; bubble.style.left = "50%;"; bubble.style.transform = "translateX(-50%)";
+        caret.style.right = "auto"; caret.style.left = "50%"; caret.style.transform = "translateX(-50%)";
+      }
+    }
   }
 
   function closeDragRoutine(e) {
     orb.style.cursor = "grab";
     
-    // Clear the document listeners cleanly
     document.onmouseup = null;
     document.onmousemove = null;
     document.removeEventListener('touchend', closeDragRoutine);
     document.removeEventListener('touchmove', elementDragRoutine);
 
-    // 🧠 DRAG SAFEGUARD: Intercept accidental clicks if the user was actually dragging the orb
     if (isDraggingState) {
       const stopPropagationTrap = (captureEvent) => {
         captureEvent.stopImmediatePropagation();
@@ -3085,8 +3079,3 @@ function makeOrbFullyDraggable() {
     }
   }
 }
-
-// 🎬 Run tracking engine hook on document layout resolution
-document.addEventListener("DOMContentLoaded", () => {
-  makeOrbFullyDraggable();
-});
