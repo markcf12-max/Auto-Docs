@@ -1238,12 +1238,6 @@ body.dark-theme .meta-orb-badge,
   background: rgba(239, 68, 68, 0.04) !important;
 }
 @keyframes messengerSpring {
-  0% {
-    transform: translateX(-50%) scale(0.7);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
+  0% { transform: scale(0.75); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
