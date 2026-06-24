@@ -1237,3 +1237,13 @@ body.dark-theme .meta-orb-badge,
   border-left: 4px solid #ef4444 !important;
   background: rgba(239, 68, 68, 0.04) !important;
 }
+@keyframes messengerSpring {
+  0% {
+    transform: translateX(-50%) scale(0.7);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
