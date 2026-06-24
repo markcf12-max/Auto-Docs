@@ -2652,30 +2652,63 @@ function dismissMessengerAlertUI(forceDrawerOpen = false) {
   }
 }
 
-// 🛫 GLOBAL CONTEXT WINDOW MAPPINGS FOR INLINE BUTTON HANDLING
+// 🛫 FIXED GLOBAL CONTEXT WINDOW MAPPINGS FOR INLINE BUTTON HANDLING
 window.resolveCaseQueueNode = function(caseId) {
+  // 1. Temporarily pause the background engine loop to prevent race conditions
+  if (ongoingQueueTrackingLoop) {
+    clearInterval(ongoingQueueTrackingLoop);
+    ongoingQueueTrackingLoop = null;
+  }
+
   let items = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
   items = items.filter(i => i.caseId !== caseId);
+  
+  // 2. Commit to local storage immediately
   localStorage.setItem('workbench_queue_cache', JSON.stringify(items));
+  activeUrgentQueueItems = items; // Force immediate sync of global memory array
+
   pushUpdatedQueueStateToNetwork();
 };
 
 window.extendCaseQueueNode = function(caseId, minutesToExtend) {
+  // 1. Temporarily pause the background engine loop to prevent race conditions
+  if (ongoingQueueTrackingLoop) {
+    clearInterval(ongoingQueueTrackingLoop);
+    ongoingQueueTrackingLoop = null;
+  }
+
   let items = JSON.parse(localStorage.getItem('workbench_queue_cache')) || [];
+  
+  // Calculate the fresh new future expiration target boundary 
+  const freshNewEpochTarget = Date.now() + (minutesToExtend * 60 * 1000);
+  
   items = items.map(i => {
     if (i.caseId === caseId) {
-      i.expirationEpochTarget = Date.now() + (minutesToExtend * 60 * 1000);
+      i.expirationEpochTarget = freshNewEpochTarget; 
     }
     return i;
   });
+  
+  // 2. Commit to local storage immediately
   localStorage.setItem('workbench_queue_cache', JSON.stringify(items));
+  activeUrgentQueueItems = items; // Force immediate sync of global memory array
+
   pushUpdatedQueueStateToNetwork();
 };
 
 function pushUpdatedQueueStateToNetwork() {
   globalNotificationAcknowledgedLock = false; // Reset visual locks
-  if (typeof dispatchWorkbenchPayloadToCloud === "function") dispatchWorkbenchPayloadToCloud();
-  if (typeof window.refreshGlobalBadgeCounters === "function") window.refreshGlobalBadgeCounters();
+  
+  // Fire data sync up to Firestore for terminal cross-compatibility
+  if (typeof dispatchWorkbenchPayloadToCloud === "function") {
+    dispatchWorkbenchPayloadToCloud();
+  }
+  
+  if (typeof window.refreshGlobalBadgeCounters === "function") {
+    window.refreshGlobalBadgeCounters();
+  }
+  
+  // 3. Safe Restart: Re-run the engine loop cleanly now that memory states match perfectly
   runActiveQueueCountdownEngine();
 }
 
