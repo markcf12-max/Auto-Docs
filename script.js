@@ -2982,23 +2982,36 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH TRACKING FOLLOW
+   🕹️ FLOATING ENGINE: DRAGGABLE TRACKER ORB SETUP WITH AUTO-COORDINATES
    ========================================================================== */
 function makeOrbFullyDraggable() {
-  const orb = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
-  if (!orb) return;
+  const orb = document.getElementById('metaTrackerOrb');
+  if (!orb) {
+    console.warn("Drag Engine Aborted: Element #metaTrackerOrb not found in DOM.");
+    return;
+  }
 
   let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
   let isDraggingState = false;
 
+  // 🛠️ CRITICAL LIFELINE: Force explicit styles if your CSS omitted them
+  orb.style.position = "fixed";
   orb.style.cursor = "grab";
-  orb.style.position = "fixed"; 
+  orb.style.zIndex = "99998"; // Keeps it above workspace elements
+
+  // If top/left are empty or evaluating to 0px natively, seed them cleanly
+  if (!orb.style.top || orb.style.top === "auto") {
+    const currentRect = orb.getBoundingClientRect();
+    orb.style.top = currentRect.top + "px";
+    orb.style.left = currentRect.left + "px";
+  }
 
   orb.addEventListener('mousedown', dragStartProcess);
   orb.addEventListener('touchstart', dragStartProcess, { passive: false });
 
   function dragStartProcess(e) {
-    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+    // If clicking an inner actionable element inside the orb, don't drag
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.classList.contains('clickable')) return;
     
     isDraggingState = false;
     orb.style.cursor = "grabbing";
@@ -3030,10 +3043,10 @@ function makeOrbFullyDraggable() {
     mouseX = clientX;
     mouseY = clientY;
 
-    let targetTopPosition = orb.offsetTop - posY;
-    let targetLeftPosition = orb.offsetLeft - posX;
+    let targetTopPosition = parseInt(orb.style.top || 0, 10) - posY;
+    let targetLeftPosition = parseInt(orb.style.left || 0, 10) - posX;
 
-    // Viewport bounds restrictions
+    // Monitor boundaries
     if (targetTopPosition < 10) targetTopPosition = 10;
     if (targetLeftPosition < 10) targetLeftPosition = 10;
     if (targetTopPosition > window.innerHeight - 70) targetTopPosition = window.innerHeight - 70;
@@ -3044,7 +3057,7 @@ function makeOrbFullyDraggable() {
     orb.style.bottom = "auto";
     orb.style.right = "auto";
 
-    // 📡 DYNAMIC RE-ALIGNER: Direct the text bubble to shift flows mid-drag near screen limits
+    // Dynamic notification bubble realignment follow loop
     const bubble = document.getElementById('messengerNotificationBubble');
     const caret = document.getElementById('messengerBubbleCaret');
     if (bubble && caret) {
@@ -3056,13 +3069,13 @@ function makeOrbFullyDraggable() {
         bubble.style.right = "auto"; bubble.style.left = "0px"; bubble.style.transform = "none";
         caret.style.right = "auto"; caret.style.left = "16px"; caret.style.transform = "none";
       } else {
-        bubble.style.right = "auto"; bubble.style.left = "50%;"; bubble.style.transform = "translateX(-50%)";
+        bubble.style.right = "auto"; bubble.style.left = "50%"; bubble.style.transform = "translateX(-50%)";
         caret.style.right = "auto"; caret.style.left = "50%"; caret.style.transform = "translateX(-50%)";
       }
     }
   }
 
-  function closeDragRoutine(e) {
+  function closeDragRoutine() {
     orb.style.cursor = "grab";
     
     document.onmouseup = null;
