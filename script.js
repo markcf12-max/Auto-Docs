@@ -2616,10 +2616,10 @@ if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
       }
       
       if (bubble) {
-        // 1. Ensure the container is visible first
+        // Force display block status flag
         bubble.style.display = "block";
         
-        // 2. Dynamic Follow Passoff: Hand layout rendering to the window synchronizer
+        // Pass the live placement update over to our coordinate manager
         const currentOrbLeft = orbControl ? orbControl.offsetLeft : 0;
         if (typeof window.syncBubblePlacementCoordinates === 'function') {
           window.syncBubblePlacementCoordinates(currentOrbLeft);
@@ -2981,6 +2981,10 @@ function makeOrbFullyDraggable() {
     isDraggingState = false;
     orb.style.cursor = "grabbing";
 
+    // 🛑 TEXT SELECTION HIGHLIGHT FIX: Prevents selecting elements on drag
+    document.body.style.userSelect = "none";
+    document.body.style.webkitUserSelect = "none";
+
     const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
 
@@ -3020,42 +3024,19 @@ function makeOrbFullyDraggable() {
     orb.style.top = targetTopPosition + "px";
     orb.style.left = targetLeftPosition + "px";
 
-    // Execute instant realignment synchronization check
-    syncBubblePlacementCoordinates(targetLeftPosition);
-  }
-
-  // 📡 ACTIVE COORDINATE SYNC ENGINE: Re-calculates alignment relative to the screen edge
-  function syncBubblePlacementCoordinates(leftOffset) {
-    const bubble = document.getElementById('messengerNotificationBubble');
-    const caret = document.getElementById('messengerBubbleCaret');
-    if (!bubble) return;
-
-    const screenWidth = window.innerWidth;
-    
-    // Core design variables
-    const baseBubbleStyles = "display: block !important; position: absolute !important; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; top: 62px;";
-    const baseCaretStyles = "position: absolute !important; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; top: -6px;";
-
-    // If orb moves close to the right edge of the screen
-    if (leftOffset > screenWidth - 160) {
-      bubble.style.cssText = `${baseBubbleStyles} right: 0px; left: auto; transform: none;`;
-      if (caret) caret.style.cssText = `${baseCaretStyles} right: 16px; left: auto; transform: none;`;
-    } 
-    // If orb moves close to the left edge of the screen
-    else if (leftOffset < 160) {
-      bubble.style.cssText = `${baseBubbleStyles} left: 0px; right: auto; transform: none;`;
-      if (caret) caret.style.cssText = `${baseCaretStyles} left: 16px; right: auto; transform: none;`;
-    } 
-    // Safe standard center docking configuration
-    else {
-      bubble.style.cssText = `${baseBubbleStyles} left: 50%; right: auto; transform: translateX(-50%);`;
-      if (caret) caret.style.cssText = `${baseCaretStyles} left: 50%; right: auto; transform: translateX(-50%);`;
+    // ✅ Move the bubble instantly along with the orb's movement coordinates
+    if (typeof window.syncBubblePlacementCoordinates === 'function') {
+      window.syncBubblePlacementCoordinates(targetLeftPosition);
     }
   }
 
   function closeDragRoutine() {
     orb.style.cursor = "grab";
     
+    // 🔓 Restore normal highlighting permissions when released
+    document.body.style.userSelect = "auto";
+    document.body.style.webkitUserSelect = "auto";
+
     document.onmouseup = null;
     document.onmousemove = null;
     document.removeEventListener('touchend', closeDragRoutine);
@@ -3070,6 +3051,43 @@ function makeOrbFullyDraggable() {
     }
   }
 }
+
+/* ==========================================================================
+   📡 GLOBAL COORDINATE SYNC ENGINE (Extracted to window level for loop visibility)
+   ========================================================================== */
+window.syncBubblePlacementCoordinates = function(leftOffset) {
+  const bubble = document.getElementById('messengerNotificationBubble');
+  if (!bubble || bubble.style.display === "none") return;
+
+  // 🛠️ CARET GENERATOR SAFEGUARD: Ensure the caret element exists dynamically 
+  let caret = document.getElementById('messengerBubbleCaret');
+  if (!caret) {
+    caret = document.createElement('div');
+    caret.id = 'messengerBubbleCaret';
+    bubble.appendChild(caret);
+  }
+
+  const screenWidth = window.innerWidth;
+  
+  const baseBubbleStyles = "display: block !important; position: absolute !important; width: 250px; padding: 12px 14px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: sans-serif; z-index: 99999; top: 62px; transform: none !important;";
+  const baseCaretStyles = "position: absolute !important; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; top: -6px; transform: none !important;";
+
+  // Right edge constraint mapping
+  if (leftOffset > screenWidth - 160) {
+    bubble.style.cssText = `${baseBubbleStyles} right: -10px; left: auto;`;
+    caret.style.cssText = `${baseCaretStyles} right: 24px; left: auto;`;
+  } 
+  // Left edge constraint mapping
+  else if (leftOffset < 160) {
+    bubble.style.cssText = `${baseBubbleStyles} left: -10px; right: auto;`;
+    caret.style.cssText = `${baseCaretStyles} left: 24px; right: auto;`;
+  } 
+  // Standard float center option
+  else {
+    bubble.style.cssText = `${baseBubbleStyles} left: 50%; right: auto; transform: translateX(-50%) !important;`;
+    caret.style.cssText = `${baseCaretStyles} left: 50%; right: auto; transform: translateX(-50%) !important;`;
+  }
+};
 
 // 🎬 Run tracking engine hook on document layout resolution
 document.addEventListener("DOMContentLoaded", () => {
