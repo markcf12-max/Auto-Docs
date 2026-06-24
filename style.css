@@ -1241,3 +1241,13 @@ body.dark-theme .meta-orb-badge,
   0% { transform: scale(0.75); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
+/* ☁️ Forces the bubble to calculate coordinates relative to the moving Orb container */
+#metaTrackerOrb {
+  position: fixed !important; /* Locks parent as the root drag frame */
+}
+
+#messengerNotificationBubble {
+  position: absolute !important; /* Strips fixed page-snapping rules */
+  transform-origin: top center;
+  margin: 0 !important; /* Prevents external margins from causing layout drift */
+}
