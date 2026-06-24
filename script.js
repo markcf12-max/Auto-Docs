@@ -2607,7 +2607,7 @@ function runActiveQueueCountdownEngine() {
     const orbControl = document.getElementById('metaTrackerOrb');
     const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
 
-    if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
+if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
       if (txtDisplay) {
         txtDisplay.innerHTML = `
           <div style="font-weight: 700; font-size: 13px; color: #050505; margin-bottom: 2px;">SLA Priority Monitor</div>
@@ -2616,56 +2616,18 @@ function runActiveQueueCountdownEngine() {
       }
       
       if (bubble) {
-        // Find screen width to calculate side-dock flow directions
-        const orbRect = orbControl.getBoundingClientRect();
-        const screenWidth = window.innerWidth;
+        // 1. Ensure the container is visible first
+        bubble.style.display = "block";
         
-        let bubblePlacementStyle = ``;
-        let caretPlacementStyle = ``;
-
-        // Right side screen detection
-        if (orbRect.left > screenWidth - 280) {
-          bubblePlacementStyle = `right: 0px; top: 62px; transform-origin: top right;`;
-          caretPlacementStyle = `right: 16px; top: -6px; border-bottom: 7px solid #ffffff;`;
-        } 
-        // Left side screen detection
-        else if (orbRect.left < 280) {
-          bubblePlacementStyle = `left: 0px; top: 62px; transform-origin: top left;`;
-          caretPlacementStyle = `left: 16px; top: -6px; border-bottom: 7px solid #ffffff;`;
-        } 
-        // Pinned center option
-        else {
-          bubblePlacementStyle = `left: 50%; transform: translateX(-50%); top: 62px; transform-origin: top center;`;
-          caretPlacementStyle = `left: 50%; transform: translateX(-50%); top: -6px; border-bottom: 7px solid #ffffff;`;
+        // 2. Dynamic Follow Passoff: Hand layout rendering to the window synchronizer
+        const currentOrbLeft = orbControl ? orbControl.offsetLeft : 0;
+        if (typeof window.syncBubblePlacementCoordinates === 'function') {
+          window.syncBubblePlacementCoordinates(currentOrbLeft);
         }
-
-        bubble.style.cssText = `
-          display: block;
-          position: absolute;
-          width: 250px;
-          padding: 12px 14px;
-          background: #ffffff; 
-          border-radius: 14px; 
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-          z-index: 99999;
-          cursor: pointer;
-          opacity: 1;
-          ${bubblePlacementStyle}
-        `;
-
-        let caret = document.getElementById('messengerBubbleCaret');
-        if (!caret) {
-          caret = document.createElement('div');
-          caret.id = 'messengerBubbleCaret';
-          bubble.appendChild(caret);
-        }
-        caret.style.cssText = `
-          position: absolute; width: 0; height: 0;
-          border-left: 7px solid transparent; border-right: 7px solid transparent;
-          pointer-events: none; ${caretPlacementStyle}
-        `;
       }
+      
+      if (orbControl) orbControl.classList.add('tracker-orb-alert-active');
+      if (orbIcon) orbIcon.className = "fas fa-exclamation-triangle meta-orb-icon";
     }
 
     // 🛡️ CRITICAL FIX: Retain the alerting "!" icon if ANY case in the queue remains expired
