@@ -1,4 +1,13 @@
 /* ==========================================================================
+   🌐 CLOUD-SYNCED AGENT ARCHIVE & LIVING QUEUE ENGINE (FIRESTORE CORES)
+   ========================================================================== */
+// Centralized state arrays (No longer falling back exclusively to local hardware cache)
+let activeFolderFilterBucket = null;
+let activeUrgentQueueItems = [];
+let ongoingQueueTrackingLoop = null;
+let globalNotificationAcknowledgedLock = false;
+
+/* ==========================================================================
    FIREBASE CONFIGURATION & MODULE INTEGRATION (V12.14.0)
    ========================================================================== */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js';
@@ -2277,12 +2286,7 @@ function listenToOperationalBroadcasts() {
   });
 }
 
-/* ==========================================================================
-   🌐 CLOUD-SYNCED AGENT ARCHIVE & LIVING QUEUE ENGINE (FIRESTORE CORES)
-   ========================================================================== */
-// Centralized state arrays (No longer falling back exclusively to local hardware cache)
-let activeUrgentQueueItems = [];
-let ongoingQueueTrackingLoop = null;
+
 
 /**
  * 📥 CORE SYNC: Pull active session data from Firestore on Agent Auth/Login
@@ -2467,7 +2471,7 @@ function initializeHistorySearch() {
   });
 }
 
-let activeFolderFilterBucket = null;
+
 window.drilldownArchiveFolderEntries = function(dateKey) {
   const currentNormalizedKey = getNormalizedSystemDateString();
   
@@ -2502,7 +2506,7 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
  * ⏱️ UPGRADED PRIORITY MONITOR COUNTDOWN ENGINE
  * Maintains expired cases in view, manages the Messenger orb notification, and calculates 24H SLA markers.
  */
-let globalNotificationAcknowledgedLock = false;
+
 
 /* ==========================================================================
    🔄 COUNTDOWN ENGINE: PERSISTENT NOTIFICATIONS & DYNAMIC FOLLOW PIPELINE
@@ -3071,12 +3075,12 @@ function makeOrbFullyDraggable() {
     const baseCaretStyles = "position: absolute !important; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 7px solid #ffffff; pointer-events: none; top: -6px;";
 
     // If orb moves close to the right edge of the screen
-    if (leftOffset > screenWidth - 280) {
+    if (leftOffset > screenWidth - 160) {
       bubble.style.cssText = `${baseBubbleStyles} right: 0px; left: auto; transform: none;`;
       if (caret) caret.style.cssText = `${baseCaretStyles} right: 16px; left: auto; transform: none;`;
     } 
     // If orb moves close to the left edge of the screen
-    else if (leftOffset < 280) {
+    else if (leftOffset < 160) {
       bubble.style.cssText = `${baseBubbleStyles} left: 0px; right: auto; transform: none;`;
       if (caret) caret.style.cssText = `${baseCaretStyles} left: 16px; right: auto; transform: none;`;
     } 
