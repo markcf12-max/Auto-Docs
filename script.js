@@ -2614,31 +2614,54 @@ function runActiveQueueCountdownEngine() {
     const orbControl = document.getElementById('metaTrackerOrb');
     const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
 
-    if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
-      if (txtDisplay) txtDisplay.innerHTML = `☁️ <strong>SLA Notification</strong><br>Case ID #${expiredCaseIdentifier} has hit its threshold limit and requires checking.`;
+if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
+      if (txtDisplay) {
+        // Messenger-style clean typography layout
+        txtDisplay.innerHTML = `
+          <div style="font-weight: 700; font-size: 13px; color: #050505; margin-bottom: 2px;">SLA Priority Monitor</div>
+          <div style="font-weight: 400; font-size: 12px; color: #65676B; line-height: 1.3;">Case <span style="font-weight: 600; color: #050505;">#${expiredCaseIdentifier}</span> has expired and needs immediate checking.</div>
+        `;
+      }
       
       if (bubble) {
-        // ⛅ DYNAMIC POSITIONING BELOW THE ORB WITH PREMIUM GLASS COAT FINISH
+        // 💬 MESSENGER POPUP AESTHETIC PINNED BELOW THE ORB
         bubble.style.cssText = `
           display: block;
           position: absolute;
-          top: 65px; 
+          top: 62px; 
           left: 50%;
-          transform: translateX(-50%) translateY(0) scale(1);
-          width: 250px;
+          transform: translateX(-50%) scale(1);
+          width: 240px;
           padding: 12px 14px;
-          background: rgba(240, 246, 255, 0.88); 
-          backdrop-filter: blur(12px) saturate(140%);
-          -webkit-backdrop-filter: blur(12px) saturate(140%);
-          border: 1px solid rgba(255, 255, 255, 0.65);
-          border-radius: 16px; 
-          box-shadow: 0 10px 30px rgba(147, 197, 253, 0.35), inset 0 2px 4px rgba(255,255,255,0.9);
-          color: #1e3a8a; 
-          font-size: 11px;
-          line-height: 1.4;
+          background: #ffffff; 
+          border-radius: 12px; 
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           z-index: 99999;
+          cursor: pointer;
+          animation: messengerSpring 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: opacity 0.2s ease;
           opacity: 1;
-          transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        `;
+
+        // 🔺 Inject the dynamic pointing caret tail if it doesn't already exist
+        let caret = document.getElementById('messengerBubbleCaret');
+        if (!caret) {
+          caret = document.createElement('div');
+          caret.id = 'messengerBubbleCaret';
+          bubble.appendChild(caret);
+        }
+        caret.style.cssText = `
+          position: absolute;
+          top: -6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 7px solid transparent;
+          border-right: 7px solid transparent;
+          border-bottom: 7px solid #ffffff;
+          pointer-events: none;
         `;
       }
       
@@ -2752,9 +2775,35 @@ function pushUpdatedQueueStateToNetwork() {
 
 // 🔗 INITIALIZE POPUP OBSERVERS ON APP STARTUP
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById('messengerNotificationBubble')?.addEventListener('click', () => {
+  
+  // 💬 UPGRADED MESSENGER POPUP CLICK ROUTER
+  document.getElementById('messengerNotificationBubble')?.addEventListener('click', (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation(); // Stops any event bubbling conflicts
+    }
+
     globalNotificationAcknowledgedLock = true; // Set lock to stop popup until next cycle
-    dismissMessengerAlertUI(true); // Hide popup window and open side tracking board
+    
+    // 1. Hide the popup window cleanly
+    dismissMessengerAlertUI(true); 
+
+    // 2. 🎯 THE SLIDE OPEN FIX: Instantly force open the side tracking board!
+    const drawer = document.getElementById('metaTrackerDrawer') || $('metaTrackerDrawer');
+    const orbControl = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
+    
+    if (drawer) {
+      drawer.classList.add('drawer-open'); // Forces your tracking panel to slide into view
+      
+      // Update the Orb's structural state classes to show it's active
+      if (orbControl) {
+        orbControl.className = "meta-orb-trigger drawer-active-state"; 
+      }
+      
+      console.log("🎯 Messenger Action: Intercepted bubble click and slid open tracking panel.");
+    } else {
+      console.error("Layout Error: Target element '#metaTrackerDrawer' missing from DOM.");
+    }
   });
   
   // Fire off baseline loop sequence execution
