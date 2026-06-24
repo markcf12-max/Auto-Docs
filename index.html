@@ -48,7 +48,7 @@
   </div>
 
   <div id="metaTrackerOrb" class="meta-orb-trigger" title="Toggle Monitoring Case Tracker" style="cursor: pointer; position: relative;">
-    <i class="fas fa-folder-open meta-orb-icon"></i>
+    <i class="fas fa-folder-open meta-orb-icon" style="transition: transform 0.2s ease, color 0.2s ease;"></i>
     <span id="metaOrbBadgeCount" class="meta-orb-badge">0</span>
   </div>
 
@@ -228,7 +228,7 @@
     </select>
   </div>
   
-  <div>
+<div>
     <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Urgency / Timer Threshold</label>
     <select id="urgencyTrackingTimerSelect" style="padding: 6px; font-size: 12px; width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 4px; cursor: pointer;">
       <option value="1">⏱️ 1 Minute (Quick Debug Test Loop)</option>
@@ -239,18 +239,7 @@
     </select>
   </div>
 
-  <div style="display: flex; gap: 10px; width: 100%;">
-      <button id="expireCaseDoneBtn" style="flex: 1; background: #10b981; color: #fff; border: none; padding: 12px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-        <i class="fas fa-check-circle"></i> Mark Done
-      </button>
-      <button id="expireCaseExtendBtn" style="flex: 1; background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-        <i class="fas fa-history"></i> Extend Queue
-      </button>
-    </div>
   </div>
-</div>
-
-</div>
 
       <div class="buttons" style="margin-top: 15px;">
         <button id="copyBtn" class="btn-primary"><i class="fas fa-copy"></i> Copy Output</button>
