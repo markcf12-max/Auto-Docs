@@ -1282,7 +1282,6 @@ body.dark-theme .meta-orb-badge,
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
   border: 2px solid #60a5fa;
   box-shadow: 0 0 16px rgba(96, 165, 250, 0.25);
   overflow: hidden;
@@ -1290,18 +1289,21 @@ body.dark-theme .meta-orb-badge,
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  
-  /* 🎯 ADD THIS: Safe internal buffer space so the logo doesn't touch the edges */
-  padding: 4px; 
+  padding: 6px; 
   box-sizing: border-box;
+
+  /* 🎯 CHANGE THIS: Match your logo's background color */
+  /* If your logo has a white background, use #ffffff. If black, use #000000 */
+  background: #ffffff !important; 
 }
 
 .brand-logo-circle-large img {
   width: 100%;
   height: 100%;
-  
-  /* 🎯 CHANGE THIS from 'cover' to 'contain' to zoom out and show the full logo */
-  object-fit: contain; 
+  object-fit: contain;
+
+  /* 🎯 ADD THIS: Forces the rectangular image file to round out its own corners */
+  border-radius: 50%; 
 }
 
 .brand-main-title {
