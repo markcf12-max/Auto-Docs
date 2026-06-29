@@ -1244,6 +1244,9 @@ body.dark-theme .meta-orb-badge,
 /* ☁️ Forces the bubble to calculate coordinates relative to the moving Orb container */
 #metaTrackerOrb {
   position: fixed !important; /* Locks parent as the root drag frame */
+  
+  /* 🎯 SECURE DEFAULT LOCK: Hidden on page load until handleSessionLoginTransition overrides it */
+  display: none; 
 }
 
 #messengerNotificationBubble {
