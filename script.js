@@ -1119,14 +1119,26 @@ async function pullLiveWorkspace() {
           const el = $(id);
           if (el && id !== 'authEmail' && id !== 'authPassword' && id !== 'authName') {
             el.value = savedFormState[id];
+            
+            /* 🎯 THE FIX (PART 1): Force inputs to register their new data values so 
+               any change-listeners across your interface register the update instantly */
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
           }
         });
 
+        // Force dropdown lists to re-build their child dependencies 
         if ($("concernType")?.value) updateVocOptions(true);
-        if (savedFormState["voc"]) $("voc").value = savedFormState["voc"];
+        if (savedFormState["voc"]) {
+          $("voc").value = savedFormState["voc"];
+          /* 🎯 THE FIX (PART 2): Force the VOC sub-string dropdown to register its state */
+          $("voc").dispatchEvent(new Event('change', { bubbles: true }));
+        }
 
+        /* 🎯 THE FIX (PART 3): Sequentially force-compile your layout view modules */
         updateOutput();
-        updateSuggestions();
+        await updateSuggestions(); // Await since it calls an async cloud fetch
+        
         if($('case')) validateCaseField($('case'));
         if($('min')) validateMinField($('min'));
         
