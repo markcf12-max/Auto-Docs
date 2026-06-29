@@ -1369,4 +1369,10 @@ body.dark-theme .meta-orb-badge,
   .brand-system-status {
     display: none;
   }
+   /* ⭕ Secondary Logo Offset Adjustments */
+.brand-logo-secondary {
+  border-color: #a7f3d0 !important; /* Soft distinct emerald border ring for the second logo */
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.15) !important;
+  margin-left: -4px; /* Optional tight overlap layout look — delete this line if you want them floating separate */
+}
 }
