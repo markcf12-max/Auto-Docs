@@ -3175,3 +3175,30 @@ window.syncBubblePlacementCoordinates = function() {
 document.addEventListener("DOMContentLoaded", () => {
   makeOrbFullyDraggable();
 });
+
+/* ==========================================================================
+   🎨 DYNAMIC AGENT WORKSPACE STYLING CONTROLLER
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  const colorPicker = document.getElementById('agentThemePicker');
+  
+  // 1. Check if the agent has a preferred background color saved from a prior shift
+  const savedThemeColor = localStorage.getItem('agent_custom_theme_color');
+  
+  if (savedThemeColor) {
+    // Apply saved background to the root DOM container element
+    document.documentElement.style.setProperty('--workspace-bg', savedThemeColor);
+    if (colorPicker) colorPicker.value = savedThemeColor;
+  }
+
+  // 2. Monitor real-time adjustments on the fly
+  colorPicker?.addEventListener('input', (e) => {
+    const selectedColor = e.target.value;
+    
+    // Dynamically inject the new hue variable to the screen layout engine
+    document.documentElement.style.setProperty('--workspace-bg', selectedColor);
+    
+    // Commit selection to storage so it survives application updates
+    localStorage.setItem('agent_custom_theme_color', selectedColor);
+  });
+});
