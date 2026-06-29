@@ -1262,10 +1262,13 @@ body.dark-theme .meta-orb-badge,
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  background: rgba(15, 23, 42, 0.4);
+  
+  /* 🎯 MODIFIED: Shifted from transparent dark slate grey to premium deep black */
+  background: rgba(4, 6, 10, 0.9) !important;
+  
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Slightly muted border accent */
   border-radius: 8px;
   margin-bottom: 20px;
   width: 100%;
