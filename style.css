@@ -1251,3 +1251,104 @@ body.dark-theme .meta-orb-badge,
   transform-origin: top center;
   margin: 0 !important; /* Prevents external margins from causing layout drift */
 }
+/* ==========================================================================
+   💎 PREMIUM APP BRAND HEADER STYLES
+   ========================================================================== */
+.workspace-brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.brand-identity-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px; /* Space between logo and text */
+}
+
+/* ⭕ The Circular Logo Mask */
+.brand-logo-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 2px solid #60a5fa; /* Sleek accent ring around your logo */
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-logo-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Prevents warping of your logo asset */
+}
+
+/* 📋 Typography Text Stack */
+.brand-title-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-main-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.brand-sub-title {
+  margin: 2px 0 0 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* 🟢 Minimal Right-Hand Clean Status (Replaces old messy text) */
+.brand-system-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.06);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.status-text-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #10b981;
+  text-transform: uppercase;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .brand-system-status {
+    display: none; /* Hide status pill on mobile screen spaces */
+  }
+}
