@@ -1438,3 +1438,16 @@ body.light-mode .header-action-btn.logout-accent:hover {
     display: none;
   }
 }
+/* ==========================================================================
+   🌓 MOON/SUN ICON VISIBILITY OVERRIDES FOR LIGHT MODE
+   ========================================================================== */
+/* Forces the font icon tag inside the theme button to switch from white to black */
+body.light-mode #themeToggle i {
+  color: #0f172a !important; 
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Adds a sharp crisp edge */
+}
+
+/* Optional: Emphasize the sun color when hovered over in light mode */
+body.light-mode #themeToggle:hover i {
+  color: #000000 !important;
+}
