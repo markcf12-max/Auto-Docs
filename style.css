@@ -1451,3 +1451,62 @@ body.light-mode #themeToggle i {
 body.light-mode #themeToggle:hover i {
   color: #000000 !important;
 }
+
+/* ==========================================================================
+   🎨 DYNAMIC AGENT COLOR SELECTOR PLATFORM STYLES
+   ========================================================================== */
+:root {
+  /* Default initial system backdrop state */
+  --workspace-bg: #0f172a; 
+}
+
+/* Apply the custom agent selection directly to the core frame */
+body {
+  background-color: var(--workspace-bg) !important;
+  transition: background-color 0.4s ease;
+}
+
+/* Layout container styling for the color palette trigger box */
+.theme-picker-wrapper {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.theme-picker-wrapper:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.theme-picker-label {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  cursor: pointer;
+  pointer-events: none; /* Passes the click directly to the underlying input mask */
+  z-index: 2;
+}
+
+/* Completely hide the default box border of the browser native color square */
+.agent-color-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; /* Keeps it active to click but perfectly invisible */
+  cursor: pointer;
+}
+
+.theme-picker-label i {
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); /* Guarantees the icon is visible even on light theme picks! */
+}
