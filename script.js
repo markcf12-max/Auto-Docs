@@ -549,6 +549,10 @@ async function handleAuthSubmission(e) {
   }
 }
 
+/* ==========================================================================
+   🔑 AUTHENTICATION FLOW & SECURITY LOCK CHANNELS
+   ========================================================================== */
+
 async function handleSessionLoginTransition() {
   $('authModal').style.display = "none";
   if ($('logoutBtn')) $('logoutBtn').style.display = "block";
@@ -558,13 +562,56 @@ async function handleSessionLoginTransition() {
   updateOutput();
   updateSuggestions();
   
-  // 🎯 THE FIX: Instantly evaluate and dismiss/sync the checklist modal logic upon successful shift login
+  // 🎯 REVEAL THE WORKSPACE MONITORING ORB UPON SUCCESSFUL LOGIN
+  const orb = document.getElementById('metaTrackerOrb');
+  if (orb) {
+    orb.style.setProperty('display', 'flex', 'important');
+  }
+  
+  // Instantly evaluate and dismiss/sync the checklist modal logic upon successful shift login
   if (typeof window.evaluateShiftCheckInModal === "function") {
     window.evaluateShiftCheckInModal();
   }
   
   await pullLiveWorkspace();
 }
+
+// 🎯 SECURE LOGOUT TERMINAL WORKSPACE WIPER
+// This interceptor forces the tracking orb to vanish the instant they click sign out.
+document.addEventListener("DOMContentLoaded", () => {
+  const logoutButton = document.getElementById('logoutBtn');
+
+  if (logoutButton) {
+    logoutButton.addEventListener('click', (e) => {
+      // 1. Locate all tracking layout surfaces
+      const orb = document.getElementById('metaTrackerOrb');
+      const bubble = document.getElementById('messengerNotificationBubble');
+      const drawer = document.getElementById('metaTrackerDrawer');
+
+      // 2. Erase them from the screen completely 
+      if (orb) orb.style.setProperty('display', 'none', 'important');
+      if (bubble) bubble.style.setProperty('display', 'none', 'important');
+      if (drawer) drawer.classList.remove('open-drawer', 'drawer-open');
+
+      // 3. Kill the background countdown processing engine loop
+      if (window.ongoingQueueTrackingLoop) {
+        clearInterval(window.ongoingQueueTrackingLoop);
+        window.ongoingQueueTrackingLoop = null;
+      }
+
+      // 4. Wipe runtime transient state layers
+      window.currentAgentId = null;
+      window.globalShiftHistory = [];
+      window.activeUrgentQueueItems = [];
+
+      // 5. Clear disk caches to ensure absolute privacy for the next user
+      localStorage.removeItem('workbench_queue_cache');
+      localStorage.removeItem('shift_history_cache_key');
+
+      console.log("🔒 Security Protocol: Station wiped clean. Tracking elements destroyed.");
+    });
+  }
+});
 
 /* ==========================================================================
    👑 SUPERVISOR MATRIX MANAGER MODULE FUNCTIONS (SECURED WITH DATA STATE)
