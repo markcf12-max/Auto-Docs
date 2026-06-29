@@ -573,7 +573,14 @@ async function handleSessionLoginTransition() {
     window.evaluateShiftCheckInModal();
   }
   
-  await pullLiveWorkspace();
+  // 📡 HOT CORRECTION: Intercept local loading and sync real-time database parameters live
+  if (window.currentAgentId && typeof window.syncAgentSessionFromCloud === "function") {
+    console.log(`⚡ Transition Core: Fetching cloud workbench state for Agent ID: ${window.currentAgentId}`);
+    await window.syncAgentSessionFromCloud(window.currentAgentId);
+  } else {
+    // Structural fallback if the cloud utility array is detached or unmounted
+    await pullLiveWorkspace();
+  }
 }
 
 // 🎯 SECURE LOGOUT TERMINAL WORKSPACE WIPER
