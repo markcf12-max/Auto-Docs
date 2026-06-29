@@ -1252,16 +1252,16 @@ body.dark-theme .meta-orb-badge,
   margin: 0 !important; /* Prevents external margins from causing layout drift */
 }
 /* ==========================================================================
-   💎 PREMIUM UPSCALED BRAND HEADER STYLES
+   💎 PLATFORM CONTROLLED HEADER INFRASTRUCTURE
    ========================================================================== */
 .workspace-brand-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 14px 24px;
   background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   border-radius: 8px;
   margin-bottom: 20px;
@@ -1272,16 +1272,15 @@ body.dark-theme .meta-orb-badge,
 .brand-identity-wrapper {
   display: flex;
   align-items: center;
-  gap: 18px; /* Slightly increased gap to look balanced with the larger logo */
+  gap: 16px; 
 }
 
-/* ⭕ Upscaled Circular Logo Container */
 .brand-logo-circle-large {
   width: 54px;
   height: 54px;
   border-radius: 50%;
   background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 2px solid #60a5fa; /* Custom accent ring */
+  border: 2px solid #60a5fa;
   box-shadow: 0 0 16px rgba(96, 165, 250, 0.25);
   overflow: hidden;
   display: flex;
@@ -1293,34 +1292,34 @@ body.dark-theme .meta-orb-badge,
 .brand-logo-circle-large img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Keeps image proportions locked without distortion */
-}
-
-/* 📋 Typography Styling */
-.brand-title-stack {
-  display: flex;
-  flex-direction: column;
+  object-fit: cover;
 }
 
 .brand-main-title {
   margin: 0;
-  font-size: 16px; /* Stepped up size to balance the 54px frame */
+  font-size: 16px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: #ffffff;
   font-family: system-ui, -apple-system, sans-serif;
-  text-transform: uppercase;
 }
 
-/* 🟢 Polished Minimal Active Indicator */
+/* ⚙️ Control Deck Layout Structure */
+.header-control-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .brand-system-status {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(16, 185, 129, 0.06);
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 20px;
   border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-right: 4px;
 }
 
 .status-pulse-dot {
@@ -1332,17 +1331,42 @@ body.dark-theme .meta-orb-badge,
 }
 
 .status-text-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: #10b981;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-/* Responsive Hide for Mobile layout views */
+/* 🔘 High-End Interactive UI Buttons */
+.header-action-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.header-action-btn.logout-accent:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
 @media (max-width: 640px) {
   .brand-system-status {
     display: none;
   }
-}
 }
