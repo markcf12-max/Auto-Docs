@@ -1380,7 +1380,18 @@ function toggleTheme() {
 function updateThemeIcon(isDark) {
   const icon = document.querySelector("#themeToggle i");
   if (!icon) return;
-  icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+  
+  // 🌓 Corrected Visual Mapping: 
+  // Show Moon in dark mode, Sun in light mode
+  icon.className = isDark ? "fas fa-moon" : "fas fa-sun";
+
+  // 🎯 THE ADAPTIVE LINK: Toggle the 'light-mode' class directly on the body 
+  // so the CSS buttons can instantly switch their colors without refreshing!
+  if (isDark) {
+    document.body.classList.remove("light-mode");
+  } else {
+    document.body.classList.add("light-mode");
+  }
 }
 
 function updateFloatingBanner() {
