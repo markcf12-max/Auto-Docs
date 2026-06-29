@@ -1275,6 +1275,9 @@ body.dark-theme .meta-orb-badge,
   gap: 16px; 
 }
 
+/* ==========================================================================
+   ⭕ PERFECTLY CENTERED & SCALED DUAL LOGO IMAGES
+   ========================================================================== */
 .brand-logo-circle-large {
   width: 54px;
   height: 54px;
@@ -1287,12 +1290,18 @@ body.dark-theme .meta-orb-badge,
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  
+  /* 🎯 ADD THIS: Safe internal buffer space so the logo doesn't touch the edges */
+  padding: 4px; 
+  box-sizing: border-box;
 }
 
 .brand-logo-circle-large img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  
+  /* 🎯 CHANGE THIS from 'cover' to 'contain' to zoom out and show the full logo */
+  object-fit: contain; 
 }
 
 .brand-main-title {
@@ -1369,10 +1378,12 @@ body.dark-theme .meta-orb-badge,
   .brand-system-status {
     display: none;
   }
-   /* ⭕ Secondary Logo Offset Adjustments */
+/* ⭕ Secondary Logo Custom Offset Adjustments */
 .brand-logo-secondary {
-  border-color: #a7f3d0 !important; /* Soft distinct emerald border ring for the second logo */
+  border-color: #a7f3d0 !important; 
   box-shadow: 0 0 16px rgba(52, 211, 153, 0.15) !important;
-  margin-left: -4px; /* Optional tight overlap layout look — delete this line if you want them floating separate */
+  
+  /* Removed negative margin to ensure distinct, clean spacing between both full logos */
+  margin-left: 0px; 
 }
 }
