@@ -9,7 +9,6 @@
 </head>
 <body>
 
-  <!-- Agent Shift Check-In Modal Overlay -->
   <div class="login-reminder-overlay" id="loginReminderScreen">
     <div class="login-reminder-container">
       <div class="reminder-icon-shield">
@@ -29,31 +28,28 @@
     </div>
   </div>
 
-  <!-- Persistent Flow Monitor Orb Control Trigger -->
-<div id="metaTrackerOrb" class="meta-orb-trigger" title="Toggle Monitoring Case Tracker" 
-     style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; cursor: grab;">
-  
-  <i class="fas fa-folder-open meta-orb-icon" style="transition: transform 0.2s ease, color 0.2s ease;"></i>
-  <span id="metaOrbBadgeCount" class="meta-orb-badge">0</span>
+  <div id="metaTrackerOrb" class="meta-orb-trigger" title="Toggle Monitoring Case Tracker" 
+       style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; cursor: grab;">
+    
+    <i class="fas fa-folder-open meta-orb-icon" style="transition: transform 0.2s ease, color 0.2s ease;"></i>
+    <span id="metaOrbBadgeCount" class="meta-orb-badge">0</span>
 
-  <div id="messengerNotificationBubble" style="display: none; pointer-events: auto; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #ef4444; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.5); padding: 12px 16px; border-radius: 18px 18px 4px 18px; width: 280px; color: #fff; cursor: pointer; position: absolute !important; font-family: inherit;">
-    <div style="display: flex; gap: 10px; align-items: flex-start;">
-      <div style="background: rgba(239, 68, 68, 0.15); color: #ef4444; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" class="orb-pulse-animation">
-        <i class="fas fa-exclamation-triangle" style="font-size: 13px;"></i>
+    <div id="messengerNotificationBubble" style="display: none; pointer-events: auto; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #ef4444; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.5); padding: 12px 16px; border-radius: 18px 18px 4px 18px; width: 280px; color: #fff; cursor: pointer; position: absolute !important; font-family: inherit;">
+      <div style="display: flex; gap: 10px; align-items: flex-start;">
+        <div style="background: rgba(239, 68, 68, 0.15); color: #ef4444; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" class="orb-pulse-animation">
+          <i class="fas fa-exclamation-triangle" style="font-size: 13px;"></i>
+        </div>
+        <div style="flex: 1;">
+          <h5 style="margin: 0 0 3px 0; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #ef4444; text-transform: uppercase;">Priority Alert</h5>
+          <p id="messengerNotificationText" style="margin: 0; font-size: 11px; line-height: 1.4; color: #cbd5e1; font-weight: 500;">Hey there! A priority case has expired and needs immediate checking.</p>
+        </div>
       </div>
-      <div style="flex: 1;">
-        <h5 style="margin: 0 0 3px 0; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #ef4444; text-transform: uppercase;">Priority Alert</h5>
-        <p id="messengerNotificationText" style="margin: 0; font-size: 11px; line-height: 1.4; color: #cbd5e1; font-weight: 500;">Hey there! A priority case has expired and needs immediate checking.</p>
+      <div style="text-align: right; margin-top: 8px; font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px;">
+        Click bubble to view drawer • Tap to dismiss
       </div>
-    </div>
-    <div style="text-align: right; margin-top: 8px; font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px;">
-      Click bubble to view drawer • Tap to dismiss
     </div>
   </div>
 
-</div>
-
-  <!-- Priority Follow-Up Slide-Out Drawer Panel -->
   <div id="metaTrackerDrawer">
     <div class="glass-drawer-header">
       <h3><i class="fas fa-satellite-dish animate-pulse"></i> Priority Case Monitor</h3>
@@ -62,11 +58,9 @@
     <p class="glass-drawer-desc">Active timers sync across workstations. Alerts prompt on screen upon reaching zero.</p>
     
     <div id="metaTrackerQueueBox" class="tracker-scroll-area">
-      <!-- Active system-wide target clock cards inject here -->
-    </div>
+      </div>
   </div>
 
-  <!-- Floating Sticky Case Clipboard Recovery Preview Window -->
   <div id="stickyPreviewWindow" class="sticky-preview-window" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <span id="stickyPreviewHeaderTitle" style="font-size: 12px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">[Case Review]</span>
@@ -78,7 +72,6 @@
     </button>
   </div>
 
-  <!-- Critical Emergency Broadcast System Notification Grid -->
   <div id="adminBroadcastBanner" class="broadcast-banner" style="display: none;">
     <div class="broadcast-content">
       <i class="fas fa-bullhorn animate-bounce"></i> 
@@ -86,38 +79,31 @@
     </div>
   </div>
 
-  <!-- Core App Navigation Topbar Bar -->
-  <header class="app-header">
-    <div class="header-brand-block">
-      <div class="header-title-wrapper">
-        <i class="fas fa-cubes-stacked header-brand-icon"></i>
-        <h1>Agent Documentation Suite</h1>
+  <header class="workspace-brand-header">
+    <div class="brand-identity-wrapper">
+      <div class="brand-logo-circle-large">
+        <img src="company-logo.gif" alt="Brand Logo" onerror="this.style.display='none';">
       </div>
-      <span class="version-tag">SYSTEM v2.5</span>
+      
+      <h1 class="brand-main-title">AGENT DOCUMENTATION SUITE</h1>
     </div>
 
-<!-- 🎯 CLEANED EXECUTIVE BRAND HEADER COMPONENT -->
-<header class="workspace-brand-header">
-  <div class="brand-identity-wrapper">
-    <!-- Upscaled Circular Logo Box -->
-    <div class="brand-logo-circle-large">
-      <img src="company-logo.gif" alt="Brand Logo" onerror="this.style.display='none';">
-    </div>
-    
-    <!-- Retained ONLY your core documentation reference -->
-    <div class="brand-title-stack">
-      <h1 class="brand-main-title">AGENT DOCUMENTATION</h1>
-    </div>
-  </div>
+    <div class="header-control-actions">
+      <div class="brand-system-status">
+        <span class="status-pulse-dot"></span>
+        <span class="status-text-label">Active</span>
+      </div>
 
-  <!-- Ultra-Minimal Clean Active Indicator -->
-  <div class="brand-system-status">
-    <span class="status-pulse-dot"></span>
-    <span class="status-text-label">Active</span>
-  </div>
-</header>
+      <button type="button" id="themeToggle" class="header-action-btn" title="Toggle UI Theme">
+        <i class="fas fa-moon"></i>
+      </button>
 
-  <!-- Workspace Matrix Operational Split Grid -->
+      <button type="button" id="logoutBtn" class="header-action-btn logout-accent" title="Secure Exit Terminal">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </header>
+
   <main class="layout">
     
     <!-- Entry Formulation Column Panel -->
