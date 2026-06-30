@@ -1925,6 +1925,7 @@ async function executeSupervisorExtraction() {
 
     let csvContent = "";
     let recordsCount = 0;
+    const trackedCaseIds = new Set(); // Prevents record duplication during extraction merge
 
     const cleanValue = (val) => {
       if (val === undefined || val === null || val === "") return "";
@@ -1936,93 +1937,103 @@ async function executeSupervisorExtraction() {
     };
 
     if (reportType === "CASES") {
+      // Establish CSV Layout Headers
+      csvContent += "Data Source,Agent ID,Agent Name,Line of Business,Case/SR,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Company,Email Address,Subject,VOC Selection\n";
+
+      // Create timestamps from text filters to ensure fallback queries match
+      const startDateTime = new Date(new Date(startDateFilter).setHours(0,0,0,0));
+      const endDateTime = new Date(new Date(endDateFilter).setHours(23,59,59,999));
+
+      // 📡 PATH A: Query Historical Logs
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
-      
-      const q = query(
+      const q1 = query(
         performanceRef, 
         where("submission_date", ">=", startDateFilter), 
-        where("submission_date", "<=", endDateFilter),
-        orderBy("submission_date", "desc")
+        where("submission_date", "<=", endDateFilter)
       );
 
-      let performanceSnapshot;
-      try {
-        performanceSnapshot = await getDocs(q);
-      } catch (indexError) {
-        console.warn("Composite Index missing/unoptimized. Falling back to clean scan partition model...", indexError);
-        const fallbackQuery = query(performanceRef, where("submission_date", ">=", startDateFilter), where("submission_date", "<=", endDateFilter));
-        performanceSnapshot = await getDocs(fallbackQuery);
-      }
-      
-      if (performanceSnapshot.empty) {
-        console.warn("Targeted history range void. Scanning global active workspace drafts...");
-        const backupRef = collection(firestoreDb, "case_logs");
-        const backupSnap = await getDocs(backupRef);
-        
-        if (backupSnap.empty) {
-          showSystemAlert("Data Void", "No records found in historical logs or real-time workspaces.");
-          return;
-        }
-        
-        csvContent += "Draft Log Doc ID,Agent ID/WinID,Last Active Case Target,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection\n";
-        
-        backupSnap.forEach((docSnap) => {
-          const d = docSnap.data();
-          const snap = d.form_data || d || {};
-          
-          csvContent += [
-            cleanValue(docSnap.id), cleanValue(d.agent_id),
-            cleanValue(d.case_number || snap.case || snap.field_case || "BLANK DRAFT"),
-            cleanValue(snap.action       || snap.field_action       || "BLANK DRAFT"),
-            cleanValue(snap.wocas        || snap.field_wocas        || "BLANK DRAFT"),
-            cleanValue(snap.thread       || snap.field_thread       || "BLANK DRAFT"),
-            cleanValue(snap.name         || snap.field_name         || "BLANK DRAFT"),
-            cleanValue(snap.concernType  || snap.field_concernType  || "BLANK DRAFT"),
-            cleanValue(snap.min          || snap.field_min          || "BLANK DRAFT"),
-            cleanValue(snap.datetime     || snap.field_datetime     || "BLANK DRAFT"),
-            cleanValue(snap.company      || snap.field_company      || "BLANK DRAFT"),
-            cleanValue(snap.email        || snap.field_email        || "BLANK DRAFT"),
-            cleanValue(snap.subj         || snap.field_subj         || "BLANK DRAFT"),
-            cleanValue(snap.voc          || snap.field_voc          || "BLANK DRAFT")
-          ].join(",") + "\n";
-          
-          recordsCount++;
-        });
-      } else {
-        csvContent += "Agent ID,Agent Name,Line of Business,Case/SR,Completed Timestamp,Action Taken,WOCAS Notes,Thread ID,Customer Name,Concern Type,MIN / Mobile,Date-Time Field,Company,Email Address,Subject,VOC Selection\n";
+      // 📡 PATH B: Query Real-time Case Tracker Logs simultaneously
+      const liveTrackerRef = collection(firestoreDb, "case_logs");
+      const q2 = query(
+        liveTrackerRef,
+        where("timestamp", ">=", startDateTime),
+        where("timestamp", "<=", endDateTime)
+      );
 
+      // Execute both dataset extraction sweeps asynchronously
+      const [performanceSnapshot, liveSnapshot] = await Promise.all([
+        getDocs(q1).catch(err => { console.error("Metrics collection query failure:", err); return { empty: true }; }),
+        getDocs(q2).catch(err => { console.error("Live collection query failure:", err); return { empty: true }; })
+      ]);
+
+      // 🗃️ PARSE PERFORMANCE DATASET
+      if (!performanceSnapshot.empty) {
         performanceSnapshot.forEach((docSnap) => {
           const rawDoc = docSnap.data();
           const agentLob = rawDoc.lob || "UNKNOWN";
-
           if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
           const snap = rawDoc.snapshot || rawDoc.form_data || rawDoc || {};
-          const isLegacyFlatRecord = !rawDoc.snapshot && !rawDoc.form_data && !rawDoc.action && !rawDoc.wocas;
-          const fallbackString = isLegacyFlatRecord ? "No Log" : "N/A";
+          const caseNum = rawDoc.case_id || snap.case || snap.field_case || docSnap.id;
+          
+          trackedCaseIds.add(caseNum);
 
           csvContent += [
-            cleanValue(rawDoc.agent_id), cleanValue(rawDoc.agent_name || "No Log"), cleanValue(agentLob),
-            cleanValue(rawDoc.case_id || snap.case || snap.field_case || "N/A"),
-            cleanValue(rawDoc.completed_at || rawDoc.updated_at || "N/A"),
-            cleanValue(snap.action       || snap.field_action       || fallbackString),
-            cleanValue(snap.wocas        || snap.field_wocas        || fallbackString),
-            cleanValue(snap.thread       || snap.field_thread       || fallbackString),
-            cleanValue(snap.name         || snap.field_name         || fallbackString),
-            cleanValue(snap.concernType  || snap.field_concernType  || fallbackString),
-            cleanValue(snap.min          || snap.field_min          || fallbackString),
-            cleanValue(snap.datetime     || snap.field_datetime     || fallbackString),
-            cleanValue(snap.company      || snap.field_company      || fallbackString),
-            cleanValue(snap.email        || snap.field_email        || fallbackString),
-            cleanValue(snap.subj         || snap.field_subj         || fallbackString),
-            cleanValue(snap.voc          || snap.field_voc          || fallbackString)
+            "Historical Log", cleanValue(rawDoc.agent_id), cleanValue(rawDoc.agent_name || "N/A"), cleanValue(agentLob),
+            cleanValue(caseNum), cleanValue(rawDoc.completed_at || rawDoc.updated_at || startDateFilter),
+            cleanValue(snap.action       || snap.field_action       || "N/A"),
+            cleanValue(snap.wocas        || snap.field_wocas        || "N/A"),
+            cleanValue(snap.thread       || snap.field_thread       || "N/A"),
+            cleanValue(snap.name         || snap.field_name         || "N/A"),
+            cleanValue(snap.concernType  || snap.field_concernType  || "N/A"),
+            cleanValue(snap.min          || snap.field_min          || "N/A"),
+            cleanValue(snap.company      || snap.field_company      || "N/A"),
+            cleanValue(snap.email        || snap.field_email        || "N/A"),
+            cleanValue(snap.subj         || snap.field_subj         || "N/A"),
+            cleanValue(snap.voc          || snap.field_voc          || "N/A")
           ].join(",") + "\n";
           recordsCount++;
         });
       }
+
+      // 🗃️ PARSE LIVE FLOOR TRACKER DATASET (Merge & De-duplicate records)
+      if (!liveSnapshot.empty) {
+        liveSnapshot.forEach((docSnap) => {
+          const d = docSnap.data();
+          const snap = d.form_data || d || {};
+          const caseNum = d.case_number || snap.case || snap.field_case || docSnap.id;
+          const agentLob = d.lob || snap.lob || "UNKNOWN";
+
+          // Guard conditions for structural duplicates or LOB filtering mismatch
+          if (trackedCaseIds.has(caseNum)) return; 
+          if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+
+          let formattedDate = startDateFilter;
+          if (d.timestamp) {
+            try { formattedDate = d.timestamp.toDate ? d.timestamp.toDate().toISOString() : new Date(d.timestamp).toISOString(); } catch(e){}
+          }
+
+          csvContent += [
+            "Live Tracker Draft", cleanValue(d.agent_id), cleanValue(d.agent_name || "Active Agent"), cleanValue(agentLob),
+            cleanValue(caseNum), cleanValue(formattedDate),
+            cleanValue(snap.action       || snap.field_action       || "N/A"),
+            cleanValue(snap.wocas        || snap.field_wocas        || "N/A"),
+            cleanValue(snap.thread       || snap.field_thread       || "N/A"),
+            cleanValue(snap.name         || snap.field_name         || "N/A"),
+            cleanValue(snap.concernType  || snap.field_concernType  || "N/A"),
+            cleanValue(snap.min          || snap.field_min          || "N/A"),
+            cleanValue(snap.company      || snap.field_company      || "N/A"),
+            cleanValue(snap.email        || snap.field_email        || "N/A"),
+            cleanValue(snap.subj         || snap.field_subj         || "N/A"),
+            cleanValue(snap.voc          || snap.field_voc          || "N/A")
+          ].join(",") + "\n";
+          recordsCount++;
+        });
+      }
+
     } else {
+      // 🛠️ COMPLIANCE TELEMETRY REPORT TYPE ROUTING ENGINE
       const metricsRef = collection(firestoreDb, "daily_compliance_telemetry");
-      
       const q = query(
         metricsRef, 
         where("date", ">=", startDateFilter), 
@@ -2030,7 +2041,6 @@ async function executeSupervisorExtraction() {
       );
       
       const snapshot = await getDocs(q);
-      
       if (snapshot.empty) {
         showSystemAlert("Data Void", "No timeline compliance telemetry rows match this date range query.");
         return;
