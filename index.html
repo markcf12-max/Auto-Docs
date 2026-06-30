@@ -392,7 +392,65 @@
             </div>
           </div>
         </div>
+<div id="supervisorDashboardCanvas" style="display: none; flex-direction: column; gap: 20px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;">
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+    
+    <div style="background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 16px;">
+      <div style="background: rgba(59, 130, 246, 0.15); width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(59, 130, 246, 0.3);">
+        <i class="fas fa-chart-line" style="color: #3b82f6; font-size: 20px;"></i>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Total Shift Volume</p>
+        <h3 id="dashTotalVolumeText" style="margin: 4px 0 0 0; font-size: 24px; color: #fff; font-weight: 700;">0</h3>
+      </div>
+    </div>
 
+    <div style="background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 16px;">
+      <div style="background: rgba(239, 68, 68, 0.15); width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.3);">
+        <i class="fas fa-fire" style="color: #ef4444; font-size: 20px;"></i>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Top Intent Driver</p>
+        <h3 id="dashTopDriverText" style="margin: 4px 0 0 0; font-size: 16px; color: #ef4444; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 180px;">N/A</h3>
+      </div>
+    </div>
+
+    <div style="background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 16px;">
+      <div style="background: rgba(16, 185, 129, 0.15); width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(16, 185, 129, 0.3);">
+        <i class="fas fa-shield-alt" style="color: #10b981; font-size: 20px;"></i>
+      </div>
+      <div>
+        <p style="margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Floor Intent Health</p>
+        <h3 id="dashHealthStatusText" style="margin: 4px 0 0 0; font-size: 24px; color: #10b981; font-weight: 700;">STABLE</h3>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background: rgba(15, 23, 42, 0.3); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.45);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-th-list" style="color: #60a5fa;"></i> Live Floor Intent Distribution Tracker
+        </h2>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Real-time metrics compiled dynamically across all roving agent workstations</p>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button id="exportIntentMatrixBtn" type="button" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); border: none; border-radius: 6px; padding: 8px 16px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.2s ease;">
+          <i class="fas fa-cloud-download-alt"></i> Export Intent Matrix (CSV)
+        </button>
+      </div>
+    </div>
+
+    <div id="dashSpectrumGraphContainer" style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; font-size: 13px;">
+        Awaiting live synchronization signal from database array...
+      </div>
+    </div>
+  </div>
+</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
             <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
