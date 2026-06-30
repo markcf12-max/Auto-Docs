@@ -384,74 +384,69 @@ function listenToGlobalIntentAnalytics() {
     globalDashboardUnsubscribe = null;
   }
 
-  const todayStr = getSystemDateString(); // Matches YYYY-MM-DD template from Part 4
   const chartDeckUI = document.getElementById('dashSpectrumGraphContainer');
-  
-  console.log(`📡 Dashboard Pipeline Hooked: Monitoring Intent Stream for Date: ${todayStr}`);
+  console.log(`📡 Telemetry Bridge Armed: Monitoring Live Submissions...`);
 
-  // Reference targeted collection directly to prevent massive database scan queries
-  const telemetryQuery = query(
-    collection(firestoreDb, "daily_compliance_telemetry"),
-    where("__name__", ">=", `${todayStr}_`),
-    where("__name__", "<=", `${todayStr}_\uf8ff`)
+  // Target your primary case log repository (Handles historical dates natively)
+  // NOTE: If your root collection path is named something else like "cases", change "case_logs" here to match.
+  const caseLogsQuery = query(
+    collection(firestoreDb, "case_logs"), 
+    where("timestamp", ">=", new Date(new Date().setHours(0,0,0,0))) 
   );
 
-  globalDashboardUnsubscribe = onSnapshot(telemetryQuery, (snapshot) => {
+  globalDashboardUnsubscribe = onSnapshot(caseLogsQuery, (snapshot) => {
     const rawIntentCounts = {};
     let aggregatedTotalShiftVolume = 0;
 
-    // 1. Loop through live agent telemetry lines on the floor
     snapshot.forEach((doc) => {
       const data = doc.data();
-      // Extract intent from payload metadata logs (Form attributes saved from form_data)
-      const agentActiveIntent = data.last_tracked_intent || data.concern_type || "Unclassified Concerns";
-      const countIncrement = data.saved_cases_count || 1; // Standard shift counter configuration
+      
+      // Map straight against your HTML field inputs: fallback sequence matches concernType -> voc -> fallback
+      const agentActiveIntent = data.concernType || data.voc || data.concern_type || data.intent || "UNCLASSIFIED CASES";
+      const countIncrement = data.saved_cases_count || 1; 
 
-      if (!rawIntentCounts[agentActiveIntent]) {
-        rawIntentCounts[agentActiveIntent] = 0;
+      const cleanKey = String(agentActiveIntent).toUpperCase().trim();
+      if (!cleanKey || cleanKey === "") return;
+
+      if (!rawIntentCounts[cleanKey]) {
+        rawIntentCounts[cleanKey] = 0;
       }
-      rawIntentCounts[agentActiveIntent] += countIncrement;
+      rawIntentCounts[cleanKey] += countIncrement;
       aggregatedTotalShiftVolume += countIncrement;
     });
 
-    // Mock Weekly Baselines for dynamic variation tracking ratios (Avoids expensive multi-day processing scans)
+    // Baseline definitions adjusted to match your precise HTML selection inputs
     const baselineAverages = {
-      "BILLING DISPUTE": 12,
-      "SYSTEM ERROR": 8,
-      "ACCOUNT LOCKED": 15,
-      "GENERAL INQUIRY": 25,
-      "MANAGER ESCALATION": 5
+      "TECHNICAL": 15,
+      "AFTERSALES": 10,
+      "INQUIRY": 30,
+      "COMPLAINT": 5,
+      "SIM REPLACEMENT": 8,
+      "SIM ACTIVATION": 12
     };
 
-    // 2. Convert mapped dataset into a normalized sorting vector array
     const compiledList = Object.keys(rawIntentCounts).map(intentKey => {
-      const normalizedKey = intentKey.toUpperCase();
       const activeVolume = rawIntentCounts[intentKey];
-      const baselineVal = baselineAverages[normalizedKey] || 10;
-      
-      // Calculate dynamic variation trend percentage formulas
-      const deviationDelta = baselineVal > 0 
-        ? ((activeVolume - baselineVal) / baselineVal) * 100 
-        : 0;
+      const baselineVal = baselineAverages[intentKey] || 10;
+      const deviationDelta = baselineVal > 0 ? ((activeVolume - baselineVal) / baselineVal) * 100 : 0;
 
       return {
-        intent: normalizedKey,
+        intent: intentKey,
         volume: activeVolume,
         baseline: baselineVal,
         deviation: deviationDelta
       };
     });
 
-    // Rank from absolute top drivers down to minor items
+    // Rank from highest peak drivers down
     compiledList.sort((a, b) => b.volume - a.volume);
-    currentActiveDashboardData = compiledList; // Cache tracking layout state directly
+    currentActiveDashboardData = compiledList;
 
-    // 3. Repaint Dynamic UI Canvas Content
     if (chartDeckUI) {
       if (compiledList.length === 0) {
         chartDeckUI.innerHTML = `
-          <div style="padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; font-size: 12px; border: 1px dashed var(--border-color); border-radius: 8px;">
-            No intents committed by floor agents during this active tracking window yet.
+          <div style="padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+            No case matching logs identified for today's shifts yet.
           </div>`;
         updateKpiTextDisplays(0, "N/A", "NOMINAL");
         return;
@@ -462,20 +457,16 @@ function listenToGlobalIntentAnalytics() {
       let operationalSurgeDetected = false;
 
       compiledList.forEach(node => {
-        // Calculate fill bar widths cleanly
-        const graphicalWidthPercent = absoluteHighestPeakVolume > 0 
-          ? (node.volume / absoluteHighestPeakVolume) * 100 
-          : 0;
+        const graphicalWidthPercent = absoluteHighestPeakVolume > 0 ? (node.volume / absoluteHighestPeakVolume) * 100 : 0;
 
-        // Determine gradient tracking colors depending on critical volume spikes
-        let spectralHueGradient = "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)"; // Standard Blue
+        let spectralHueGradient = "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
         if (node.deviation >= 50) {
-          spectralHueGradient = "linear-gradient(90deg, #ea580c 0%, #ef4444 100%)"; // Crimson Flash Alert
+          spectralHueGradient = "linear-gradient(90deg, #ea580c 0%, #ef4444 100%)";
           operationalSurgeDetected = true;
         } else if (node.deviation > 15) {
-          spectralHueGradient = "linear-gradient(90deg, #d97706 0%, #f59e0b 100%)"; // Amber warning profile
+          spectralHueGradient = "linear-gradient(90deg, #d97706 0%, #f59e0b 100%)";
         } else if (node.deviation < 0) {
-          spectralHueGradient = "linear-gradient(90deg, #059669 0%, #10b981 100%)"; // Emerald Clean Stable
+          spectralHueGradient = "linear-gradient(90deg, #059669 0%, #10b981 100%)";
         }
 
         const trendChevron = node.deviation >= 0 ? "fa-caret-up" : "fa-caret-down";
@@ -501,13 +492,11 @@ function listenToGlobalIntentAnalytics() {
       });
 
       chartDeckUI.innerHTML = uiBufferHtml;
-      
-      // Update high-level KPI card displays
       const healthOutputStatus = operationalSurgeDetected ? "SURGING ALERTS" : "STABLE NOMINAL";
       updateKpiTextDisplays(aggregatedTotalShiftVolume, compiledList[0].intent, healthOutputStatus);
     }
   }, (error) => {
-    console.warn("Analytics Live Sync Stream Drop:", error);
+    console.error("🚨 Dashboard Live Stream Error:", error);
   });
 }
 
