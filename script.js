@@ -445,12 +445,14 @@ async function handleAuthSubmission(e) {
     }
   }
 
-  // 📡 NO LONGER CHECKING FOR PURE NUMERIC ID - VALIDATING RAW EMAIL SPECIFICATION
-  if (!agentEmail.includes("@")) {
-    showSystemAlert("Format Error", "Please provide a valid agent email address!");
-    $('authEmail').focus();
-    return;
-  }
+// ❌ REMOVE OR COMMENT OUT THIS BLOCK FROM YOUR JS CODE:
+/*
+if (!agentEmail.includes("@")) {
+  showSystemAlert("Format Error", "Please provide a valid agent email address!");
+  $('authEmail').focus();
+  return;
+}
+*/
 
   try {
     // Look up via profile collection by matching the 'email' property
