@@ -399,9 +399,9 @@ function isolateWorkspaceUI(role) {
 let globalDashboardUnsubscribe = null;
 let currentActiveDashboardData = []; // Cached snapshot object for standalone spreadsheet processing
 
-/**
- * 🛰️ LIVE AGGREGATION MONITOR: Connects to real-time snapshot engines
- */
+==========================================================================
+   📊 SUPERVISOR INTENT REAL-TIME DISTRIBUTION TRACKER (OMNI-PARSER)
+   ========================================================================== */
 function listenToGlobalIntentAnalytics() {
   if (globalDashboardUnsubscribe) {
     globalDashboardUnsubscribe();
@@ -409,31 +409,53 @@ function listenToGlobalIntentAnalytics() {
   }
 
   const chartDeckUI = document.getElementById('dashSpectrumGraphContainer');
-  console.log(`📡 Telemetry Bridge Armed: Scanning Live Submissions...`);
+  console.log(`📡 Telemetry Bridge Armed: Listening to Case Logs...`);
 
-  // 🕒 RESILIENT CALENDAR WINDOWING: Look back a full 24 hours to prevent timezone drops
-  const trackingWindowStart = new Date();
-  trackingWindowStart.setHours(trackingWindowStart.getHours() - 24);
+  // 🕒 Generate standard text strings and date parameters for cross-checking
+  const todayObj = new Date();
+  const year = todayObj.getFullYear();
+  const month = String(todayObj.getMonth() + 1).padStart(2, '0');
+  const day = String(todayObj.getDate()).padStart(2, '0');
+  
+  const todayStringYMD = `${year}-${month}-${day}`; // Format: YYYY-MM-DD
+  const fallbackWindowStart = new Date(new Date().setHours(0,0,0,0));
 
-  // Target your primary case log repository
-  const caseLogsQuery = query(
-    collection(firestoreDb, "case_logs"), 
-    where("timestamp", ">=", trackingWindowStart) 
-  );
+  // Pull everything from the root collection to parse locally and bypass date format conflicts
+  const liveTrackerRef = collection(firestoreDb, "case_logs");
 
-  globalDashboardUnsubscribe = onSnapshot(caseLogsQuery, (snapshot) => {
+  globalDashboardUnsubscribe = onSnapshot(liveTrackerRef, (snapshot) => {
     const rawIntentCounts = {};
     let aggregatedTotalShiftVolume = 0;
 
-    console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} total documents in query pool.`);
+    console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} raw documents in case_logs.`);
 
     snapshot.forEach((doc) => {
-      const data = doc.data();
+      const d = doc.data();
+      const snap = d.form_data || d || {};
+
+      // 1. 🔍 DATE VALIDATION FALLBACK CHECK
+      let isRecordFromToday = false;
+
+      // Check text-based parameters (e.g., "2026-07-01")
+      if (d.submission_date === todayStringYMD || snap.datetime?.toString().includes(todayStringYMD)) {
+        isRecordFromToday = true;
+      }
       
-      // 🎯 EXACT VARIABLE FIELD TARGETING FROM YOUR CHOSEN HTML ELEMENTS:
-      // Extracts "concernType" (Technical, Aftersales, etc.) or individual "voc" entries
-      const agentActiveIntent = data.concernType || data.voc || data.concern_type || data.intent || "UNCLASSIFIED CASES";
-      const countIncrement = data.saved_cases_count || 1; 
+      // Check native Firestore or standard JS Timestamps
+      if (!isRecordFromToday && d.timestamp) {
+        try {
+          const recordDate = d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+          if (recordDate >= fallbackWindowStart) isRecordFromToday = true;
+        } catch(e) {}
+      }
+
+      // If you just want to see ALL saved data on your dashboard while debugging, 
+      // comment out the next line to bypass the date check entirely:
+      if (!isRecordFromToday) return; 
+
+      // 2. 🎯 EXTRACT INTENT CATEGORY 
+      const agentActiveIntent = snap.concernType || d.concernType || snap.voc || d.voc || "UNCLASSIFIED CASES";
+      const countIncrement = d.saved_cases_count || 1; 
 
       const cleanKey = String(agentActiveIntent).toUpperCase().trim();
       if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN") return;
@@ -445,14 +467,12 @@ function listenToGlobalIntentAnalytics() {
       aggregatedTotalShiftVolume += countIncrement;
     });
 
-    // Baseline profiles matching your specific HTML selection dropdown inputs
+    // Baseline targets matching your HTML selection values
     const baselineAverages = {
       "TECHNICAL": 15,
       "AFTERSALES": 10,
       "INQUIRY": 30,
-      "COMPLAINT": 5,
-      "SIM REPLACEMENT": 8,
-      "SIM ACTIVATION": 12
+      "COMPLAINT": 5
     };
 
     const compiledList = Object.keys(rawIntentCounts).map(intentKey => {
@@ -468,15 +488,13 @@ function listenToGlobalIntentAnalytics() {
       };
     });
 
-    // Rank from highest peak volume downward
     compiledList.sort((a, b) => b.volume - a.volume);
-    currentActiveDashboardData = compiledList;
 
     if (chartDeckUI) {
       if (compiledList.length === 0) {
         chartDeckUI.innerHTML = `
           <div style="padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-            No matching data identified in database for this tracking window.
+            Found case logs, but none matched today's date (${todayStringYMD}).
           </div>`;
         updateKpiTextDisplays(0, "N/A", "NOMINAL");
         return;
@@ -484,49 +502,29 @@ function listenToGlobalIntentAnalytics() {
 
       const absoluteHighestPeakVolume = compiledList[0].volume;
       let uiBufferHtml = ``;
-      let operationalSurgeDetected = false;
 
       compiledList.forEach(node => {
         const graphicalWidthPercent = absoluteHighestPeakVolume > 0 ? (node.volume / absoluteHighestPeakVolume) * 100 : 0;
-
         let spectralHueGradient = "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
-        if (node.deviation >= 50) {
-          spectralHueGradient = "linear-gradient(90deg, #ea580c 0%, #ef4444 100%)";
-          operationalSurgeDetected = true;
-        } else if (node.deviation > 15) {
-          spectralHueGradient = "linear-gradient(90deg, #d97706 0%, #f59e0b 100%)";
-        } else if (node.deviation < 0) {
-          spectralHueGradient = "linear-gradient(90deg, #059669 0%, #10b981 100%)";
-        }
-
-        const trendChevron = node.deviation >= 0 ? "fa-caret-up" : "fa-caret-down";
-        const trendColorColor = node.deviation >= 0 ? "#ef4444" : "#10b981";
-        const formattedTrendString = `${node.deviation >= 0 ? "+" : ""}${node.deviation.toFixed(1)}%`;
 
         uiBufferHtml += `
-          <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.01); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02);">
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: rgba(255,255,255,0.01); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="font-weight: 700; color: #e2e8f0; letter-spacing: 0.5px;">${node.intent}</span>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="color: var(--text-muted); font-size: 11px;">Shift Volume: <strong style="color: #fff; font-size: 12px;">${node.volume}</strong></span>
-                <span style="color: ${trendColorColor}; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
-                  <i class="fas ${trendChevron}"></i> ${formattedTrendString}
-                </span>
-              </div>
+              <span style="font-weight: 700; color: var(--text-main);">${node.intent}</span>
+              <span style="color: var(--text-muted); font-size: 11px;">Shift Volume: <strong style="color: var(--text-main);">${node.volume}</strong></span>
             </div>
-            <div style="background: rgba(15, 23, 42, 0.6); height: 10px; border-radius: 99px; width: 100%; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
-              <div style="width: ${graphicalWidthPercent}%; background: ${spectralHueGradient}; height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 12px rgba(59,130,246,0.2);"></div>
+            <div style="background: rgba(0,0,0,0.05); height: 10px; border-radius: 99px; width: 100%; overflow: hidden; border: 1px solid var(--border-color);">
+              <div style="width: ${graphicalWidthPercent}%; background: ${spectralHueGradient}; height: 100%; border-radius: 99px; transition: width 0.5s ease;"></div>
             </div>
           </div>
         `;
       });
 
       chartDeckUI.innerHTML = uiBufferHtml;
-      const healthOutputStatus = operationalSurgeDetected ? "SURGING ALERTS" : "STABLE NOMINAL";
-      updateKpiTextDisplays(aggregatedTotalShiftVolume, compiledList[0].intent, healthOutputStatus);
+      updateKpiTextDisplays(aggregatedTotalShiftVolume, compiledList[0].intent, "ACTIVE SHIFT");
     }
   }, (error) => {
-    console.error("🚨 Dashboard Live Stream Error:", error);
+    console.error("🚨 Live Stream Engine Error:", error);
   });
 }
 
@@ -1944,7 +1942,7 @@ async function executeSupervisorExtraction() {
       const startDateTime = new Date(new Date(startDateFilter).setHours(0,0,0,0));
       const endDateTime = new Date(new Date(endDateFilter).setHours(23,59,59,999));
 
-      // 📡 PATH A: Query Historical Logs
+// 📡 PATH A: Query Historical Logs
       const performanceRef = collection(firestoreDb, "cases_performance_metrics");
       const q1 = query(
         performanceRef, 
@@ -1954,16 +1952,30 @@ async function executeSupervisorExtraction() {
 
       // 📡 PATH B: Query Real-time Case Tracker Logs simultaneously
       const liveTrackerRef = collection(firestoreDb, "case_logs");
-      const q2 = query(
+      
+      // Calculate precise timestamp boundaries for native Date queries
+      const startDateTime = new Date(new Date(startDateFilter).setHours(0,0,0,0));
+      const endDateTime = new Date(new Date(endDateFilter).setHours(23,59,59,999));
+
+      // Query B1: Assumes date fields are native Firebase Timestamp/Date objects
+      const q2Timestamp = query(
         liveTrackerRef,
         where("timestamp", ">=", startDateTime),
         where("timestamp", "<=", endDateTime)
       );
 
-      // Execute both dataset extraction sweeps asynchronously
-      const [performanceSnapshot, liveSnapshot] = await Promise.all([
-        getDocs(q1).catch(err => { console.error("Metrics collection query failure:", err); return { empty: true }; }),
-        getDocs(q2).catch(err => { console.error("Live collection query failure:", err); return { empty: true }; })
+      // Query B2: Assumes date fields are plain text strings (e.g., "2026-07-01")
+      const q2StringDate = query(
+        liveTrackerRef,
+        where("submission_date", ">=", startDateFilter),
+        where("submission_date", "<=", endDateFilter)
+      );
+
+      // Execute all three extraction loops concurrently to maximize network performance
+      const [performanceSnapshot, liveTimeSnapshot, liveStrSnapshot] = await Promise.all([
+        getDocs(q1).catch(err => { console.error("Metrics snapshot failure:", err); return { empty: true }; }),
+        getDocs(q2Timestamp).catch(err => { console.error("Live timestamp snapshot failure:", err); return { empty: true }; }),
+        getDocs(q2StringDate).catch(err => { console.error("Live string date snapshot failure:", err); return { empty: true }; })
       ]);
 
       // 🗃️ PARSE PERFORMANCE DATASET
@@ -1979,7 +1991,7 @@ async function executeSupervisorExtraction() {
           trackedCaseIds.add(caseNum);
 
           csvContent += [
-            "Historical Log", cleanValue(rawDoc.agent_id), cleanValue(rawDoc.agent_name || "N/A"), cleanValue(agentLob),
+            "Historical Log", cleanValue(rawDoc.agent_id), cleanValue(rawDoc.agent_name || "No Log"), cleanValue(agentLob),
             cleanValue(caseNum), cleanValue(rawDoc.completed_at || rawDoc.updated_at || startDateFilter),
             cleanValue(snap.action       || snap.field_action       || "N/A"),
             cleanValue(snap.wocas        || snap.field_wocas        || "N/A"),
@@ -1996,21 +2008,31 @@ async function executeSupervisorExtraction() {
         });
       }
 
-      // 🗃️ PARSE LIVE FLOOR TRACKER DATASET (Merge & De-duplicate records)
-      if (!liveSnapshot.empty) {
-        liveSnapshot.forEach((docSnap) => {
+      // 🗃️ COMBINE & PARSE DUAL-SCHEMA LIVE TRACKER RESULTS
+      let combinedLiveDocs = [];
+      if (!liveTimeSnapshot.empty) liveTimeSnapshot.forEach(doc => combinedLiveDocs.push(doc));
+      if (!liveStrSnapshot.empty) liveStrSnapshot.forEach(doc => combinedLiveDocs.push(doc));
+
+      if (combinedLiveDocs.length > 0) {
+        combinedLiveDocs.forEach((docSnap) => {
           const d = docSnap.data();
           const snap = d.form_data || d || {};
           const caseNum = d.case_number || snap.case || snap.field_case || docSnap.id;
           const agentLob = d.lob || snap.lob || "UNKNOWN";
 
-          // Guard conditions for structural duplicates or LOB filtering mismatch
+          // Guard against duplicates across both timestamp/string snapshots and historical data
           if (trackedCaseIds.has(caseNum)) return; 
           if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+
+          trackedCaseIds.add(caseNum); // Prevent subsequent loops from repeating this item
 
           let formattedDate = startDateFilter;
           if (d.timestamp) {
             try { formattedDate = d.timestamp.toDate ? d.timestamp.toDate().toISOString() : new Date(d.timestamp).toISOString(); } catch(e){}
+          } else if (d.submission_date) {
+            formattedDate = d.submission_date;
+          } else if (snap.datetime) {
+            formattedDate = snap.datetime;
           }
 
           csvContent += [
