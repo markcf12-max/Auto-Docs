@@ -307,60 +307,84 @@ function updatePlaybookSpiel(concern, voc, cloudTemplateString) {
 }
 
 /* ==========================================================================
-   STRICT WORKSPACE MANAGEMENT & ISOLATION HOOKS
+   STRICT WORKSPACE MANAGEMENT & ISOLATION HOOKS (DOM ACCELERATED PURGE)
    ========================================================================== */
 function isolateWorkspaceUI(role) {
   const mainWorkspaceLayout = document.querySelector('.layout');
-  const viewPlaybooksDrawerBtn = $('drawerToggle');
+  const viewPlaybooksDrawerBtn = $('drawerToggle') || document.getElementById('drawerToggle');
   const mobileActionDock = document.querySelector('.floating-action-dock');
-  const supervisorAdminPanel = $('supervisorAdminPanel');       // Extraction Report Modal
-  const supervisorPanel = $('supervisorPanel');                 // CMS Portal Panel
-  const outputPanel = document.querySelector('.outputPanel');   // Agent Note Output/History Panel
-  const playbookPanel = $('playbookPanel');                     // Interactive Knowledge Map Section
+  const supervisorAdminPanel = $('supervisorAdminPanel') || document.getElementById('supervisorAdminPanel');
+  const supervisorPanel = $('supervisorPanel') || document.getElementById('supervisorPanel');
+  const outputPanel = document.querySelector('.outputPanel');
+  const playbookPanel = $('playbookPanel') || document.getElementById('playbookPanel');
   const supervisorAnalyticsDashboard = document.getElementById('supervisorDashboardCanvas');
-  const agentMainFormWrapper = document.getElementById('workbenchMainFormContainer'); // Primary Agent Form Selector
+
+  // 🎯 UNCOMPROMISING ELEMENT ARRAY TARGETING
+  const agentFormSelectors = [
+    document.getElementById('agentMainFormWrapper'),
+    document.getElementById('workbenchMainFormContainer'),
+    document.querySelector('.inputPanel'),
+    document.querySelector('section.inputPanel')
+  ];
 
   const normalizedRole = String(role).toUpperCase();
   console.log(`🎛️ Workspace Transition Fired -> Targeted Profile State: ${normalizedRole}`);
 
   if (normalizedRole === "SUPERVISOR") {
-    // 1. Keep the workspace layout grid fully visible for structural positioning
-    if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid"; 
-    
-    // 2. Clear paths for interactive playbooks to reveal on command
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; 
-    if (playbookPanel) playbookPanel.style.display = "block";
-    
-    // 3. Hide agent-specific data logging panels that supervisors don't need
-    if (mobileActionDock) mobileActionDock.style.display = "none";
-    if (outputPanel) outputPanel.style.display = "none"; 
-    if (agentMainFormWrapper) agentMainFormWrapper.style.display = "none";
-    
-    // 4. Keep the telemetry extraction overlay hidden until explicitly summoned
-    if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
+    // 1. Maintain layout grid positioning architecture
+    if (mainWorkspaceLayout) mainWorkspaceLayout.style.setProperty('display', 'grid', 'important');
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.setProperty('display', 'flex', 'important');
+    if (playbookPanel) playbookPanel.style.setProperty('display', 'block', 'important');
 
-    // 5. Reveal our integrated CMS Editor panel alongside the new live spectrum dashboard
-    if (supervisorPanel) supervisorPanel.style.display = "block";
-    if (supervisorAnalyticsDashboard) supervisorAnalyticsDashboard.style.display = "flex";
+    // 2. 🛡️ RECLAIM SPACE: Aggressively target and overwrite agent input elements
+    agentFormSelectors.forEach(element => {
+      if (element) {
+        element.style.setProperty('display', 'none', 'important');
+      }
+    });
 
-    // 6. Connect real-time active floor intent stream queries
+    // 3. Clear all mobile-specific floating entry elements out of sight
+    if (mobileActionDock) mobileActionDock.style.setProperty('display', 'none', 'important');
+    if (outputPanel) outputPanel.style.setProperty('display', 'none', 'important');
+    if (supervisorAdminPanel) supervisorAdminPanel.style.setProperty('display', 'none', 'important');
+
+    // 4. Reveal Supervisor Controls & Visual Analytics Dashboard Canvas
+    if (supervisorPanel) supervisorPanel.style.setProperty('display', 'block', 'important');
+    if (supervisorAnalyticsDashboard) {
+      supervisorAnalyticsDashboard.style.setProperty('display', 'flex', 'important');
+    }
+
+    // 5. Connect real-time active floor intent stream queries
     listenToGlobalIntentAnalytics();
 
   } else {
-    // Standard Agent routing logic layout configuration
-    if (mainWorkspaceLayout) mainWorkspaceLayout.style.display = "grid";
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.display = "flex"; 
-    if (playbookPanel) playbookPanel.style.display = "block";
-    if (mobileActionDock) mobileActionDock.style.display = "flex";
-    if (outputPanel) outputPanel.style.display = "block";
-    if (agentMainFormWrapper) agentMainFormWrapper.style.display = "block";
-    
-    // Ensure all admin/supervisor controls and dashboards are completely hidden from agents
-    if (supervisorAdminPanel) supervisorAdminPanel.style.display = "none";
-    if (supervisorPanel) supervisorPanel.style.display = "none";
-    if (supervisorAnalyticsDashboard) supervisorAnalyticsDashboard.style.display = "none";
+    // 🔓 STANDARD AGENT ROUTING LOGIC & RESET SEQUENCE
+    if (mainWorkspaceLayout) mainWorkspaceLayout.style.setProperty('display', 'grid');
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.setProperty('display', 'flex');
+    if (playbookPanel) playbookPanel.style.setProperty('display', 'block');
 
-    // Clean up dashboard sync queries to save device network/CPU resources when logged out
+    // Restore full functionality to agent tracking forms
+    agentFormSelectors.forEach(element => {
+      if (element) {
+        element.style.setProperty('display', 'block');
+      }
+    });
+
+    // Handle responsive layouts cleanly depending on current window dimensions during reload
+    if (window.innerWidth <= 1024) {
+      if (mobileActionDock) mobileActionDock.style.setProperty('display', 'grid', 'important');
+    } else {
+      if (mobileActionDock) mobileActionDock.style.setProperty('display', 'none');
+    }
+    
+    if (outputPanel) outputPanel.style.setProperty('display', 'block');
+
+    // Completely lock and isolate admin panels away from agent access layers
+    if (supervisorAdminPanel) supervisorAdminPanel.style.setProperty('display', 'none');
+    if (supervisorPanel) supervisorPanel.style.setProperty('display', 'none');
+    if (supervisorAnalyticsDashboard) supervisorAnalyticsDashboard.style.setProperty('display', 'none');
+
+    // Unsubscribe database pipeline to prevent unneeded background thread cycles
     if (globalDashboardUnsubscribe) {
       globalDashboardUnsubscribe();
       globalDashboardUnsubscribe = null;
