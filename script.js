@@ -46,9 +46,10 @@ let saveTimeout = null;
 let currentAuthMode = "LOGIN"; 
 let globalShiftHistory = []; 
 
-// Session Management State variables for Numeric Database Routing
+// Session Management State variables for Email/Database Routing
 let isSupervisorAuthenticated = false;
-let currentAgentId = null; 
+let currentAgentId = null; // Will now store the verified document ID / unique identifier
+let currentAgentEmail = null; 
 let currentAgentName = "Unknown Agent"; 
 let currentAgentLob = "UNKNOWN";        
 
@@ -315,7 +316,7 @@ function isolateWorkspaceUI(role) {
   const supervisorAdminPanel = $('supervisorAdminPanel'); // Extraction Report Modal
   const supervisorPanel = $('supervisorPanel');           // CMS Portal Panel
   const outputPanel = document.querySelector('.outputPanel'); // Agent Note Output/History Panel
-  const playbookPanel = $('playbookPanel');                 // The Interactive Knowledge Map Section
+  const playbookPanel = $('playbookPanel');                  // The Interactive Knowledge Map Section
 
   if (role === "SUPERVISOR") {
     // 1. Keep the workspace layout grid fully visible so the supervisor can view & choose options
@@ -351,7 +352,7 @@ function isolateWorkspaceUI(role) {
 }
 
 /* ==========================================================================
-   PURE NUMERIC CUSTOM SECURITY AUTHENTICATION FLOW
+   EMAIL-BASED OPERATIONAL ACCOUNT PROVISIONING VIEW TOGGLE
    ========================================================================== */
 function toggleAuthMode(e) {
   if (e) e.preventDefault();
@@ -359,7 +360,7 @@ function toggleAuthMode(e) {
   if (currentAuthMode === "LOGIN") {
     currentAuthMode = "REGISTER";
     $('authTitle').textContent = "Register Agent Profile";
-    $('authSubtitle').textContent = "Configure secure numeric credential tokens";
+    $('authSubtitle').textContent = "Configure secure email credentials and workforce details";
     $('authSubmitBtn').textContent = "Provision Account";
     $('authToggleAnchor').textContent = "Already have an assigned profile? Log In";
     
@@ -382,23 +383,24 @@ function toggleAuthMode(e) {
 }
 
 /* ==========================================================================
-   AUTHENTICATION ENTRYWAY & INTEGRATED SESSION STATE ROUTINES (FIXED)
+   AUTHENTICATION ENTRYWAY & INTEGRATED SESSION STATE ROUTINES (EMAIL CORRECTIONS)
    ========================================================================== */
 async function handleAuthSubmission(e) {
   e.preventDefault();
-  const agentId = $('authEmail').value.trim();
+  const agentEmail = $('authEmail').value.trim(); // Reads field value as an Email address string
   const password = $('authPassword').value.trim();
   const fullName = $('authName')?.value.trim().toUpperCase() || "";
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
   // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
-  if (agentId.toLowerCase() === "admin" || agentId.toLowerCase() === "supervisor") {
+  if (agentEmail.toLowerCase() === "admin" || agentEmail.toLowerCase() === "supervisor" || agentEmail.toLowerCase() === "admin@domain.com") {
     if (password === "SuperOps2026!") {
       
       // 🔒 1. ELEVATE STATE CLEARANCE TOKENS FIRST AHEAD OF PANEL GENERATION
       isSupervisorAuthenticated = true; 
       currentAgentId = "SUPERVISOR";
+      currentAgentEmail = agentEmail;
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
       localStorage.setItem("active_agent_session_id", "SUPERVISOR");
@@ -443,38 +445,46 @@ async function handleAuthSubmission(e) {
     }
   }
 
-  if (!/^\d+$/.test(agentId)) {
-    showSystemAlert("Format Error", "Agent ID must contain numeric values only!");
-    $('authEmail').value = "";
+  // 📡 NO LONGER CHECKING FOR PURE NUMERIC ID - VALIDATING RAW EMAIL SPECIFICATION
+  if (!agentEmail.includes("@")) {
+    showSystemAlert("Format Error", "Please provide a valid agent email address!");
     $('authEmail').focus();
     return;
   }
 
   try {
-    const agentRef = doc(firestoreDb, "agent_profiles", agentId);
-    const agentSnap = await getDoc(agentRef);
+    // Look up via profile collection by matching the 'email' property
+    const agentProfilesRef = collection(firestoreDb, "agent_profiles");
+    const profileQuery = query(agentProfilesRef, where("email", "==", agentEmail));
+    const profileQuerySnap = await getDocs(profileQuery);
 
     if (currentAuthMode === "LOGIN") {
-      if (agentSnap.exists()) {
-        if (agentSnap.data().password === password) {
+      if (!profileQuerySnap.empty) {
+        const profileDoc = profileQuerySnap.docs[0];
+        const profileData = profileDoc.data();
+
+        if (profileData.password === password) {
           isSupervisorAuthenticated = false; // Explicit lock down reinforcement
-          currentAgentId = agentId;
-          currentAgentName = agentSnap.data().full_name || "Agent " + agentId;
-          currentAgentLob = agentSnap.data().lob || "UNKNOWN";
-          localStorage.setItem("active_agent_session_id", agentId);
+          currentAgentId = profileDoc.id;    // Track profile doc reference key
+          currentAgentEmail = agentEmail;
+          currentAgentName = profileData.full_name || "Agent";
+          currentAgentLob = profileData.lob || "UNKNOWN";
+          localStorage.setItem("active_agent_session_id", currentAgentId);
           document.body.classList.remove('role-supervisor');
           
           // ERASE CREDENTIALS IMMEDIATELY ON AGENT LOGIN SUCCESS TO SECURE GATEWAY SCREEN
           $('authEmail').value = "";
           $('authPassword').value = "";
 
-          await updateDoc(agentRef, { last_active_at: Date.now() }).catch(async () => {
-            await setDoc(agentRef, { last_active_at: Date.now() }, { merge: true });
+          const agentDocRef = doc(firestoreDb, "agent_profiles", currentAgentId);
+          await updateDoc(agentDocRef, { last_active_at: Date.now() }).catch(async () => {
+            await setDoc(agentDocRef, { last_active_at: Date.now() }, { merge: true });
           });
 
-          const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${agentId}_${todayStr}`);
+          const metricDayRef = doc(firestoreDb, "daily_compliance_telemetry", `${currentAgentId}_${todayStr}`);
           await setDoc(metricDayRef, {
-            agent_id: agentId,
+            agent_id: currentAgentId,
+            agent_email: currentAgentEmail,
             agent_name: currentAgentName,
             lob: currentAgentLob,
             date: todayStr,
@@ -491,32 +501,33 @@ async function handleAuthSubmission(e) {
           $('authPassword').focus();
         }
       } else {
-        showSystemAlert("Authorization Failure", "This Agent ID does not have an active profile registered.");
-        $('authEmail').value = "";
+        showSystemAlert("Authorization Failure", "This Email address does not have an active profile registered.");
         $('authEmail').focus();
       }
     } else {
-      if (agentSnap.exists()) {
-        showSystemAlert("Profile Error", "This numeric Agent ID is already registered to an active workspace.");
-        $('authEmail').value = "";
+      // REGISTER CODE PATH
+      if (!profileQuerySnap.empty) {
+        showSystemAlert("Profile Error", "This Email address is already registered to an active workspace.");
         $('authEmail').focus();
         return;
       }
       
-      const rosterRef = doc(firestoreDb, "registered_agents", agentId);
-      const rosterSnap = await getDoc(rosterRef);
+      // Query official employee roster to ensure domain credentials are authorized
+      const rosterRef = collection(firestoreDb, "registered_agents");
+      const rosterQuery = query(rosterRef, where("email", "==", agentEmail));
+      const rosterQuerySnap = await getDocs(rosterQuery);
 
-      if (!rosterSnap.exists()) {
-        showSystemAlert("Security Warning", `Agent ID / WinID [${agentId}] is not authorized in the employee database roster.`);
-        $('authEmail').value = "";
+      if (rosterQuerySnap.empty) {
+        showSystemAlert("Security Warning", `Email [${agentEmail}] is not authorized in the employee database roster.`);
         $('authEmail').focus();
         return;
       }
 
-      const registeredName = rosterSnap.data().name.trim().toUpperCase();
+      const rosterDocData = rosterQuerySnap.docs[0].data();
+      const registeredName = rosterDocData.name.trim().toUpperCase();
+      
       if (registeredName !== fullName) {
-        showSystemAlert("Validation Error", `The name provided does not match the official records registered for ID ${agentId}.`);
-        $('authName').value = "";
+        showSystemAlert("Validation Error", `The full name provided does not match official workplace tracking records.`);
         $('authName').focus();
         return;
       }
@@ -526,8 +537,12 @@ async function handleAuthSubmission(e) {
         return;
       }
       
-      await setDoc(agentRef, {
-        agent_id: agentId,
+      // Document ID falls back to roster winid mapping or random hash safely auto-generated
+      const generatedProfileId = rosterQuerySnap.docs[0].id || "agent_" + Date.now();
+
+      await setDoc(doc(firestoreDb, "agent_profiles", generatedProfileId), {
+        agent_id: generatedProfileId,
+        email: agentEmail,
         full_name: fullName,
         password: password,
         lob: selectedLob,
@@ -539,7 +554,7 @@ async function handleAuthSubmission(e) {
       currentAuthMode = "LOGIN"; 
       toggleAuthMode();
       
-      $('authEmail').value = agentId;
+      $('authEmail').value = agentEmail;
       $('authPassword').value = "";
       $('authPassword').focus(); 
     }
