@@ -399,7 +399,7 @@ function isolateWorkspaceUI(role) {
 let globalDashboardUnsubscribe = null;
 let currentActiveDashboardData = []; // Cached snapshot object for standalone spreadsheet processing
 
-==========================================================================
+/*==========================================================================
    📊 SUPERVISOR INTENT REAL-TIME DISTRIBUTION TRACKER (OMNI-PARSER)
    ========================================================================== */
 function listenToGlobalIntentAnalytics() {
