@@ -458,21 +458,33 @@ async function handleAuthSubmission(e) {
     const profileQuery = query(agentProfilesRef, where("email", "==", agentEmail));
     const profileQuerySnap = await getDocs(profileQuery);
 
-    if (currentAuthMode === "LOGIN") {
+if (currentAuthMode === "LOGIN") {
+      // 📡 DUAL-LOGIN ENGINE: Check if the input matches 'email' OR 'winid' (or agent_id)
+      const agentProfilesRef = collection(firestoreDb, "agent_profiles");
+      
+      // Query 1: Try matching by Email
+      const emailQuery = query(agentProfilesRef, where("email", "==", agentEmail));
+      let profileQuerySnap = await getDocs(emailQuery);
+
+      // Query 2: If no email match, try matching by WinID/Agent ID instead
+      if (profileQuerySnap.empty) {
+        const idQuery = query(agentProfilesRef, where("agent_id", "==", agentEmail));
+        profileQuerySnap = await getDocs(idQuery);
+      }
+
       if (!profileQuerySnap.empty) {
         const profileDoc = profileQuerySnap.docs[0];
         const profileData = profileDoc.data();
 
         if (profileData.password === password) {
-          isSupervisorAuthenticated = false; // Explicit lock down reinforcement
-          currentAgentId = profileDoc.id;    // Track profile doc reference key
-          currentAgentEmail = agentEmail;
+          isSupervisorAuthenticated = false; 
+          currentAgentId = profileDoc.id;    
+          currentAgentEmail = profileData.email || "";
           currentAgentName = profileData.full_name || "Agent";
           currentAgentLob = profileData.lob || "UNKNOWN";
           localStorage.setItem("active_agent_session_id", currentAgentId);
           document.body.classList.remove('role-supervisor');
           
-          // ERASE CREDENTIALS IMMEDIATELY ON AGENT LOGIN SUCCESS TO SECURE GATEWAY SCREEN
           $('authEmail').value = "";
           $('authPassword').value = "";
 
@@ -501,10 +513,10 @@ async function handleAuthSubmission(e) {
           $('authPassword').focus();
         }
       } else {
-        showSystemAlert("Authorization Failure", "This Email address does not have an active profile registered.");
+        showSystemAlert("Authorization Failure", "No active profile found matching this Email or Agent ID.");
         $('authEmail').focus();
       }
-    } else {
+    }else {
       // REGISTER CODE PATH
       if (!profileQuerySnap.empty) {
         showSystemAlert("Profile Error", "This Email address is already registered to an active workspace.");
