@@ -393,54 +393,71 @@ async function handleAuthSubmission(e) {
   const selectedLob = $('authLob')?.value || "";
   const todayStr = getSystemDateString();
 
-  // STABILIZED SUPERVISOR ACCESSIBILITY CHECKER WITH DIRECT PORTAL LOCKDOWN
-  if (agentEmail.toLowerCase() === "admin" || agentEmail.toLowerCase() === "supervisor" || agentEmail.toLowerCase() === "admin@domain.com") {
-    if (password === "SuperOps2026!") {
-      
-      // 🔒 1. ELEVATE STATE CLEARANCE TOKENS FIRST AHEAD OF PANEL GENERATION
-      isSupervisorAuthenticated = true; 
-      currentAgentId = "SUPERVISOR";
-      currentAgentEmail = agentEmail;
-      currentAgentName = "Operations Supervisor";
-      currentAgentLob = "MANAGEMENT";
-      localStorage.setItem("active_agent_session_id", "SUPERVISOR");
-      document.body.classList.add('role-supervisor'); // For CSS rule bindings
+// ==========================================================================
+  // SECURE SUPERVISOR PORTAL ACCESSIBILITY CHECKER (DATABASE DRIVEN)
+  // ==========================================================================
+  const lowerInput = agentEmail.toLowerCase();
+  
+  if (lowerInput === "admin" || lowerInput === "supervisor" || lowerInput === "admin@domain.com") {
+    try {
+      // 📡 Fetch the supervisor credentials securely from the cloud database
+      const supervisorRef = doc(firestoreDb, "supervisor_profiles", "master_account");
+      const supervisorSnap = await getDoc(supervisorRef);
 
-      // ERASE CREDENTIALS IMMEDIATELY AFTER VALIDS MET TO SECURE THE GATEWAY SCREEN
-      $('authEmail').value = "";
-      $('authPassword').value = "";
-      if ($('authName')) $('authName').value = "";
-      
-      $('authModal').style.display = "none";
-      if ($('logoutBtn')) $('logoutBtn').style.display = "block";
-      
-      // Directly Route layout to the Extraction Dashboard, avoiding documentation suite
-      isolateWorkspaceUI("SUPERVISOR");
-      
-      // 🚀 2. NOW THIS WILL PASS CLEANLY: The token is true!
-      if (typeof bypassLockForAuthenticatedSupervisor === "function") {
-        bypassLockForAuthenticatedSupervisor();
-      }
-      
-      // 🎯 FORCE RESET TELEMETRY PANEL VIEW STATES (Fixes Telemetry Button)
-      const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
-      if (telemetryContainer) {
-        telemetryContainer.style.display = "none";
-        telemetryContainer.style.visibility = "hidden";
-        telemetryContainer.style.opacity = "0";
-      }
+      if (supervisorSnap.exists()) {
+        const adminData = supervisorSnap.data();
 
-      // 🎯 MODAL INTERCEPT: Dynamically clear out login banners/reminders for admin accounts
-      if (typeof window.evaluateShiftCheckInModal === "function") {
-        window.evaluateShiftCheckInModal();
+        // Validate the entered username and password against the database values
+        if (password === adminData.password && lowerInput === adminData.username.toLowerCase()) {
+          
+          // 🔒 ELEVATE STATE CLEARANCE TOKENS
+          isSupervisorAuthenticated = true; 
+          currentAgentId = "SUPERVISOR";
+          currentAgentEmail = agentEmail;
+          currentAgentName = "Operations Supervisor";
+          currentAgentLob = "MANAGEMENT";
+          localStorage.setItem("active_agent_session_id", "SUPERVISOR");
+          document.body.classList.add('role-supervisor');
+
+          // ERASE CREDENTIALS IMMEDIATELY TO SECURE THE GATEWAY SCREEN
+          $('authEmail').value = "";
+          $('authPassword').value = "";
+          if ($('authName')) $('authName').value = "";
+          
+          $('authModal').style.display = "none";
+          if ($('logoutBtn')) $('logoutBtn').style.display = "block";
+          
+          isolateWorkspaceUI("SUPERVISOR");
+          
+          if (typeof bypassLockForAuthenticatedSupervisor === "function") {
+            bypassLockForAuthenticatedSupervisor();
+          }
+          
+          const telemetryContainer = document.getElementById("supervisorAdminPanel") || $('supervisorAdminPanel');
+          if (telemetryContainer) {
+            telemetryContainer.style.display = "none";
+            telemetryContainer.style.visibility = "hidden";
+            telemetryContainer.style.opacity = "0";
+          }
+
+          if (typeof window.evaluateShiftCheckInModal === "function") {
+            window.evaluateShiftCheckInModal();
+          }
+          
+          showToast("Supervisor Portal Engaged.");
+          return;
+        }
       }
       
-      showToast("Supervisor Portal Engaged.");
-      return;
-    } else {
+      // Generic error so malicious users don't know if the username or password was wrong
       showSystemAlert("Access Denied", "Invalid administrative supervisor master token.");
       $('authPassword').value = "";
       $('authPassword').focus();
+      return;
+
+    } catch (dbError) {
+      console.error("Supervisor secure validation error:", dbError);
+      showSystemAlert("Security Exception", "Database verification pipeline rejected interaction.");
       return;
     }
   }
