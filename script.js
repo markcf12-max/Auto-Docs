@@ -409,28 +409,34 @@ function listenToGlobalIntentAnalytics() {
   }
 
   const chartDeckUI = document.getElementById('dashSpectrumGraphContainer');
-  console.log(`📡 Telemetry Bridge Armed: Monitoring Live Submissions...`);
+  console.log(`📡 Telemetry Bridge Armed: Scanning Live Submissions...`);
 
-  // Target your primary case log repository (Handles historical dates natively)
-  // NOTE: If your root collection path is named something else like "cases", change "case_logs" here to match.
+  // 🕒 RESILIENT CALENDAR WINDOWING: Look back a full 24 hours to prevent timezone drops
+  const trackingWindowStart = new Date();
+  trackingWindowStart.setHours(trackingWindowStart.getHours() - 24);
+
+  // Target your primary case log repository
   const caseLogsQuery = query(
     collection(firestoreDb, "case_logs"), 
-    where("timestamp", ">=", new Date(new Date().setHours(0,0,0,0))) 
+    where("timestamp", ">=", trackingWindowStart) 
   );
 
   globalDashboardUnsubscribe = onSnapshot(caseLogsQuery, (snapshot) => {
     const rawIntentCounts = {};
     let aggregatedTotalShiftVolume = 0;
 
+    console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} total documents in query pool.`);
+
     snapshot.forEach((doc) => {
       const data = doc.data();
       
-      // Map straight against your HTML field inputs: fallback sequence matches concernType -> voc -> fallback
+      // 🎯 EXACT VARIABLE FIELD TARGETING FROM YOUR CHOSEN HTML ELEMENTS:
+      // Extracts "concernType" (Technical, Aftersales, etc.) or individual "voc" entries
       const agentActiveIntent = data.concernType || data.voc || data.concern_type || data.intent || "UNCLASSIFIED CASES";
       const countIncrement = data.saved_cases_count || 1; 
 
       const cleanKey = String(agentActiveIntent).toUpperCase().trim();
-      if (!cleanKey || cleanKey === "") return;
+      if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN") return;
 
       if (!rawIntentCounts[cleanKey]) {
         rawIntentCounts[cleanKey] = 0;
@@ -439,7 +445,7 @@ function listenToGlobalIntentAnalytics() {
       aggregatedTotalShiftVolume += countIncrement;
     });
 
-    // Baseline definitions adjusted to match your precise HTML selection inputs
+    // Baseline profiles matching your specific HTML selection dropdown inputs
     const baselineAverages = {
       "TECHNICAL": 15,
       "AFTERSALES": 10,
@@ -462,7 +468,7 @@ function listenToGlobalIntentAnalytics() {
       };
     });
 
-    // Rank from highest peak drivers down
+    // Rank from highest peak volume downward
     compiledList.sort((a, b) => b.volume - a.volume);
     currentActiveDashboardData = compiledList;
 
@@ -470,7 +476,7 @@ function listenToGlobalIntentAnalytics() {
       if (compiledList.length === 0) {
         chartDeckUI.innerHTML = `
           <div style="padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-            No case matching logs identified for today's shifts yet.
+            No matching data identified in database for this tracking window.
           </div>`;
         updateKpiTextDisplays(0, "N/A", "NOMINAL");
         return;
