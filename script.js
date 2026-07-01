@@ -440,7 +440,7 @@ snapshot.forEach((doc) => {
 
       // 🚨 FORCE DISPLAY SAFETY VALVE:
       // Comment out the next line if you want to bypass the date filter and see all 10 historical test logs!
-       if (!isRecordFromToday) return; 
+       //if (!isRecordFromToday) return; 
 
       // 2. 🎯 EXTRACT REAL-TIME INTENT CATEGORY FROM NESTED MAP
       // We added 'd.case_number' fallback check to make sure it pulls an active classification
