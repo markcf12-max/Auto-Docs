@@ -399,7 +399,7 @@ function isolateWorkspaceUI(role) {
 let globalDashboardUnsubscribe = null;
 let currentActiveDashboardData = []; // Cached snapshot object for standalone spreadsheet processing
 
-/*==========================================================================
+/* ==========================================================================
    📊 SUPERVISOR INTENT REAL-TIME DISTRIBUTION TRACKER (OMNI-PARSER)
    ========================================================================== */
 function listenToGlobalIntentAnalytics() {
@@ -421,41 +421,46 @@ function listenToGlobalIntentAnalytics() {
     const rawIntentCounts = {};
     let aggregatedTotalShiftVolume = 0;
 
-    console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} raw documents in case_logs.`);
+    console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} agent log profiles.`);
 
-snapshot.forEach((doc) => {
+    snapshot.forEach((doc) => {
       const d = doc.data();
-      const snap = d.form_data || {};
+      
+      // 🔍 Find the array inside the document. 
+      const targetArrayKey = Object.keys(d).find(key => Array.isArray(d[key]));
+      
+      if (!targetArrayKey) {
+        console.warn(`⚠️ No case array matrix detected inside document ID: ${doc.id}`);
+        return; 
+      }
 
-      // 1. 🔍 TIMESTAMP DATE MATCHING PIPELINE
-      let isRecordFromToday = false;
-      const numericTimestamp = d.updated_at || d.timestamp || snap.updated_at;
+      const caseArray = d[targetArrayKey]; // This grabs your [0, 1, 2, 3...] list
 
-      if (numericTimestamp) {
-        const recordMillis = numericTimestamp.toMillis ? numericTimestamp.toMillis() : Number(numericTimestamp);
-        if (recordMillis >= fallbackWindowStart) {
-          isRecordFromToday = true;
+      caseArray.forEach((caseItem) => {
+        const rawTextString = caseItem.text || "";
+        if (!rawTextString) return;
+
+        // 🎯 REGEX ENGINE: Extract the value sitting immediately between "CONCERN TYPE:" and "VOC:"
+        const concernTypeMatch = rawTextString.match(/CONCERN TYPE:\s*(.*?)\s*VOC:/i);
+        
+        let extractedIntent = "UNCLASSIFIED CASES";
+        if (concernTypeMatch && concernTypeMatch[1]) {
+          extractedIntent = concernTypeMatch[1].trim();
         }
-      }
 
-      // 🚨 FORCE DISPLAY SAFETY VALVE:
-      // Comment out the next line if you want to bypass the date filter and see all 10 historical test logs!
-       //if (!isRecordFromToday) return; 
+        const cleanKey = extractedIntent.toUpperCase().trim();
+        if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN" || cleanKey === "UNDEFINED") return;
 
-      // 2. 🎯 EXTRACT REAL-TIME INTENT CATEGORY FROM NESTED MAP
-      // We added 'd.case_number' fallback check to make sure it pulls an active classification
-      const agentActiveIntent = snap.concernType || snap.voc || d.concernType || d.voc || d.intent || "UNCLASSIFIED CASES";
-      const countIncrement = d.saved_cases_count || 1; 
-
-      const cleanKey = String(agentActiveIntent).toUpperCase().trim();
-      if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN" || cleanKey === "UNDEFINED") return;
-
-      if (!rawIntentCounts[cleanKey]) {
-        rawIntentCounts[cleanKey] = 0;
-      }
-      rawIntentCounts[cleanKey] += countIncrement;
-      aggregatedTotalShiftVolume += countIncrement;
+        // Increment counts per individual nested case item
+        if (!rawIntentCounts[cleanKey]) {
+          rawIntentCounts[cleanKey] = 0;
+        }
+        rawIntentCounts[cleanKey] += 1;
+        aggregatedTotalShiftVolume += 1;
+      });
     });
+
+    console.log(`📊 Total Nested Cases Processed across all arrays: ${aggregatedTotalShiftVolume}`);
 
     // Baseline targets matching your HTML selection values
     const baselineAverages = {
