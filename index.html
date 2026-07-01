@@ -338,29 +338,32 @@
 
       <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
         
-        <!-- NEW sub-segment node for direct dropdown category configuration tag rules -->
-        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(96, 165, 250, 0.25); border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div style="grid-column: span 2;">
-            <h4 style="margin: 0 0 4px 0; color: #60a5fa; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-              <i class="fas fa-tags"></i> Follow-Up Dropdown Router Option Configuration Manager
-            </h4>
-            <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Add or eliminate routing category keys globally. Changes propagate in real time directly to all active loggers' inputs.</p>
-          </div>
-          <div>
-            <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Active Router Array Cache</label>
-            <div id="supeActiveTagsListContainer" style="background: #0f172a; border: 1px solid #334155; height: 110px; overflow-y: auto; padding: 8px; border-radius: 4px; display: flex; flex-direction: column; gap: 4px;">
-              <!-- Current dynamic cloud items will manifest list rules here -->
-            </div>
-          </div>
-          <div>
-            <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Inject Novel Option Variant Tag</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-              <input type="text" id="supeNewTagInput" placeholder="Ex: Billing Team Hold" style="flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-size: 12px;">
-              <button type="button" id="supeAddTagBtn" style="background: #10b981; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;"><i class="fas fa-plus"></i> Add</button>
-            </div>
-            <p style="margin: 0; color: #64748b; font-size: 11px; font-style: italic;">Note: Keep labels brief and concise to avoid UI clipping on low-resolution workstation monitors.</p>
-          </div>
-        </div>
+<div style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-top: 20px;">
+  <h3 style="color: #f8fafc; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+    📘 Playbook Provisioning Panel: Global VOC & Spiels Engine
+  </h3>
+  
+  <form id="supervisorPlaybookForm" style="display: flex; flex-direction: column; gap: 12px;">
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">VOC Name (This becomes the Document ID)</label>
+      <input type="text" id="newVocId" placeholder="e.g., Voice Quality" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
+    </div>
+
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Operational Matrix Context / Policies (htmlContent)</label>
+      <textarea id="newHtmlContent" rows="4" placeholder="💡 Use text or clean HTML elements here:<br><strong>Step 1:</strong> Check network settings..." required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; font-family: sans-serif; resize: vertical; box-sizing: border-box;"></textarea>
+    </div>
+
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Sample Email Guide / Script Template (rawSpielText)</label>
+      <textarea id="newRawSpielText" rows="4" placeholder="Dear Valued Customer,&#10;&#10;Regarding your issue about..." required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; font-family: monospace; resize: vertical; box-sizing: border-box;"></textarea>
+    </div>
+
+    <button type="submit" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s;">
+      💾 Inject Playbook Into Collection Database
+    </button>
+  </form>
+</div>
 
         <!-- Operational Urgent Live Message Broadcast Card Module Segment -->
         <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
