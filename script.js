@@ -409,11 +409,7 @@ function listenToGlobalIntentAnalytics() {
   }
 
   const chartDeckUI = document.getElementById('dashSpectrumGraphContainer');
-  console.log(`📡 Telemetry Bridge Armed: Listening to Case Logs...`);
-
-  // 🕒 Generate current timezone boundary parameters
-  const todayObj = new Date();
-  const fallbackWindowStart = new Date(todayObj.setHours(0,0,0,0)).getTime(); // Converted to Milliseconds matching updated_at!
+  console.log(`📡 Telemetry Bridge Armed: Listening to Case Logs for VOC Specifics...`);
 
   const liveTrackerRef = collection(firestoreDb, "case_logs");
 
@@ -426,32 +422,27 @@ function listenToGlobalIntentAnalytics() {
     snapshot.forEach((doc) => {
       const d = doc.data();
       
-      // 🔍 Find the array inside the document. 
+      // Locate case array inside document
       const targetArrayKey = Object.keys(d).find(key => Array.isArray(d[key]));
-      
-      if (!targetArrayKey) {
-        console.warn(`⚠️ No case array matrix detected inside document ID: ${doc.id}`);
-        return; 
-      }
+      if (!targetArrayKey) return; 
 
-      const caseArray = d[targetArrayKey]; // This grabs your [0, 1, 2, 3...] list
+      const caseArray = d[targetArrayKey];
 
       caseArray.forEach((caseItem) => {
         const rawTextString = caseItem.text || "";
         if (!rawTextString) return;
 
-        // 🎯 REGEX ENGINE: Extract the value sitting immediately between "CONCERN TYPE:" and "VOC:"
-        const concernTypeMatch = rawTextString.match(/CONCERN TYPE:\s*(.*?)\s*VOC:/i);
+        // 🎯 SPECIFIC VOC REGEX ENGINE: Extracts the value sitting directly between "VOC:" and "SUBJ:"
+        const vocTypeMatch = rawTextString.match(/VOC:\s*(.*?)\s*(?:SUBJ:|DATE\/TIME:)/i);
         
-        let extractedIntent = "UNCLASSIFIED CASES";
-        if (concernTypeMatch && concernTypeMatch[1]) {
-          extractedIntent = concernTypeMatch[1].trim();
+        let extractedIntent = "UNCLASSIFIED VOC";
+        if (vocTypeMatch && vocTypeMatch[1]) {
+          extractedIntent = vocTypeMatch[1].trim();
         }
 
         const cleanKey = extractedIntent.toUpperCase().trim();
-        if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN" || cleanKey === "UNDEFINED") return;
+        if (!cleanKey || cleanKey === "" || cleanKey === "SELECT VOC" || cleanKey === "UNDEFINED") return;
 
-        // Increment counts per individual nested case item
         if (!rawIntentCounts[cleanKey]) {
           rawIntentCounts[cleanKey] = 0;
         }
@@ -460,19 +451,17 @@ function listenToGlobalIntentAnalytics() {
       });
     });
 
-    console.log(`📊 Total Nested Cases Processed across all arrays: ${aggregatedTotalShiftVolume}`);
-
-    // Baseline targets matching your HTML selection values
+    // Baseline targets adjusted for specific, granular items
     const baselineAverages = {
-      "TECHNICAL": 15,
-      "AFTERSALES": 10,
-      "INQUIRY": 30,
-      "COMPLAINT": 5
+      "SIM REPLACEMENT": 10,
+      "ADA ENROLLMENT": 8,
+      "DATA CONNECTIVITY:INTERMITTENT CONNECTION": 15,
+      "DISPUTE: MSF CHARGES": 5
     };
 
     const compiledList = Object.keys(rawIntentCounts).map(intentKey => {
       const activeVolume = rawIntentCounts[intentKey];
-      const baselineVal = baselineAverages[intentKey] || 10;
+      const baselineVal = baselineAverages[intentKey] || 5; // Default lower baseline threshold for specific metrics
       const deviationDelta = baselineVal > 0 ? ((activeVolume - baselineVal) / baselineVal) * 100 : 0;
 
       return {
@@ -490,7 +479,7 @@ function listenToGlobalIntentAnalytics() {
       if (compiledList.length === 0) {
         chartDeckUI.innerHTML = `
           <div style="padding: 40px; text-align: center; color: #94a3b8; font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-            No records saved during today's shift tracking period yet.
+            No specific VOC case flags parsed during this shift yet.
           </div>`;
         updateKpiTextDisplays(0, "N/A", "NOMINAL");
         return;
@@ -501,7 +490,11 @@ function listenToGlobalIntentAnalytics() {
 
       compiledList.forEach(node => {
         const graphicalWidthPercent = absoluteHighestPeakVolume > 0 ? (node.volume / absoluteHighestPeakVolume) * 100 : 0;
-        let spectralHueGradient = "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
+        
+        // Dynamic color scheme: shifts to a red gradient layout warning if a specific operational VOC driver spikes heavily
+        let spectralHueGradient = node.volume >= 15 
+          ? "linear-gradient(90deg, #ef4444 0%, #f87171 100%)" 
+          : "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
 
         uiBufferHtml += `
           <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
@@ -2009,43 +2002,64 @@ async function executeSupervisorExtraction() {
       if (!liveTimeSnapshot.empty) liveTimeSnapshot.forEach(doc => combinedLiveDocs.push(doc));
       if (!liveStrSnapshot.empty) liveStrSnapshot.forEach(doc => combinedLiveDocs.push(doc));
 
+// 🗃️ PARSE LIVE FLOOR TRACKER DATASET (Merge & Array De-duplicate records)
       if (combinedLiveDocs.length > 0) {
         combinedLiveDocs.forEach((docSnap) => {
           const d = docSnap.data();
-          const snap = d.form_data || d || {};
-          const caseNum = d.case_number || snap.case || snap.field_case || docSnap.id;
-          const agentLob = d.lob || snap.lob || "UNKNOWN";
+          
+          // Locate case array matrix inside document
+          const targetArrayKey = Object.keys(d).find(key => Array.isArray(d[key]));
+          if (!targetArrayKey) return;
 
-          // Guard against duplicates across both timestamp/string snapshots and historical data
-          if (trackedCaseIds.has(caseNum)) return; 
+          const caseArray = d[targetArrayKey];
+          const agentLob = d.lob || "UNKNOWN";
+
           if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
 
-          trackedCaseIds.add(caseNum); // Prevent subsequent loops from repeating this item
+          caseArray.forEach((caseItem) => {
+            const caseNum = caseItem.id || docSnap.id;
+            
+            // Guard conditions for duplicates
+            if (trackedCaseIds.has(caseNum)) return; 
+            trackedCaseIds.add(caseNum);
 
-          let formattedDate = startDateFilter;
-          if (d.timestamp) {
-            try { formattedDate = d.timestamp.toDate ? d.timestamp.toDate().toISOString() : new Date(d.timestamp).toISOString(); } catch(e){}
-          } else if (d.submission_date) {
-            formattedDate = d.submission_date;
-          } else if (snap.datetime) {
-            formattedDate = snap.datetime;
-          }
+            const rawTextString = caseItem.text || "";
+            
+            // Run Regex lookbehinds to map out text fields cleanly into separate columns
+            const concernMatch = rawTextString.match(/CONCERN TYPE:\s*(.*?)\s*VOC:/i);
+            const vocMatch     = rawTextString.match(/VOC:\s*(.*?)\s*(?:SUBJ:|DATE\/TIME:)/i);
+            const subjMatch    = rawTextString.match(/SUBJ:\s*(.*?)\s*NAME:/i);
+            const nameMatch    = rawTextString.match(/NAME:\s*(.*?)\s*MIN:/i);
+            const minMatch     = rawTextString.match(/MIN:\s*(.*?)\s*COMPANY:/i);
 
-          csvContent += [
-            "Live Tracker Draft", cleanValue(d.agent_id), cleanValue(d.agent_name || "Active Agent"), cleanValue(agentLob),
-            cleanValue(caseNum), cleanValue(formattedDate),
-            cleanValue(snap.action       || snap.field_action       || "N/A"),
-            cleanValue(snap.wocas        || snap.field_wocas        || "N/A"),
-            cleanValue(snap.thread       || snap.field_thread       || "N/A"),
-            cleanValue(snap.name         || snap.field_name         || "N/A"),
-            cleanValue(snap.concernType  || snap.field_concernType  || "N/A"),
-            cleanValue(snap.min          || snap.field_min          || "N/A"),
-            cleanValue(snap.company      || snap.field_company      || "N/A"),
-            cleanValue(snap.email        || snap.field_email        || "N/A"),
-            cleanValue(snap.subj         || snap.field_subj         || "N/A"),
-            cleanValue(snap.voc          || snap.field_voc          || "N/A")
-          ].join(",") + "\n";
-          recordsCount++;
+            const extractedConcern = concernMatch ? concernMatch[1].trim() : "N/A";
+            const extractedVoc     = vocMatch ? vocMatch[1].trim() : "N/A";
+            const extractedSubj    = subjMatch ? subjMatch[1].trim() : "N/A";
+            const extractedName    = nameMatch ? nameMatch[1].trim() : "N/A";
+            const extractedMin     = minMatch ? minMatch[1].trim() : "N/A";
+
+            let formattedDate = startDateFilter;
+            if (d.updated_at) {
+              try { formattedDate = new Date(Number(d.updated_at)).toISOString().split('T')[0]; } catch(e){}
+            }
+
+            // Write row directly out to the data spreadsheet format content string
+            csvContent += [
+              "Live Tracker Draft", cleanValue(d.agent_id), cleanValue(d.agent_name || "Active Agent"), cleanValue(agentLob),
+              cleanValue(caseNum), cleanValue(formattedDate),
+              cleanValue(extractedConcern), // Action/Concern Column
+              cleanValue(extractedVoc),     // Specific Tracker VOC Category
+              cleanValue("N/A"),            // Thread
+              cleanValue(extractedName),    // Customer Name
+              cleanValue(extractedVoc),     // Concern Type Match
+              cleanValue(extractedMin),     // Mobile/MIN
+              cleanValue("N/A"),            // Company
+              cleanValue("N/A"),            // Email
+              cleanValue(extractedSubj),    // Subject Line
+              cleanValue(extractedVoc)      // VOC
+            ].join(",") + "\n";
+            recordsCount++;
+          });
         });
       }
 
