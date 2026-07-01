@@ -399,6 +399,38 @@ function isolateWorkspaceUI(role) {
 let globalDashboardUnsubscribe = null;
 let currentActiveDashboardData = []; // Cached snapshot object for standalone spreadsheet processing
 
+
+/* ==========================================================================
+   📘 SUPERVISOR PLAYBOOK INJECTION ENGINE
+   ========================================================================== */
+document.getElementById('supervisorPlaybookForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const rawVocInput = document.getElementById('newVocId').value.trim();
+  const operationalMatrixHtml = document.getElementById('newHtmlContent').value.trim();
+  const sampleEmailGuideText = document.getElementById('newRawSpielText').value.trim();
+
+  // 🎯 Replaces slashes with hyphens to match the Agent side lookups
+  const synchronizedDocId = rawVocInput.replace(/\//g, "-");
+
+  try {
+    const playbookDocRef = doc(firestoreDb, "playbooks", synchronizedDocId);
+
+    await setDoc(playbookDocRef, {
+      htmlContent: operationalMatrixHtml,
+      rawSpielText: sampleEmailGuideText,
+      lastUpdated: Date.now()
+    });
+
+    alert(`🎉 Success! Playbook profile created for: "${synchronizedDocId}"`);
+    document.getElementById('supervisorPlaybookForm').reset();
+
+  } catch (error) {
+    console.error("🚨 Playbook Injection Module Failure:", error);
+    alert(`Execution Error: ${error.message}`);
+  }
+});
+
 /* ==========================================================================
    📊 SUPERVISOR INTENT REAL-TIME DISTRIBUTION TRACKER (OMNI-PARSER)
    ========================================================================== */
