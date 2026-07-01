@@ -1953,9 +1953,9 @@ async function executeSupervisorExtraction() {
       // 📡 PATH B: Query Real-time Case Tracker Logs simultaneously
       const liveTrackerRef = collection(firestoreDb, "case_logs");
       
-      // Calculate precise timestamp boundaries for native Date queries
-      const startDateTime = new Date(new Date(startDateFilter).setHours(0,0,0,0));
-      const endDateTime = new Date(new Date(endDateFilter).setHours(23,59,59,999));
+      // 🎯 FIXED: Re-assigning variables instead of re-declaring them with 'const'
+      startDateTime = new Date(new Date(startDateFilter).setHours(0,0,0,0));
+      endDateTime = new Date(new Date(endDateFilter).setHours(23,59,59,999));
 
       // Query B1: Assumes date fields are native Firebase Timestamp/Date objects
       const q2Timestamp = query(
