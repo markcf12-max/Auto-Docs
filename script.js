@@ -411,7 +411,6 @@ function listenToGlobalIntentAnalytics() {
   const chartDeckUI = document.getElementById('dashSpectrumGraphContainer');
   console.log(`📡 Telemetry Bridge Armed: Listening to Case Logs...`);
 
-  // 🕒 Generate standard text strings and date parameters for cross-checking
   const todayObj = new Date();
   const year = todayObj.getFullYear();
   const month = String(todayObj.getMonth() + 1).padStart(2, '0');
@@ -420,7 +419,6 @@ function listenToGlobalIntentAnalytics() {
   const todayStringYMD = `${year}-${month}-${day}`; // Format: YYYY-MM-DD
   const fallbackWindowStart = new Date(new Date().setHours(0,0,0,0));
 
-  // Pull everything from the root collection to parse locally and bypass date format conflicts
   const liveTrackerRef = collection(firestoreDb, "case_logs");
 
   globalDashboardUnsubscribe = onSnapshot(liveTrackerRef, (snapshot) => {
@@ -429,6 +427,11 @@ function listenToGlobalIntentAnalytics() {
 
     console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} raw documents in case_logs.`);
 
+    // 🔬 SCHEMA DETECTOR: Log out the first document to reveal its exact payload format
+    if (snapshot.size > 0) {
+      console.log("📋 CORE DB STRUCT DETECTED:", snapshot.docs[0].data());
+    }
+
     snapshot.forEach((doc) => {
       const d = doc.data();
       const snap = d.form_data || d || {};
@@ -436,29 +439,39 @@ function listenToGlobalIntentAnalytics() {
       // 1. 🔍 DATE VALIDATION FALLBACK CHECK
       let isRecordFromToday = false;
 
-      // Check text-based parameters (e.g., "2026-07-01")
-      if (d.submission_date === todayStringYMD || snap.datetime?.toString().includes(todayStringYMD)) {
+      // Scan common date-property layouts strings/maps
+      if (
+        d.submission_date === todayStringYMD || 
+        d.date === todayStringYMD ||
+        snap.datetime?.toString().includes(todayStringYMD) ||
+        snap.submission_date === todayStringYMD
+      ) {
         isRecordFromToday = true;
       }
       
-      // Check native Firestore or standard JS Timestamps
-      if (!isRecordFromToday && d.timestamp) {
+      // Scan typical timestamp layouts
+      const tsVal = d.timestamp || d.completed_at || snap.timestamp;
+      if (!isRecordFromToday && tsVal) {
         try {
-          const recordDate = d.timestamp.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+          const recordDate = tsVal.toDate ? tsVal.toDate() : new Date(tsVal);
           if (recordDate >= fallbackWindowStart) isRecordFromToday = true;
         } catch(e) {}
       }
 
-      // If you just want to see ALL saved data on your dashboard while debugging, 
-      // comment out the next line to bypass the date check entirely:
-      if (!isRecordFromToday) return; 
+      // 🛠️ TEMPORARY DEBUG SAFETY NET: 
+      // If the date filters fail, we bypass the block to display the data bars anyway
+      if (!isRecordFromToday) {
+        console.warn(`⚠️ Doc ID [${doc.id}] dropped by date validation filters. Bypassing check to force display layout...`);
+        isRecordFromToday = true; 
+      }
 
       // 2. 🎯 EXTRACT INTENT CATEGORY 
-      const agentActiveIntent = snap.concernType || d.concernType || snap.voc || d.voc || "UNCLASSIFIED CASES";
+      // Checks alternative variables including "intent" or "concern_type"
+      const agentActiveIntent = snap.concernType || d.concernType || snap.voc || d.voc || d.intent || d.concern_type || "UNCLASSIFIED CASES";
       const countIncrement = d.saved_cases_count || 1; 
 
       const cleanKey = String(agentActiveIntent).toUpperCase().trim();
-      if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN") return;
+      if (!cleanKey || cleanKey === "" || cleanKey === "SELECT CONCERN" || cleanKey === "UNDEFINED") return;
 
       if (!rawIntentCounts[cleanKey]) {
         rawIntentCounts[cleanKey] = 0;
@@ -467,7 +480,6 @@ function listenToGlobalIntentAnalytics() {
       aggregatedTotalShiftVolume += countIncrement;
     });
 
-    // Baseline targets matching your HTML selection values
     const baselineAverages = {
       "TECHNICAL": 15,
       "AFTERSALES": 10,
@@ -489,12 +501,15 @@ function listenToGlobalIntentAnalytics() {
     });
 
     compiledList.sort((a, b) => b.volume - a.volume);
+    
+    // Save to global cache so download function functions correctly
+    currentActiveDashboardData = compiledList;
 
     if (chartDeckUI) {
       if (compiledList.length === 0) {
         chartDeckUI.innerHTML = `
-          <div style="padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-            Found case logs, but none matched today's date (${todayStringYMD}).
+          <div style="padding: 40px; text-align: center; color: #94a3b8; font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+            Found case logs, but no valid intent properties extracted. Check console structure logs.
           </div>`;
         updateKpiTextDisplays(0, "N/A", "NOMINAL");
         return;
@@ -507,13 +522,14 @@ function listenToGlobalIntentAnalytics() {
         const graphicalWidthPercent = absoluteHighestPeakVolume > 0 ? (node.volume / absoluteHighestPeakVolume) * 100 : 0;
         let spectralHueGradient = "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
 
+        // Hardcoded explicit fallback styling rules to isolate CSS configuration interference
         uiBufferHtml += `
-          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: rgba(255,255,255,0.01); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="font-weight: 700; color: var(--text-main);">${node.intent}</span>
-              <span style="color: var(--text-muted); font-size: 11px;">Shift Volume: <strong style="color: var(--text-main);">${node.volume}</strong></span>
+              <span style="font-weight: 700; color: #f8fafc; letter-spacing: 0.5px;">${node.intent}</span>
+              <span style="color: #94a3b8; font-size: 11px;">Shift Volume: <strong style="color: #3b82f6; font-size: 12px;">${node.volume}</strong></span>
             </div>
-            <div style="background: rgba(0,0,0,0.05); height: 10px; border-radius: 99px; width: 100%; overflow: hidden; border: 1px solid var(--border-color);">
+            <div style="background: rgba(0,0,0,0.2); height: 10px; border-radius: 99px; width: 100%; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
               <div style="width: ${graphicalWidthPercent}%; background: ${spectralHueGradient}; height: 100%; border-radius: 99px; transition: width 0.5s ease;"></div>
             </div>
           </div>
