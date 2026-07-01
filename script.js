@@ -411,13 +411,9 @@ function listenToGlobalIntentAnalytics() {
   const chartDeckUI = document.getElementById('dashSpectrumGraphContainer');
   console.log(`📡 Telemetry Bridge Armed: Listening to Case Logs...`);
 
+  // 🕒 Generate current timezone boundary parameters
   const todayObj = new Date();
-  const year = todayObj.getFullYear();
-  const month = String(todayObj.getMonth() + 1).padStart(2, '0');
-  const day = String(todayObj.getDate()).padStart(2, '0');
-  
-  const todayStringYMD = `${year}-${month}-${day}`; // Format: YYYY-MM-DD
-  const fallbackWindowStart = new Date(new Date().setHours(0,0,0,0));
+  const fallbackWindowStart = new Date(todayObj.setHours(0,0,0,0)).getTime(); // Converted to Milliseconds matching updated_at!
 
   const liveTrackerRef = collection(firestoreDb, "case_logs");
 
@@ -427,47 +423,32 @@ function listenToGlobalIntentAnalytics() {
 
     console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} raw documents in case_logs.`);
 
-    // 🔬 SCHEMA DETECTOR: Log out the first document to reveal its exact payload format
-    if (snapshot.size > 0) {
-      console.log("📋 CORE DB STRUCT DETECTED:", snapshot.docs[0].data());
-    }
-
     snapshot.forEach((doc) => {
       const d = doc.data();
-      const snap = d.form_data || d || {};
+      
+      // 🎯 TARGET NESTED MAP: Extract form data payload wrapper natively
+      const snap = d.form_data || {};
 
-      // 1. 🔍 DATE VALIDATION FALLBACK CHECK
+      // 1. 🔍 TIMESTAMP DATE MATCHING PIPELINE
       let isRecordFromToday = false;
 
-      // Scan common date-property layouts strings/maps
-      if (
-        d.submission_date === todayStringYMD || 
-        d.date === todayStringYMD ||
-        snap.datetime?.toString().includes(todayStringYMD) ||
-        snap.submission_date === todayStringYMD
-      ) {
-        isRecordFromToday = true;
-      }
-      
-      // Scan typical timestamp layouts
-      const tsVal = d.timestamp || d.completed_at || snap.timestamp;
-      if (!isRecordFromToday && tsVal) {
-        try {
-          const recordDate = tsVal.toDate ? tsVal.toDate() : new Date(tsVal);
-          if (recordDate >= fallbackWindowStart) isRecordFromToday = true;
-        } catch(e) {}
+      // Extract your exact millisecond field found in the console log
+      const numericTimestamp = d.updated_at || d.timestamp || snap.updated_at;
+
+      if (numericTimestamp) {
+        // If it's a Firestore timestamp object, convert it; otherwise handle it as a direct epoch integer
+        const recordMillis = numericTimestamp.toMillis ? numericTimestamp.toMillis() : Number(numericTimestamp);
+        
+        if (recordMillis >= fallbackWindowStart) {
+          isRecordFromToday = true;
+        }
       }
 
-      // 🛠️ TEMPORARY DEBUG SAFETY NET: 
-      // If the date filters fail, we bypass the block to display the data bars anyway
-      if (!isRecordFromToday) {
-        console.warn(`⚠️ Doc ID [${doc.id}] dropped by date validation filters. Bypassing check to force display layout...`);
-        isRecordFromToday = true; 
-      }
+      // If the record isn't from today's shift window, skip it
+      if (!isRecordFromToday) return;
 
-      // 2. 🎯 EXTRACT INTENT CATEGORY 
-      // Checks alternative variables including "intent" or "concern_type"
-      const agentActiveIntent = snap.concernType || d.concernType || snap.voc || d.voc || d.intent || d.concern_type || "UNCLASSIFIED CASES";
+      // 2. 🎯 EXTRACT REAL-TIME INTENT CATEGORY FROM NESTED MAP
+      const agentActiveIntent = snap.concernType || snap.voc || d.concernType || d.voc || "UNCLASSIFIED CASES";
       const countIncrement = d.saved_cases_count || 1; 
 
       const cleanKey = String(agentActiveIntent).toUpperCase().trim();
@@ -480,6 +461,7 @@ function listenToGlobalIntentAnalytics() {
       aggregatedTotalShiftVolume += countIncrement;
     });
 
+    // Baseline targets matching your HTML selection values
     const baselineAverages = {
       "TECHNICAL": 15,
       "AFTERSALES": 10,
@@ -501,15 +483,13 @@ function listenToGlobalIntentAnalytics() {
     });
 
     compiledList.sort((a, b) => b.volume - a.volume);
-    
-    // Save to global cache so download function functions correctly
     currentActiveDashboardData = compiledList;
 
     if (chartDeckUI) {
       if (compiledList.length === 0) {
         chartDeckUI.innerHTML = `
           <div style="padding: 40px; text-align: center; color: #94a3b8; font-style: italic; font-size: 12px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
-            Found case logs, but no valid intent properties extracted. Check console structure logs.
+            No records saved during today's shift tracking period yet.
           </div>`;
         updateKpiTextDisplays(0, "N/A", "NOMINAL");
         return;
@@ -522,7 +502,6 @@ function listenToGlobalIntentAnalytics() {
         const graphicalWidthPercent = absoluteHighestPeakVolume > 0 ? (node.volume / absoluteHighestPeakVolume) * 100 : 0;
         let spectralHueGradient = "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
 
-        // Hardcoded explicit fallback styling rules to isolate CSS configuration interference
         uiBufferHtml += `
           <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
