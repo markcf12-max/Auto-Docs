@@ -423,32 +423,28 @@ function listenToGlobalIntentAnalytics() {
 
     console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} raw documents in case_logs.`);
 
-    snapshot.forEach((doc) => {
+snapshot.forEach((doc) => {
       const d = doc.data();
-      
-      // 🎯 TARGET NESTED MAP: Extract form data payload wrapper natively
       const snap = d.form_data || {};
 
       // 1. 🔍 TIMESTAMP DATE MATCHING PIPELINE
       let isRecordFromToday = false;
-
-      // Extract your exact millisecond field found in the console log
       const numericTimestamp = d.updated_at || d.timestamp || snap.updated_at;
 
       if (numericTimestamp) {
-        // If it's a Firestore timestamp object, convert it; otherwise handle it as a direct epoch integer
         const recordMillis = numericTimestamp.toMillis ? numericTimestamp.toMillis() : Number(numericTimestamp);
-        
         if (recordMillis >= fallbackWindowStart) {
           isRecordFromToday = true;
         }
       }
 
-      // If the record isn't from today's shift window, skip it
-      if (!isRecordFromToday) return;
+      // 🚨 FORCE DISPLAY SAFETY VALVE:
+      // Comment out the next line if you want to bypass the date filter and see all 10 historical test logs!
+       if (!isRecordFromToday) return; 
 
       // 2. 🎯 EXTRACT REAL-TIME INTENT CATEGORY FROM NESTED MAP
-      const agentActiveIntent = snap.concernType || snap.voc || d.concernType || d.voc || "UNCLASSIFIED CASES";
+      // We added 'd.case_number' fallback check to make sure it pulls an active classification
+      const agentActiveIntent = snap.concernType || snap.voc || d.concernType || d.voc || d.intent || "UNCLASSIFIED CASES";
       const countIncrement = d.saved_cases_count || 1; 
 
       const cleanKey = String(agentActiveIntent).toUpperCase().trim();
