@@ -417,24 +417,17 @@ function listenToGlobalIntentAnalytics() {
     const rawIntentCounts = {};
     let aggregatedTotalShiftVolume = 0;
 
-    console.log(`🔄 Live Sync Intercepted: Found ${snapshot.size} agent log profiles.`);
-
     snapshot.forEach((doc) => {
       const d = doc.data();
-      
-      // Locate case array inside document
       const targetArrayKey = Object.keys(d).find(key => Array.isArray(d[key]));
       if (!targetArrayKey) return; 
 
       const caseArray = d[targetArrayKey];
-
       caseArray.forEach((caseItem) => {
         const rawTextString = caseItem.text || "";
         if (!rawTextString) return;
 
-        // 🎯 SPECIFIC VOC REGEX ENGINE: Extracts the value sitting directly between "VOC:" and "SUBJ:"
         const vocTypeMatch = rawTextString.match(/VOC:\s*(.*?)\s*(?:SUBJ:|DATE\/TIME:)/i);
-        
         let extractedIntent = "UNCLASSIFIED VOC";
         if (vocTypeMatch && vocTypeMatch[1]) {
           extractedIntent = vocTypeMatch[1].trim();
@@ -451,17 +444,15 @@ function listenToGlobalIntentAnalytics() {
       });
     });
 
-    // Baseline targets adjusted for specific, granular items
     const baselineAverages = {
       "SIM REPLACEMENT": 10,
       "ADA ENROLLMENT": 8,
-      "DATA CONNECTIVITY:INTERMITTENT CONNECTION": 15,
-      "DISPUTE: MSF CHARGES": 5
+      "DATA CONNECTIVITY:INTERMITTENT CONNECTION": 15
     };
 
     const compiledList = Object.keys(rawIntentCounts).map(intentKey => {
       const activeVolume = rawIntentCounts[intentKey];
-      const baselineVal = baselineAverages[intentKey] || 5; // Default lower baseline threshold for specific metrics
+      const baselineVal = baselineAverages[intentKey] || 5;
       const deviationDelta = baselineVal > 0 ? ((activeVolume - baselineVal) / baselineVal) * 100 : 0;
 
       return {
@@ -486,30 +477,71 @@ function listenToGlobalIntentAnalytics() {
       }
 
       const absoluteHighestPeakVolume = compiledList[0].volume;
-      let uiBufferHtml = ``;
+      
+      // 🎛️ Modern Wrapper: Implements a fixed-height scrollable flexbox canvas grid
+      let uiBufferHtml = `
+        <div style="
+          display: grid; 
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+          gap: 10px; 
+          max-height: 400px; 
+          overflow-y: auto; 
+          padding-right: 6px;
+          scroll-behavior: smooth;
+        " class="custom-dashboard-scroll">
+      `;
 
       compiledList.forEach(node => {
         const graphicalWidthPercent = absoluteHighestPeakVolume > 0 ? (node.volume / absoluteHighestPeakVolume) * 100 : 0;
         
-        // Dynamic color scheme: shifts to a red gradient layout warning if a specific operational VOC driver spikes heavily
-        let spectralHueGradient = node.volume >= 15 
-          ? "linear-gradient(90deg, #ef4444 0%, #f87171 100%)" 
-          : "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)";
+        // Modern UI: Blue neon accents for standard lines, soft amber warnings for surges
+        let glowAccent = node.volume >= 12 ? "rgba(245, 158, 11, 0.15)" : "rgba(59, 130, 246, 0.15)";
+        let barColor = node.volume >= 12 ? "#f59e0b" : "#3b82f6";
 
         uiBufferHtml += `
-          <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-              <span style="font-weight: 700; color: #f8fafc; letter-spacing: 0.5px;">${node.intent}</span>
-              <span style="color: #94a3b8; font-size: 11px;">Shift Volume: <strong style="color: #3b82f6; font-size: 12px;">${node.volume}</strong></span>
+          <div style="
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(8px);
+            padding: 10px 12px; 
+            border-radius: 6px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 0 12px ${glowAccent};
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 6px;
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+              <span style="font-weight: 600; color: #f1f5f9; font-size: 11px; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.3px; word-break: break-word;">
+                ${node.intent}
+              </span>
+              <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; color: ${barColor}; white-space: nowrap;">
+                Vol: ${node.volume}
+              </span>
             </div>
-            <div style="background: rgba(0,0,0,0.2); height: 10px; border-radius: 99px; width: 100%; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
-              <div style="width: ${graphicalWidthPercent}%; background: ${spectralHueGradient}; height: 100%; border-radius: 99px; transition: width 0.5s ease;"></div>
+            
+            <div style="width: 100%;">
+              <div style="background: rgba(0,0,0,0.3); height: 5px; border-radius: 99px; width: 100%; overflow: hidden;">
+                <div style="width: ${graphicalWidthPercent}%; background: ${barColor}; height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+              </div>
             </div>
           </div>
         `;
       });
 
-      chartDeckUI.innerHTML = uiBufferHtml;
+      uiBufferHtml += `</div>`; // Close grid container
+
+      // Inject custom inline style to make the scrollbar minimal and elegant
+      const scrollStyle = `
+        <style>
+          .custom-dashboard-scroll::-webkit-scrollbar { width: 5px; }
+          .custom-dashboard-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 99px; }
+          .custom-dashboard-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+          .custom-dashboard-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        </style>
+      `;
+
+      chartDeckUI.innerHTML = scrollStyle + uiBufferHtml;
       updateKpiTextDisplays(aggregatedTotalShiftVolume, compiledList[0].intent, "ACTIVE SHIFT");
     }
   }, (error) => {
