@@ -911,24 +911,22 @@ async function handleSessionLoginTransition() {
   updateOutput();
   updateSuggestions();
   
-  // 🎯 REVEAL THE WORKSPACE MONITORING ORB UPON SUCCESSFUL LOGIN
   const orb = document.getElementById('metaTrackerOrb');
   if (orb) {
     orb.style.setProperty('display', 'flex', 'important');
   }
   
-  // Instantly evaluate and dismiss/sync the checklist modal logic upon successful shift login
   if (typeof window.evaluateShiftCheckInModal === "function") {
     window.evaluateShiftCheckInModal();
   }
   
-  // 📡 HOT CORRECTION: Intercept local loading and sync real-time database parameters live
+  // 🎯 FIX: Always restore the main form fields from case_logs,
+  // AND separately sync the tracker queue / shift history.
+  await pullLiveWorkspace();
+
   if (window.currentAgentId && typeof window.syncAgentSessionFromCloud === "function") {
     console.log(`⚡ Transition Core: Fetching cloud workbench state for Agent ID: ${window.currentAgentId}`);
     await window.syncAgentSessionFromCloud(window.currentAgentId);
-  } else {
-    // Structural fallback if the cloud utility array is detached or unmounted
-    await pullLiveWorkspace();
   }
 }
 
