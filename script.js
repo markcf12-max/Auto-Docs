@@ -1455,7 +1455,7 @@ async function triggerCloudDraftRecovery(agentId) {
     if (snap.exists()) {
       const data = snap.data();
 
-      // 1. Restore plain text variables
+      // 1. Restore plain text variables immediately
       if (data.case && $("case")) $("case").value = data.case;
       if (data.min && $("min")) $("min").value = data.min;
 
@@ -1464,18 +1464,17 @@ async function triggerCloudDraftRecovery(agentId) {
         $("concernType").value = data.concernType;
         $("concernType").dispatchEvent(new Event('change'));
 
-        // Delay parsing the sub-VOC drop-down selection until cascading child arrays finish rendering
+        // Give the sub-VOC array a solid 400ms buffer to build its menu items over the network
         setTimeout(async () => {
           if (data.voc && $("voc")) {
             $("voc").value = data.voc;
             $("voc").dispatchEvent(new Event('change'));
 
-            // Re-fire suggestions/playbooks
             if (typeof updateSuggestions === 'function') {
               await updateSuggestions();
             }
           }
-        }, 300); // 300ms network layout render buffer
+        }, 400); 
       }
     }
   } catch (err) {
