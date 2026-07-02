@@ -1313,13 +1313,10 @@ const updateData = {
 function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
   
-  document.querySelectorAll("input, textarea").forEach(el => {
-    // Explicitly protect authentication AND supervisor configuration fields from being wiped!
+document.querySelectorAll("input, textarea").forEach(el => {
     const isAuthField = el.id === 'authEmail' || el.id === 'authPassword' || el.id === 'authName';
-    
-    // 🛡️ SAFEKEEPING: Protect active agent inputs from being wiped out by the verification loop
     const isAgentDraftField = el.id === 'case' || el.id === 'min';
-
+    const isColorField = el.type === 'color';   // 🎯 ADD THIS
     const isSupeField = (
       el.id === 'supeHtmlContent' || 
       el.id === 'supeUrl' || 
@@ -1331,11 +1328,11 @@ function listenToSessionState() {
       el.id === 'newRawSpielText'
     );
 
-    if (!isAuthField && !isSupeField && !isAgentDraftField) {
+    if (!isAuthField && !isSupeField && !isAgentDraftField && !isColorField) {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
     }
-  });
+});
 
   // 🛡️ PROTECTION FIX: Only force drop-down resets if there is NO active session!
   if (!cachedId) {
