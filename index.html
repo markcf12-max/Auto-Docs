@@ -120,13 +120,13 @@
           <input type="text" id="case" placeholder="8 or 10 digits" maxlength="10" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="form-group">
-        <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Concern Type (Which dropdown this VOC belongs to)</label>
-        <select id="newVocConcernType" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
-        <option value="">-- Select Concern Type --</option>
-        <option value="Technical">Technical</option>
-        <option value="Aftersales">Aftersales</option>
-        <option value="Inquiry">Inquiry</option>
-        <option value="Complaint">Complaint</option>
+          <label for="concernType">Concern Type</label>
+          <select id="concernType">
+            <option value="">Select Concern</option>
+            <option value="Technical">Technical</option>
+            <option value="Aftersales">Aftersales</option>
+            <option value="Inquiry">Inquiry</option>
+            <option value="Complaint">Complaint</option>
           </select>
         </div>
       </div>
@@ -342,8 +342,24 @@
   <h3 style="color: #f8fafc; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
     📘 Playbook Provisioning Panel: Global VOC & Spiels Engine
   </h3>
-  
   <form id="supervisorPlaybookForm" style="display: flex; flex-direction: column; gap: 12px;">
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Concern Type (Which dropdown this VOC belongs to)</label>
+      <select id="newVocConcernType" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
+        <option value="">-- Select Concern Type --</option>
+        <option value="Technical">Technical</option>
+        <option value="Aftersales">Aftersales</option>
+        <option value="Inquiry">Inquiry</option>
+        <option value="Complaint">Complaint</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">VOC Name (This becomes the Document ID)</label>
+      <input type="text" id="newVocId" placeholder="e.g., Voice Quality" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
+    </div>
+  
+<form id="supervisorPlaybookForm" style="display: flex; flex-direction: column; gap: 12px;">
     <div>
       <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">VOC Name (This becomes the Document ID)</label>
       <input type="text" id="newVocId" placeholder="e.g., Voice Quality" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
