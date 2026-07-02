@@ -433,12 +433,12 @@ document.getElementById('supervisorPlaybookForm')?.addEventListener('submit', as
       options: arrayUnion(rawVocInput)
     }, { merge: true });
 
-    alert(`🎉 Success! "${rawVocInput}" added under ${concernTypeForVoc}.`);
+      showVocInjectionSuccess(rawVocInput, concernTypeForVoc);
     document.getElementById('supervisorPlaybookForm').reset();
 
   } catch (error) {
     console.error("🚨 Playbook Injection Module Failure:", error);
-    alert(`Execution Error: ${error.message}`);
+    showSystemAlert("Injection Failed", `Execution Error: ${error.message}`);
   }
 });
 
@@ -1997,6 +1997,43 @@ function showToast(msg, isError = false) {
   if (label) label.textContent = msg;
   toast.classList.add('show');
   setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+function showVocInjectionSuccess(vocName, concernType) {
+  let card = document.getElementById('vocSuccessCardInstance');
+
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'vocSuccessCardInstance';
+    card.className = 'voc-success-card';
+    card.innerHTML = `
+      <div class="voc-success-icon"><i class="fas fa-check"></i></div>
+      <div class="voc-success-body">
+        <div class="voc-success-title">Playbook Published</div>
+        <div class="voc-success-detail" id="vocSuccessDetailText"></div>
+      </div>
+      <button type="button" class="voc-success-close" aria-label="Dismiss">&times;</button>
+    `;
+    document.body.appendChild(card);
+
+    card.querySelector('.voc-success-close').addEventListener('click', () => {
+      card.classList.remove('show');
+    });
+  }
+
+  const detailEl = document.getElementById('vocSuccessDetailText');
+  if (detailEl) {
+    detailEl.innerHTML = `<strong>${vocName}</strong> added to ${concernType}`;
+  }
+
+  // Restart animation cleanly if triggered again while visible
+  card.classList.remove('show');
+  void card.offsetWidth; // force reflow so the animation replays
+  card.classList.add('show');
+
+  clearTimeout(card._autoHideTimer);
+  card._autoHideTimer = setTimeout(() => {
+    card.classList.remove('show');
+  }, 3500);
 }
 
 function copyDoc() {
