@@ -2989,6 +2989,7 @@ window.syncAgentSessionFromCloud = async function(agentId) {
       renderChronologicalArchiveGrid();
       if (typeof renderHistoryView === "function") renderHistoryView();
       runActiveQueueCountdownEngine();
+      window.refreshGlobalBadgeCounters(); // 🎯 show correct count right on login
       
       console.log(`📡 Station Hot-Swap Success: Loaded data for Agent: ${agentId}`);
     } else {
@@ -3214,9 +3215,11 @@ function runActiveQueueCountdownEngine() {
       }
     } // 🎯 closes "if (cloudSyncTickCounter >= 5)"
 
-    if (localStorage.getItem('workbench_queue_cache')) {
+if (localStorage.getItem('workbench_queue_cache')) {
       activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
     }
+
+    window.refreshGlobalBadgeCounters(); // 🎯 keeps the orb badge in sync every second
 
     if (activeUrgentQueueItems.length === 0) {
       trackingContainerUI.innerHTML = `<div style="padding:20px; text-align:center; color: var(--text-muted); font-size:11px; font-style:italic;">No active countdown parameters tracking.</div>`;
@@ -3731,6 +3734,18 @@ function makeOrbFullyDraggable() {
     }
   }
 }
+
+/* ==========================================================================
+   🔢 FLOATING ORB BADGE COUNTER
+   ========================================================================== */
+window.refreshGlobalBadgeCounters = function() {
+  const badge = document.getElementById('metaOrbBadgeCount');
+  if (!badge) return;
+
+  const count = Array.isArray(activeUrgentQueueItems) ? activeUrgentQueueItems.length : 0;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? "flex" : "none";
+};
 
 /* ==========================================================================
    📡 GLOBAL COORDINATE SYNC ENGINE (Snaps Bubble Relative to Master Orb)
