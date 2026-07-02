@@ -2880,24 +2880,6 @@ function toggleDrawer(e) {
   }
 }
 
-function listenToDynamicVocLists() {
-  const vocListsRef = collection(firestoreDb, "voc_lists");
-  onSnapshot(vocListsRef, (snapshot) => {
-    snapshot.forEach(docSnap => {
-      const concernKey = docSnap.id; // "Technical" / "Aftersales" / etc.
-      const options = docSnap.data().options || [];
-      if (!VOC_OPTIONS[concernKey]) return;
-      options.forEach(v => {
-        if (v && !VOC_OPTIONS[concernKey].includes(v)) {
-          VOC_OPTIONS[concernKey].push(v);
-        }
-      });
-    });
-    // Refresh whichever dropdown is currently visible so it updates live
-    if (typeof updateVocOptions === "function") updateVocOptions(true);
-    if (typeof syncSupervisorVocDropdown === "function") syncSupervisorVocDropdown();
-  });
-}
 // 📢 REAL-TIME AGENT OPERATIONAL BROADCAST STREAM PIPELINE
 function listenToOperationalBroadcasts() {
   const banner = $('adminBroadcastBanner');
