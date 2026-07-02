@@ -2314,7 +2314,7 @@ async function resetForm(event) {
 }
 
 /* ==========================================================================
-   INITIALIZATION ENGINE & LOOPS
+   📊 INITIALIZATION ENGINE & LOOPS (WITH DRAFT RECOVERY PROTECTION)
 ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   $('authForm')?.addEventListener('submit', handleAuthSubmission);
@@ -2384,7 +2384,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-// 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
+  // 🎯 THE LIVE TOGGLE COUPLING: Connect the checkbox to the dropdown container
   const trackingCheckbox = document.getElementById('enableCaseTrackingCheck');
   const dropdownFieldsContainer = document.getElementById('trackingDropdownFields');
 
@@ -2402,8 +2402,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
    
-// 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
-  // Note: We use "THEME_KEY" here to match your global variable name string
+  // 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
   const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
   if (savedTheme === "dark") {
     toggleTheme(); // Let your existing function run and paint the CSS rules instantly!
@@ -2426,6 +2425,43 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof renderChronologicalArchiveGrid === 'function') {
     renderChronologicalArchiveGrid();
   }
+
+  /* ==========================================================================
+     🚀 ADDED: AGENT FORM DRAFT RECOVERY SEQUENCE
+     ========================================================================== */
+  setTimeout(async () => {
+    console.log("🔄 Running post-boot draft extraction...");
+    
+    // 1. Recover text elements
+    const savedCase = localStorage.getItem('case') || localStorage.getItem('draft_case');
+    const savedMin  = localStorage.getItem('min') || localStorage.getItem('draft_min');
+    
+    if (savedCase && $("case")) $("case").value = savedCase;
+    if (savedMin && $("min")) $("min").value = savedMin;
+
+    // 2. Recover cascade dropdown variables safely
+    const savedConcern = localStorage.getItem('concernType') || localStorage.getItem('draft_concernType');
+    const savedVoc     = localStorage.getItem('voc') || localStorage.getItem('draft_voc');
+
+    if (savedConcern && $("concernType")) {
+      $("concernType").value = savedConcern;
+      // Trigger select evaluation so sub-menus compile
+      $("concernType").dispatchEvent(new Event('change')); 
+
+      // Give your dynamic dropdown database logic a split second to finish painting selections
+      setTimeout(async () => {
+        if (savedVoc && $("voc")) {
+          $("voc").value = savedVoc;
+          $("voc").dispatchEvent(new Event('change'));
+          
+          // Re-trigger the Suggestions/Playbook template view engine matching the restored draft
+          if (typeof updateSuggestions === 'function') {
+            await updateSuggestions();
+          }
+        }
+      }, 200);
+    }
+  }, 300); // 300ms boot buffer ensuring Firebase script configs are mounted completely
 });
 
 // ==========================================================================
