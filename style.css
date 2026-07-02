@@ -1510,3 +1510,93 @@ body {
   color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); /* Guarantees the icon is visible even on light theme picks! */
 }
+/* ==========================================================================
+   ✨ MODERN VOC INJECTION SUCCESS CARD
+   ========================================================================== */
+.voc-success-card {
+  position: fixed;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  max-width: 90vw;
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 30px -8px rgba(16, 185, 129, 0.25);
+  z-index: 999999;
+  transition: top 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  opacity: 0;
+}
+
+.voc-success-card.show {
+  top: 24px;
+  opacity: 1;
+}
+
+.voc-success-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  font-size: 18px;
+  animation: vocSuccessPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes vocSuccessPop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.voc-success-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.voc-success-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+
+.voc-success-detail {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voc-success-detail strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.voc-success-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.voc-success-close:hover {
+  color: #ffffff;
+}
