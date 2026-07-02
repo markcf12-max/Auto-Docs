@@ -2394,8 +2394,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
    /* ==========================================================================
-     ☁️ LIVE CLOUD DRAFT MIRROR PIPELINE (PASTE IT HERE!)
-     ========================================================================== */
+      ☁️ LIVE CLOUD DRAFT MIRROR PIPELINE
+      ========================================================================== */
   console.log("🛡️ Cloud Auto-Save Engine Armed: Uploading drafts securely...");
 
   $('case')?.addEventListener('input', saveAgentDraftToCloud);
@@ -2501,6 +2501,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof renderChronologicalArchiveGrid === 'function') {
     renderChronologicalArchiveGrid();
   }
+}); // 🌟 FIX: Safely closes out your DOMContentLoaded wrapper block
 
 /* ==========================================================================
      🚀 AGENT FORM DRAFT RECOVERY SEQUENCE (CLOUDBASED VERSION)
