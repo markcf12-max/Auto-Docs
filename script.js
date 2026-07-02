@@ -1277,6 +1277,9 @@ const updateData = {
 /* ==========================================================================
    🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (STATION SYNC FIXES EMBEDDED)
    ========================================================================== */
+/* ==========================================================================
+   🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (STATION SYNC FIXES EMBEDDED)
+   ========================================================================== */
 function listenToSessionState() {
   const cachedId = localStorage.getItem("active_agent_session_id");
   
@@ -1284,16 +1287,21 @@ function listenToSessionState() {
     // Explicitly protect authentication AND supervisor configuration fields from being wiped!
     const isAuthField = el.id === 'authEmail' || el.id === 'authPassword' || el.id === 'authName';
     
-    // Added broadcastTextInput to the ironclad protection array!
+    // 🛡️ SAFEKEEPING: Protect active agent inputs from being wiped out by the verification loop
+    const isAgentDraftField = el.id === 'case' || el.id === 'min';
+
     const isSupeField = (
       el.id === 'supeHtmlContent' || 
       el.id === 'supeUrl' || 
       el.id === 'supeLabel' || 
       el.id === 'supeSpielText' ||
-      el.id === 'broadcastTextInput'
+      el.id === 'broadcastTextInput' ||
+      el.id === 'newVocId' ||
+      el.id === 'newHtmlContent' ||
+      el.id === 'newRawSpielText'
     );
 
-    if (!isAuthField && !isSupeField) {
+    if (!isAuthField && !isSupeField && !isAgentDraftField) {
       el.value = "";
       el.classList.remove('val-green', 'val-amber', 'val-crimson');
     }
@@ -1318,21 +1326,16 @@ function listenToSessionState() {
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
       
-      // 🎯 THE CRITICAL TIMING FIX: Elevate state clearance tokens FIRST!
       isSupervisorAuthenticated = true; 
-      
-      // Configure workspace layout views for supervisor actions
       if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("SUPERVISOR");
       
       if ($('authModal')) $('authModal').style.display = "none";
       if ($('logoutBtn')) $('logoutBtn').style.display = "block";
       
-      // 🚀 NOW THIS WILL PASS SAFELY: The flag is true, unlocking elements cleanly
       if (typeof bypassLockForAuthenticatedSupervisor === "function") {
         bypassLockForAuthenticatedSupervisor();
       }
       
-      // Update system status badge to show online
       if (typeof updateSyncStatusUI === "function") {
         updateSyncStatusUI('online');
       }
@@ -1348,13 +1351,10 @@ function listenToSessionState() {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
         currentAgentLob = snap.data().lob || "UNKNOWN";
         
-        // 🧼 🚨 THE ANTI-STALE CACHE PURGE
-        // Completely flush out old priority tracking records stored locally on this physical station
-        // before dragging down the accurate array matrices from the Firestore database.
         localStorage.removeItem('workbench_queue_cache');
         localStorage.removeItem('shift_history_cache_key');
         
-        // 🛰️ ROAMING PROFILE TRIGGER: Sync the active workbench session from the cloud instantly
+        // 🛰️ ROAMING PROFILE TRIGGER: Sync active workbench session from cloud
         if (typeof window.syncAgentSessionFromCloud === "function") {
           window.syncAgentSessionFromCloud(cachedId);
         }
@@ -1362,6 +1362,10 @@ function listenToSessionState() {
         if (typeof handleSessionLoginTransition === "function") {
           handleSessionLoginTransition();
         }
+
+        // 🚀 CLOUD DRAFT HOOK: Run draft restoration immediately after profile confirmation
+        triggerCloudDraftRecovery(cachedId);
+
       } else {
         localStorage.removeItem("active_agent_session_id");
         showLoginGateway(false);
@@ -1392,7 +1396,6 @@ function showLoginGateway(isRegisterMode = false) {
   if ($('authModal')) $('authModal').style.display = "flex";
   if ($('logoutBtn')) $('logoutBtn').style.display = "none";
   
-  // Clear credential entry containers cleanly on displaying the gateway view
   if ($('authEmail')) $('authEmail').value = "";
   if ($('authPassword')) $('authPassword').value = "";
   if ($('authName')) $('authName').value = "";
@@ -1413,6 +1416,70 @@ function showLoginGateway(isRegisterMode = false) {
     if ($('authToggleAnchor')) $('authToggleAnchor').textContent = "Need a new operational profile? Register here";
     if ($('authNameContainer')) $('authNameContainer').style.display = "none";
     if ($('authLobContainer')) $('authLobContainer').style.display = "none";
+  }
+}
+
+
+/* ==========================================================================
+   ☁️ SECURE CLOUD DRAFT WORKSPACE MATRIX (ROAMING PROFILE ENGINE)
+   ========================================================================== */
+
+// 📤 WRITE PIPELINE: Uploads draft states to Firestore securely
+async function saveAgentDraftToCloud() {
+  const agentId = typeof currentAgentId !== 'undefined' ? currentAgentId : localStorage.getItem("active_agent_session_id");
+  if (!agentId || agentId === "SUPERVISOR") return;
+
+  try {
+    const draftRef = doc(firestoreDb, "agent_drafts", agentId);
+    await setDoc(draftRef, {
+      case: $("case")?.value.trim() || "",
+      min: $("min")?.value.trim() || "",
+      concernType: $("concernType")?.value || "",
+      voc: $("voc")?.value || "",
+      lastSaved: Date.now()
+    }, { merge: true });
+  } catch (err) {
+    console.error("☁️ Cloud draft matrix synchronizer write error:", err);
+  }
+}
+
+// 📥 READ PIPELINE: Restores draft states from Firestore securely
+async function triggerCloudDraftRecovery(agentId) {
+  if (!agentId || agentId === "SUPERVISOR") return;
+  console.log(`📡 Recovering cloud desk layouts for agent: ${agentId}`);
+
+  try {
+    const draftRef = doc(firestoreDb, "agent_drafts", agentId);
+    const snap = await getDoc(draftRef);
+
+    if (snap.exists()) {
+      const data = snap.data();
+
+      // 1. Restore plain text variables
+      if (data.case && $("case")) $("case").value = data.case;
+      if (data.min && $("min")) $("min").value = data.min;
+
+      // 2. Cascade drop-down values sequentially
+      if (data.concernType && $("concernType")) {
+        $("concernType").value = data.concernType;
+        $("concernType").dispatchEvent(new Event('change'));
+
+        // Delay parsing the sub-VOC drop-down selection until cascading child arrays finish rendering
+        setTimeout(async () => {
+          if (data.voc && $("voc")) {
+            $("voc").value = data.voc;
+            $("voc").dispatchEvent(new Event('change'));
+
+            // Re-fire suggestions/playbooks
+            if (typeof updateSuggestions === 'function') {
+              await updateSuggestions();
+            }
+          }
+        }, 300); // 300ms network layout render buffer
+      }
+    }
+  } catch (err) {
+    console.error("🚨 Cloud recovery extraction failure:", err);
   }
 }
 /* ==========================================================================
@@ -2327,6 +2394,16 @@ document.addEventListener("DOMContentLoaded", () => {
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
+   /* ==========================================================================
+     ☁️ LIVE CLOUD DRAFT MIRROR PIPELINE (PASTE IT HERE!)
+     ========================================================================== */
+  console.log("🛡️ Cloud Auto-Save Engine Armed: Uploading drafts securely...");
+
+  $('case')?.addEventListener('input', saveAgentDraftToCloud);
+  $('min')?.addEventListener('input', saveAgentDraftToCloud);
+  $('concernType')?.addEventListener('change', saveAgentDraftToCloud);
+  $('voc')?.addEventListener('change', saveAgentDraftToCloud);
+
   // 🛡️ REMAPPED & SECURED: Telemetry Portal Gate (Targeting Your New HTML ID)
   const openTelemetryBtn = document.getElementById('openTelemetryBtn');
   if (openTelemetryBtn) {
@@ -2426,42 +2503,49 @@ document.addEventListener("DOMContentLoaded", () => {
     renderChronologicalArchiveGrid();
   }
 
-  /* ==========================================================================
-     🚀 ADDED: AGENT FORM DRAFT RECOVERY SEQUENCE
+/* ==========================================================================
+     🚀 AGENT FORM DRAFT RECOVERY SEQUENCE (CLOUDBASED VERSION)
      ========================================================================== */
   setTimeout(async () => {
-    console.log("🔄 Running post-boot draft extraction...");
+    const agentId = typeof currentAgentId !== 'undefined' ? currentAgentId : "";
+    if (!agentId || agentId === "SUPERVISOR") return;
+
+    console.log(`🔄 Fetching cloud workspace draft for Agent: ${agentId}`);
     
-    // 1. Recover text elements
-    const savedCase = localStorage.getItem('case') || localStorage.getItem('draft_case');
-    const savedMin  = localStorage.getItem('min') || localStorage.getItem('draft_min');
-    
-    if (savedCase && $("case")) $("case").value = savedCase;
-    if (savedMin && $("min")) $("min").value = savedMin;
+    try {
+      const draftRef = doc(firestoreDb, "agent_drafts", agentId);
+      const draftSnap = await getDoc(draftRef);
 
-    // 2. Recover cascade dropdown variables safely
-    const savedConcern = localStorage.getItem('concernType') || localStorage.getItem('draft_concernType');
-    const savedVoc     = localStorage.getItem('voc') || localStorage.getItem('draft_voc');
+      if (draftSnap.exists()) {
+        const cloudDraft = draftSnap.data();
 
-    if (savedConcern && $("concernType")) {
-      $("concernType").value = savedConcern;
-      // Trigger select evaluation so sub-menus compile
-      $("concernType").dispatchEvent(new Event('change')); 
+        // 1. Recover plain text elements
+        if (cloudDraft.case && $("case")) $("case").value = cloudDraft.case;
+        if (cloudDraft.min && $("min")) $("min").value = cloudDraft.min;
 
-      // Give your dynamic dropdown database logic a split second to finish painting selections
-      setTimeout(async () => {
-        if (savedVoc && $("voc")) {
-          $("voc").value = savedVoc;
-          $("voc").dispatchEvent(new Event('change'));
-          
-          // Re-trigger the Suggestions/Playbook template view engine matching the restored draft
-          if (typeof updateSuggestions === 'function') {
-            await updateSuggestions();
-          }
+        // 2. Cascade down selection lists safely
+        if (cloudDraft.concernType && $("concernType")) {
+          $("concernType").value = cloudDraft.concernType;
+          $("concernType").dispatchEvent(new Event('change')); 
+
+          // Wait for matching child options arrays to render over the network
+          setTimeout(async () => {
+            if (cloudDraft.voc && $("voc")) {
+              $("voc").value = cloudDraft.voc;
+              $("voc").dispatchEvent(new Event('change'));
+              
+              // Re-fire suggestions/playbooks
+              if (typeof updateSuggestions === 'function') {
+                await updateSuggestions();
+              }
+            }
+          }, 250);
         }
-      }, 200);
+      }
+    } catch (error) {
+      console.error("🚨 Failed to extract layout state backups from Firestore:", error);
     }
-  }, 300); // 300ms boot buffer ensuring Firebase script configs are mounted completely
+  }, 500); // 500ms delay to ensure user auth structures have completed negotiation
 });
 
 // ==========================================================================
