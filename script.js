@@ -1274,9 +1274,7 @@ const updateData = {
   }
 }
 
-/* ==========================================================================
-   🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (STATION SYNC FIXES EMBEDDED)
-   ========================================================================== */
+
 /* ==========================================================================
    🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (STATION SYNC FIXES EMBEDDED)
    ========================================================================== */
@@ -1307,9 +1305,12 @@ function listenToSessionState() {
     }
   });
 
-  const select = $("concernType");
-  if (select) select.selectedIndex = 0;
-  if (typeof updateVocOptions === "function") updateVocOptions(false);
+  // 🛡️ PROTECTION FIX: Only force drop-down resets if there is NO active session!
+  if (!cachedId) {
+    const select = $("concernType");
+    if (select) select.selectedIndex = 0;
+    if (typeof updateVocOptions === "function") updateVocOptions(false);
+  }
   
   if (typeof globalShiftHistory !== 'undefined') {
     globalShiftHistory = [];
