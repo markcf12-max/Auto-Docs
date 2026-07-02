@@ -680,7 +680,6 @@ body.dark-theme .meta-orb-badge,
    ========================================================================== */
 .meta-orb-trigger.rgb-mode {
   animation: rgbOrbCycle 4s linear infinite, permanentOrbPulse 2.5s infinite ease-in-out;
-  background: none !important; /* let the keyframe drive the background instead */
 }
 
 .meta-orb-trigger.rgb-mode:hover {
