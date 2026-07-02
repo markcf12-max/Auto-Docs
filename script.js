@@ -2389,7 +2389,7 @@ async function executeLogOutRoutine() {
   // Reset the permanent Orb back to default ahead of browser reload pass
   const trackingOrbNode = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
   if (trackingOrbNode) {
-    trackingOrbNode.className = "meta-orb-trigger login-unread";
+    trackingOrbNode.className = "meta-orb-trigger rgb-mode login-unread";
   }
   
   isolateWorkspaceUI("AGENT"); 
@@ -2648,14 +2648,14 @@ if (shiftCheckInOrb) {
     orbIcon.className = "fas fa-folder-open meta-orb-icon";
   }
   
-  shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+  shiftCheckInOrb.className = "meta-orb-trigger rgb-mode login-unread";
 
   shiftCheckInOrb.addEventListener('click', (e) => {
     e.stopPropagation();
     if (metaTrackerDrawerSubPane) {
       const isOpen = metaTrackerDrawerSubPane.classList.toggle('drawer-open');
       if (isOpen) {
-        shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state"; 
+        shiftCheckInOrb.className = "meta-orb-trigger rgb-mode drawer-active-state"; 
       } else {
         shiftCheckInOrb.className = "meta-orb-trigger all-clear";
       }
@@ -2670,7 +2670,7 @@ if (closeMetaDrawerHeaderBtn) {
     if (metaTrackerDrawerSubPane) {
       metaTrackerDrawerSubPane.classList.remove('drawer-open');
       if (shiftCheckInOrb) {
-        shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+        shiftCheckInOrb.className = "meta-orb-trigger rgb-mode all-clear";
       }
     }
   });
@@ -2687,7 +2687,7 @@ window.evaluateShiftCheckInModal = function() {
   if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
     glassmorphicReminderModal.style.display = 'none';
     setOrbVisibility(true);
-    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger all-clear";
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger rgb-mode all-clear";
   } else {
     glassmorphicReminderModal.style.display = 'flex';
     setOrbVisibility(true);
@@ -2695,7 +2695,7 @@ window.evaluateShiftCheckInModal = function() {
       glassmorphicReminderModal.style.transition = 'opacity 0.4s ease';
       glassmorphicReminderModal.style.opacity = '1';
     }, 50);
-    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger login-unread";
+    if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger rgb-mode login-unread";
   }
 };
 
@@ -2714,7 +2714,7 @@ if (trackerActionBtn) {
       if (metaTrackerDrawerSubPane) {
         metaTrackerDrawerSubPane.classList.add('drawer-open');
         if (shiftCheckInOrb) {
-          shiftCheckInOrb.className = "meta-orb-trigger drawer-active-state";
+          shiftCheckInOrb.className = "meta-orb-trigger rgb-mode drawer-active-state";
         }
       }
     }, 350);
@@ -3444,7 +3444,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Update the Orb's structural state classes to show it's active
       if (orbControl) {
-        orbControl.className = "meta-orb-trigger drawer-active-state"; 
+        orbControl.className = "meta-orb-trigger rgb-mode drawer-active-state";
       }
       
       console.log("🎯 Messenger Action: Intercepted bubble click and slid open tracking panel.");
