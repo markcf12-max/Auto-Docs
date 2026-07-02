@@ -24,9 +24,9 @@ import {
   getDocs, 
   increment,
   orderBy,
-   arrayUnion,
+  arrayUnion,
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
-vocListRef 
+
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
   authDomain: "auto-docs-4ad35.firebaseapp.com",
