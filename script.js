@@ -3284,7 +3284,7 @@ if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
       dismissMessengerAlertUI(false);
     }
 
-  } 1000);
+  }, 1000);
 }
 
 /**
