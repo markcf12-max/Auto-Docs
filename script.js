@@ -3157,25 +3157,25 @@ function runActiveQueueCountdownEngine() {
     if (cloudSyncTickCounter >= 5) {
       cloudSyncTickCounter = 0;
 
-    // 📡 Cross-Station Firestore Sync Gateway
-    const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
-    if (agentId && typeof firestoreDb !== 'undefined') {
-      try {
-        const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
-        const docSnap = await getDoc(agentRecordRef);
-        if (docSnap.exists()) {
-          const remoteData = docSnap.data();
-          const cloudQueue = remoteData.activeQueue || [];
-          const localQueueStr = localStorage.getItem('workbench_queue_cache') || "[]";
-          if (JSON.stringify(cloudQueue) !== localQueueStr) {
-            activeUrgentQueueItems = cloudQueue;
-            localStorage.setItem('workbench_queue_cache', JSON.stringify(cloudQueue));
+      const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
+      if (agentId && typeof firestoreDb !== 'undefined') {
+        try {
+          const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+          const docSnap = await getDoc(agentRecordRef);
+          if (docSnap.exists()) {
+            const remoteData = docSnap.data();
+            const cloudQueue = remoteData.activeQueue || [];
+            const localQueueStr = localStorage.getItem('workbench_queue_cache') || "[]";
+            if (JSON.stringify(cloudQueue) !== localQueueStr) {
+              activeUrgentQueueItems = cloudQueue;
+              localStorage.setItem('workbench_queue_cache', JSON.stringify(cloudQueue));
+            }
           }
+        } catch (e) {
+          console.warn("Sync throttled:", e);
         }
-      } catch (e) {
-        console.warn("Sync throttled:", e);
       }
-    }
+    } // 🎯 closes "if (cloudSyncTickCounter >= 5)"
 
     if (localStorage.getItem('workbench_queue_cache')) {
       activeUrgentQueueItems = JSON.parse(localStorage.getItem('workbench_queue_cache'));
@@ -3246,7 +3246,7 @@ function runActiveQueueCountdownEngine() {
     const orbControl = document.getElementById('metaTrackerOrb');
     const orbIcon = orbControl ? orbControl.querySelector('.meta-orb-icon') : null;
 
-if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
+    if (priorityExpirationDetected && !globalNotificationAcknowledgedLock) {
       if (txtDisplay) {
         txtDisplay.innerHTML = `
           <div style="font-weight: 700; font-size: 13px; color: #050505; margin-bottom: 2px;">SLA Priority Monitor</div>
