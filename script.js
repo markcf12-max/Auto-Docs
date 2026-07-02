@@ -832,9 +832,10 @@ if (currentAuthMode === "LOGIN") {
         const profileDoc = profileQuerySnap.docs[0];
         const profileData = profileDoc.data();
 
-        if (profileData.password === password) {
+      if (profileData.password === password) {
           isSupervisorAuthenticated = false; 
           currentAgentId = profileDoc.id;    
+          window.currentAgentId = profileDoc.id;   // 🎯 THE FIX
           currentAgentEmail = profileData.email || "";
           currentAgentName = profileData.full_name || "Agent";
           currentAgentLob = profileData.lob || "UNKNOWN";
