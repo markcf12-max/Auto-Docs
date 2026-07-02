@@ -2546,7 +2546,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("🚨 Failed to extract layout state backups from Firestore:", error);
     }
   }, 500); // 500ms delay to ensure user auth structures have completed negotiation
-});
 
 // ==========================================================================
 // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
