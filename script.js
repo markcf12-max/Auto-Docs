@@ -3145,9 +3145,17 @@ window.drilldownArchiveFolderEntries = function(dateKey) {
 function runActiveQueueCountdownEngine() {
   if (ongoingQueueTrackingLoop) clearInterval(ongoingQueueTrackingLoop);
 
+  let cloudSyncTickCounter = 0; // 🎯 THROTTLE: counts local ticks between cloud syncs
+
   ongoingQueueTrackingLoop = setInterval(async () => {
     const trackingContainerUI = document.getElementById('metaTrackerQueueBox');
     if (!trackingContainerUI) return;
+
+    cloudSyncTickCounter++;
+
+    // 📡 Cross-Station Firestore Sync Gateway — now only every 5 seconds instead of every 1s
+    if (cloudSyncTickCounter >= 5) {
+      cloudSyncTickCounter = 0;
 
     // 📡 Cross-Station Firestore Sync Gateway
     const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
