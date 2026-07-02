@@ -23,7 +23,8 @@ import {
   where, 
   getDocs, 
   increment,
-  orderBy // 🎯 INJECTED: Fixes "Pipeline processing broke: orderBy is not defined"
+  orderBy,
+   arrayUnion,
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -407,22 +408,32 @@ document.getElementById('supervisorPlaybookForm')?.addEventListener('submit', as
   e.preventDefault();
 
   const rawVocInput = document.getElementById('newVocId').value.trim();
+  const concernTypeForVoc = document.getElementById('newVocConcernType').value;
   const operationalMatrixHtml = document.getElementById('newHtmlContent').value.trim();
   const sampleEmailGuideText = document.getElementById('newRawSpielText').value.trim();
 
-  // 🎯 Replaces slashes with hyphens to match the Agent side lookups
+  if (!concernTypeForVoc) {
+    alert("❌ Please select which Concern Type this VOC belongs to.");
+    return;
+  }
+
   const synchronizedDocId = rawVocInput.replace(/\//g, "-");
 
   try {
     const playbookDocRef = doc(firestoreDb, "playbooks", synchronizedDocId);
-
     await setDoc(playbookDocRef, {
       htmlContent: operationalMatrixHtml,
       rawSpielText: sampleEmailGuideText,
       lastUpdated: Date.now()
     });
 
-    alert(`🎉 Success! Playbook profile created for: "${synchronizedDocId}"`);
+    // 🎯 THE FIX: register the VOC name itself so it shows up in agents' dropdowns
+    const vocListRef = doc(firestoreDb, "voc_lists", concernTypeForVoc);
+    await setDoc(vocListRef, {
+      options: arrayUnion(rawVocInput)
+    }, { merge: true });
+
+    alert(`🎉 Success! "${rawVocInput}" added under ${concernTypeForVoc}.`);
     document.getElementById('supervisorPlaybookForm').reset();
 
   } catch (error) {
@@ -654,6 +665,29 @@ document.addEventListener("DOMContentLoaded", () => {
     downloadIntentDistributionReport();
   });
 });
+
+/* ==========================================================================
+   Listen To Dynamic VOC LSIT
+   ========================================================================== */
+
+function listenToDynamicVocLists() {
+  const vocListsRef = collection(firestoreDb, "voc_lists");
+  onSnapshot(vocListsRef, (snapshot) => {
+    snapshot.forEach(docSnap => {
+      const concernKey = docSnap.id; // "Technical" / "Aftersales" / etc.
+      const options = docSnap.data().options || [];
+      if (!VOC_OPTIONS[concernKey]) return;
+      options.forEach(v => {
+        if (v && !VOC_OPTIONS[concernKey].includes(v)) {
+          VOC_OPTIONS[concernKey].push(v);
+        }
+      });
+    });
+    // Refresh whatever dropdown is currently open so it updates live
+    if (typeof updateVocOptions === "function") updateVocOptions(true);
+    if (typeof syncSupervisorVocDropdown === "function") syncSupervisorVocDropdown();
+  });
+}
 /* ==========================================================================
    EMAIL-BASED OPERATIONAL ACCOUNT PROVISIONING VIEW TOGGLE
    ========================================================================== */
