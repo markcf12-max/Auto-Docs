@@ -1234,8 +1234,13 @@ body.dark-theme .meta-orb-badge,
 
 /* Operational Trigger Classes */
 .tracker-orb-alert-active {
-  animation: orbAlertPulse 1.8s infinite, orbBlinkFlash 0.6s steps(1, end) infinite !important;
+  animation: orbAlertPulse 1.8s infinite !important;
   border-color: #fca5a5 !important;
+}
+
+.tracker-orb-alert-active .meta-orb-icon,
+.tracker-orb-alert-active .meta-orb-badge {
+  animation: orbBlinkFlash 0.6s steps(1, end) infinite;
 }
 
 @keyframes orbBlinkFlash {
