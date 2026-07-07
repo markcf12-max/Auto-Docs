@@ -1290,20 +1290,18 @@ body.dark-theme .meta-orb-badge,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
   padding: 14px 24px;
   
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
+  /* 🎯 MODIFIED: Shifted from transparent dark slate grey to premium deep black */
+  background: rgba(4, 6, 10, 0.9) !important;
   
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Slightly muted border accent */
   border-radius: 8px;
   margin-bottom: 20px;
   width: 100%;
   box-sizing: border-box;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .brand-identity-wrapper {
@@ -1348,32 +1346,15 @@ body.dark-theme .meta-orb-badge,
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: var(--text-main);
+  color: #ffffff;
   font-family: system-ui, -apple-system, sans-serif;
-  transition: color 0.3s ease;
 }
 
 /* ⚙️ Control Deck Layout Structure */
 .header-control-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: nowrap;
-  justify-content: flex-end;
-  flex-shrink: 0;
-}
-
-.header-control-actions .header-action-btn,
-.header-control-actions .theme-picker-wrapper,
-.header-control-actions .font-size-control-group {
-  flex-shrink: 0;
-}
-.font-size-control-group .header-action-btn {
-  width: 28px;
-  height: 28px;
-  font-size: 10px;
-  border: none;
-  background: transparent;
+  gap: 12px;
 }
 
 .brand-system-status {
@@ -1407,8 +1388,8 @@ body.dark-theme .meta-orb-badge,
    🌓 PREMIUM ADAPTIVE HEADER ACTION BUTTONS
    ========================================================================== */
 .header-action-btn {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1467,44 +1448,6 @@ body.light-mode .header-action-btn.logout-accent:hover {
   border-color: #dc2626 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
-}
-/* ==========================================================================
-   🌗 HEADER ICONS FOLLOW THEME (header background now shifts light/dark)
-   ========================================================================== */
-#themeToggle i,
-#densityToggleBtn i {
-  color: var(--text-main);
-  transition: color 0.25s ease;
-}
-
-#themeToggle:hover i,
-#densityToggleBtn:hover i {
-  color: var(--primary);
-}
-
-#logoutBtn:hover i {
-  color: #ffffff;
-}
-
-/* ☀️ LIGHT MODE — all header icons dark, except logout which stays red-accented */
-body.light-mode #themeToggle i,
-body.light-mode #densityToggleBtn i {
-  color: #0f172a !important;
-}
-
-body.light-mode #themeToggle:hover i,
-body.light-mode #densityToggleBtn:hover i {
-  color: #000000 !important;
-}
-
-/* Logout keeps its red accent in light mode (already defined elsewhere,
-   this just ensures the icon itself follows that color too) */
-body.light-mode #logoutBtn i {
-  color: #dc2626 !important;
-}
-
-body.light-mode #logoutBtn:hover i {
-  color: #ffffff !important; /* turns white on hover since the button background goes red */
 }
 
 /* ==========================================================================
@@ -1728,42 +1671,4 @@ body.density-compact .monitor-config-subpane {
 }
 body.density-compact #densityToggleBtn i::before {
   content: "\f065"; /* fa-expand-alt */
-}
-/* ==========================================================================
-   🔠 FONT SIZE ACCESSIBILITY SCALING
-   ========================================================================== */
-:root {
-  --app-font-scale: 1;
-}
-
-body {
-  font-size: calc(13px * var(--app-font-scale));
-}
-
-.form-group label {
-  font-size: calc(12px * var(--app-font-scale));
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  font-size: calc(13px * var(--app-font-scale));
-}
-
-#output {
-  font-size: calc(12px * var(--app-font-scale));
-}
-
-.suggestions-content,
-#playbookSpielContainer {
-  font-size: calc(13px * var(--app-font-scale));
-}
-
-.history-box {
-  font-size: calc(12px * var(--app-font-scale));
-}
-
-.micro-tracker-card,
-.priority-timer-card {
-  font-size: calc(12px * var(--app-font-scale));
 }
