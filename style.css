@@ -1449,6 +1449,44 @@ body.light-mode .header-action-btn.logout-accent:hover {
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
+/* ==========================================================================
+   🌗 UNIFIED ICON COLOR SYNC: Theme / Density / Logout Buttons
+   ========================================================================== */
+
+/* 🌙 DARK MODE (default) — all header icons white */
+#themeToggle i,
+#densityToggleBtn i,
+#logoutBtn i {
+  color: rgba(255, 255, 255, 0.85);
+  transition: color 0.25s ease;
+}
+
+#themeToggle:hover i,
+#densityToggleBtn:hover i,
+#logoutBtn:hover i {
+  color: #ffffff;
+}
+
+/* ☀️ LIGHT MODE — all header icons dark, except logout which stays red-accented */
+body.light-mode #themeToggle i,
+body.light-mode #densityToggleBtn i {
+  color: #0f172a !important;
+}
+
+body.light-mode #themeToggle:hover i,
+body.light-mode #densityToggleBtn:hover i {
+  color: #000000 !important;
+}
+
+/* Logout keeps its red accent in light mode (already defined elsewhere,
+   this just ensures the icon itself follows that color too) */
+body.light-mode #logoutBtn i {
+  color: #dc2626 !important;
+}
+
+body.light-mode #logoutBtn:hover i {
+  color: #ffffff !important; /* turns white on hover since the button background goes red */
+}
 
 /* ==========================================================================
    ⭕ BRAND BRANDING LAYOUT ELEMENTS
