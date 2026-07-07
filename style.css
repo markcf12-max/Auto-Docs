@@ -1292,16 +1292,16 @@ body.dark-theme .meta-orb-badge,
   justify-content: space-between;
   padding: 14px 24px;
   
-  /* 🎯 MODIFIED: Shifted from transparent dark slate grey to premium deep black */
-  background: rgba(4, 6, 10, 0.9) !important;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05); /* Slightly muted border accent */
   border-radius: 8px;
   margin-bottom: 20px;
   width: 100%;
   box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .brand-identity-wrapper {
@@ -1346,8 +1346,9 @@ body.dark-theme .meta-orb-badge,
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: #ffffff;
+  color: var(--text-main);
   font-family: system-ui, -apple-system, sans-serif;
+  transition: color 0.3s ease;
 }
 
 /* ⚙️ Control Deck Layout Structure */
@@ -1450,19 +1451,17 @@ body.light-mode .header-action-btn.logout-accent:hover {
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
 /* ==========================================================================
-   🌗 UNIFIED HEADER ICON COLOR (Header background is always dark, so icons
-   stay light-colored regardless of body light/dark theme)
+   🌗 HEADER ICONS FOLLOW THEME (header background now shifts light/dark)
    ========================================================================== */
 #themeToggle i,
-#densityToggleBtn i,
-#logoutBtn i {
-  color: rgba(255, 255, 255, 0.85);
+#densityToggleBtn i {
+  color: var(--text-main);
   transition: color 0.25s ease;
 }
 
 #themeToggle:hover i,
 #densityToggleBtn:hover i {
-  color: #ffffff;
+  color: var(--primary);
 }
 
 #logoutBtn:hover i {
