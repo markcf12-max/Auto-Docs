@@ -2432,7 +2432,6 @@ async function resetForm(event) {
   }
   
   isResetting = true; 
-
   try {
     document.querySelectorAll("input, textarea").forEach(el => {
       if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
@@ -2440,7 +2439,6 @@ async function resetForm(event) {
         el.classList.remove('val-green', 'val-amber', 'val-crimson');
       }
     });
-
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     updateVocOptions(false);
@@ -2449,11 +2447,22 @@ async function resetForm(event) {
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
-
+    
     // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
     if (currentAgentId && !isSupervisorAuthenticated) {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await setDoc(docRef, { form_data: {} }, { merge: true });
+
+      // 🎯 THE FIX: also clear the separate auto-saved draft, so refreshing
+      // doesn't bring back the wiped case/min/concernType/voc values.
+      const draftRef = doc(firestoreDb, "agent_drafts", currentAgentId);
+      await setDoc(draftRef, {
+        case: "",
+        min: "",
+        concernType: "",
+        voc: "",
+        lastSaved: Date.now()
+      }, { merge: true });
     }
     
     showToast("Active workspace cleared.");
