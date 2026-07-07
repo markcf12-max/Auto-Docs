@@ -1355,7 +1355,9 @@ body.dark-theme .meta-orb-badge,
 .header-control-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .brand-system-status {
@@ -1722,37 +1724,30 @@ body {
   font-size: calc(13px * var(--app-font-scale));
 }
 
-.form-group label,
+.form-group label {
+  font-size: calc(12px * var(--app-font-scale));
+}
+
 .form-group input,
 .form-group select,
-.form-group textarea,
-#output,
+.form-group textarea {
+  font-size: calc(13px * var(--app-font-scale));
+}
+
+#output {
+  font-size: calc(12px * var(--app-font-scale));
+}
+
 .suggestions-content,
-#playbookSpielContainer,
-.history-box,
+#playbookSpielContainer {
+  font-size: calc(13px * var(--app-font-scale));
+}
+
+.history-box {
+  font-size: calc(12px * var(--app-font-scale));
+}
+
 .micro-tracker-card,
 .priority-timer-card {
-  font-size: calc(1em * var(--app-font-scale));
-}
-
-.font-size-control-group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.font-size-control-group .header-action-btn {
-  width: 32px;
-  height: 32px;
-  font-size: 11px;
-  border: none;
-  background: transparent;
-}
-
-.font-size-control-group .header-action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  font-size: calc(12px * var(--app-font-scale));
 }
