@@ -1629,3 +1629,46 @@ body {
 .voc-success-close:hover {
   color: #ffffff;
 }
+/* ==========================================================================
+   📏 COMPACT / COMFORTABLE DENSITY MODE
+   ========================================================================== */
+body.density-compact .form-group {
+  margin-bottom: 6px;
+}
+
+body.density-compact .form-group label {
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+body.density-compact .form-group input,
+body.density-compact .form-group select,
+body.density-compact .form-group textarea {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+body.density-compact .form-grid {
+  gap: 6px;
+}
+
+body.density-compact .inputPanel,
+body.density-compact .outputPanel,
+body.density-compact .suggestionPanel {
+  padding: 10px;
+}
+
+body.density-compact textarea#action {
+  rows: 2;
+}
+
+body.density-compact .monitor-config-subpane {
+  padding: 8px !important;
+}
+
+#densityToggleBtn i {
+  transition: transform 0.2s ease;
+}
+body.density-compact #densityToggleBtn i::before {
+  content: "\f065"; /* fa-expand-alt */
+}
