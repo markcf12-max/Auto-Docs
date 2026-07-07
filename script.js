@@ -375,7 +375,7 @@ function isolateWorkspaceUI(role) {
     if (window.innerWidth <= 1024) {
       if (mobileActionDock) mobileActionDock.style.setProperty('display', 'grid', 'important');
     } else {
-       if (mobileActionDock) mobileActionDock.style.removeProperty('display');
+      if (mobileActionDock) mobileActionDock.style.setProperty('display', 'none');
     }
     
     if (outputPanel) outputPanel.style.setProperty('display', 'block');
@@ -1848,29 +1848,6 @@ function toggleDensityMode() {
   applyDensityMode(isCompact);
   localStorage.setItem(DENSITY_KEY, isCompact ? "compact" : "comfortable");
 }
-/* ==========================================================================
-   🔠 FONT SIZE ACCESSIBILITY CONTROL
-   ========================================================================== */
-const FONT_SCALE_KEY = "auto_docs_font_scale";
-const FONT_SCALE_MIN = 0.85;
-const FONT_SCALE_MAX = 1.3;
-const FONT_SCALE_STEP = 0.075;
-
-function applyFontScale(scale) {
-  const clamped = Math.min(FONT_SCALE_MAX, Math.max(FONT_SCALE_MIN, scale));
-  document.documentElement.style.setProperty('--app-font-scale', clamped.toFixed(3));
-  localStorage.setItem(FONT_SCALE_KEY, clamped.toFixed(3));
-  return clamped;
-}
-
-function adjustFontScale(direction) {
-  const current = parseFloat(localStorage.getItem(FONT_SCALE_KEY)) || 1;
-  const next = direction === 'increase' ? current + FONT_SCALE_STEP : current - FONT_SCALE_STEP;
-  applyFontScale(next);
-   // 🔠 RESTORE FONT SCALE PREFERENCE
-  const savedFontScale = parseFloat(localStorage.getItem(FONT_SCALE_KEY)) || 1;
-applyFontScale(savedFontScale);
-}
 
 function updateThemeIcon(isDark) {
   const icon = document.querySelector("#themeToggle i");
@@ -2455,6 +2432,7 @@ async function resetForm(event) {
   }
   
   isResetting = true; 
+
   try {
     document.querySelectorAll("input, textarea").forEach(el => {
       if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
@@ -2462,6 +2440,7 @@ async function resetForm(event) {
         el.classList.remove('val-green', 'val-amber', 'val-crimson');
       }
     });
+
     const select = $("concernType");
     if (select) select.selectedIndex = 0;
     updateVocOptions(false);
@@ -2470,22 +2449,11 @@ async function resetForm(event) {
     if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC";
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
-    
+
     // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
     if (currentAgentId && !isSupervisorAuthenticated) {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
       await setDoc(docRef, { form_data: {} }, { merge: true });
-
-      // 🎯 THE FIX: also clear the separate auto-saved draft, so refreshing
-      // doesn't bring back the wiped case/min/concernType/voc values.
-      const draftRef = doc(firestoreDb, "agent_drafts", currentAgentId);
-      await setDoc(draftRef, {
-        case: "",
-        min: "",
-        concernType: "",
-        voc: "",
-        lastSaved: Date.now()
-      }, { merge: true });
     }
     
     showToast("Active workspace cleared.");
@@ -2886,9 +2854,6 @@ $("drawerToggle")?.addEventListener("click", toggleDrawer);
 $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
 $("themeToggle")?.addEventListener("click", toggleTheme);
 $("densityToggleBtn")?.addEventListener("click", toggleDensityMode);
-$("fontIncreaseBtn")?.addEventListener("click", () => adjustFontScale('increase'));
-$("fontDecreaseBtn")?.addEventListener("click", () => adjustFontScale('decrease'));
-$("fontResetBtn")?.addEventListener("click", () => applyFontScale(1));
 
 $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
 $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
