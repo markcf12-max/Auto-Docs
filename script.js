@@ -1830,6 +1830,25 @@ function toggleTheme() {
   updateThemeIcon(isDark);
 }
 
+/* ==========================================================================
+   📏 DENSITY TOGGLE (Compact / Comfortable)
+   ========================================================================== */
+const DENSITY_KEY = "auto_docs_density";
+
+function applyDensityMode(isCompact) {
+  document.body.classList.toggle("density-compact", isCompact);
+  const btn = document.getElementById('densityToggleBtn');
+  if (btn) {
+    btn.title = isCompact ? "Switch to Comfortable Layout" : "Switch to Compact Layout";
+  }
+}
+
+function toggleDensityMode() {
+  const isCompact = !document.body.classList.contains("density-compact");
+  applyDensityMode(isCompact);
+  localStorage.setItem(DENSITY_KEY, isCompact ? "compact" : "comfortable");
+}
+
 function updateThemeIcon(isDark) {
   const icon = document.querySelector("#themeToggle i");
   if (!icon) return;
@@ -2546,11 +2565,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
    
-  // 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
-  const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
-  if (savedTheme === "dark") {
-    toggleTheme(); // Let your existing function run and paint the CSS rules instantly!
-  }
+// 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
+const savedTheme = localStorage.getItem(THEME_KEY) || localStorage.getItem("theme"); 
+if (savedTheme === "dark") {
+  toggleTheme();
+}
+
+// 📏 RESTORE DENSITY PREFERENCE
+const savedDensity = localStorage.getItem(DENSITY_KEY);
+applyDensityMode(savedDensity === "compact");
 
   // 📁 Force Sync History State Array Cache
   if (localStorage.getItem('shift_history_cache_key')) {
@@ -2830,6 +2853,7 @@ $("mobileResetBtn")?.addEventListener("click", resetForm);
 $("drawerToggle")?.addEventListener("click", toggleDrawer);
 $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
 $("themeToggle")?.addEventListener("click", toggleTheme);
+$("densityToggleBtn")?.addEventListener("click", toggleDensityMode);
 
 $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
 $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
