@@ -1450,10 +1450,9 @@ body.light-mode .header-action-btn.logout-accent:hover {
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
 /* ==========================================================================
-   🌗 UNIFIED ICON COLOR SYNC: Theme / Density / Logout Buttons
+   🌗 UNIFIED HEADER ICON COLOR (Header background is always dark, so icons
+   stay light-colored regardless of body light/dark theme)
    ========================================================================== */
-
-/* 🌙 DARK MODE (default) — all header icons white */
 #themeToggle i,
 #densityToggleBtn i,
 #logoutBtn i {
@@ -1462,7 +1461,10 @@ body.light-mode .header-action-btn.logout-accent:hover {
 }
 
 #themeToggle:hover i,
-#densityToggleBtn:hover i,
+#densityToggleBtn:hover i {
+  color: #ffffff;
+}
+
 #logoutBtn:hover i {
   color: #ffffff;
 }
