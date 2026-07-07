@@ -1522,11 +1522,13 @@ async function saveData(forceInstant = false) {
   const executeSave = async () => {
     updateSyncStatusUI('saving');
     const data = {};
-    document.querySelectorAll("input, textarea, select").forEach(el => {
-      if (el.id && el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
-        data[el.id] = el.value;
-      }
-    });
+document.querySelectorAll("input, textarea").forEach(el => {
+  const isColorField = el.type === 'color';
+  if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName' && !isColorField) {
+    el.value = "";
+    el.classList.remove('val-green', 'val-amber', 'val-crimson');
+  }
+});
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
 
@@ -2854,6 +2856,10 @@ $("drawerToggle")?.addEventListener("click", toggleDrawer);
 $("drawerCloseBtn")?.addEventListener("click", toggleDrawer);
 $("themeToggle")?.addEventListener("click", toggleTheme);
 $("densityToggleBtn")?.addEventListener("click", toggleDensityMode);
+// Prevent clicks on the color swatch from also triggering the dark/light theme toggle
+document.getElementById('agentThemePicker')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
 
 $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
 $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
