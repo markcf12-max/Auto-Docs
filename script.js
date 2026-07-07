@@ -375,7 +375,7 @@ function isolateWorkspaceUI(role) {
     if (window.innerWidth <= 1024) {
       if (mobileActionDock) mobileActionDock.style.setProperty('display', 'grid', 'important');
     } else {
-      if (mobileActionDock) mobileActionDock.style.setProperty('display', 'none');
+       if (mobileActionDock) mobileActionDock.style.removeProperty('display');
     }
     
     if (outputPanel) outputPanel.style.setProperty('display', 'block');
