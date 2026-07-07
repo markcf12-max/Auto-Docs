@@ -2888,6 +2888,7 @@ $("themeToggle")?.addEventListener("click", toggleTheme);
 $("densityToggleBtn")?.addEventListener("click", toggleDensityMode);
 $("fontIncreaseBtn")?.addEventListener("click", () => adjustFontScale('increase'));
 $("fontDecreaseBtn")?.addEventListener("click", () => adjustFontScale('decrease'));
+$("fontResetBtn")?.addEventListener("click", () => applyFontScale(1));
 
 $("downloadHistoryBtn")?.addEventListener("click", downloadHistoryLog);
 $("clearHistoryBtn")?.addEventListener("click", clearShiftHistory);
