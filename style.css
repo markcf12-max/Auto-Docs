@@ -1711,3 +1711,48 @@ body.density-compact .monitor-config-subpane {
 body.density-compact #densityToggleBtn i::before {
   content: "\f065"; /* fa-expand-alt */
 }
+/* ==========================================================================
+   🔠 FONT SIZE ACCESSIBILITY SCALING
+   ========================================================================== */
+:root {
+  --app-font-scale: 1;
+}
+
+body {
+  font-size: calc(13px * var(--app-font-scale));
+}
+
+.form-group label,
+.form-group input,
+.form-group select,
+.form-group textarea,
+#output,
+.suggestions-content,
+#playbookSpielContainer,
+.history-box,
+.micro-tracker-card,
+.priority-timer-card {
+  font-size: calc(1em * var(--app-font-scale));
+}
+
+.font-size-control-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.font-size-control-group .header-action-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 11px;
+  border: none;
+  background: transparent;
+}
+
+.font-size-control-group .header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
