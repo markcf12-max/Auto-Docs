@@ -1394,9 +1394,6 @@ document.querySelectorAll("input, textarea").forEach(el => {
           handleSessionLoginTransition();
         }
 
-        // 🚀 CLOUD DRAFT HOOK: Run draft restoration immediately after profile confirmation
-        triggerCloudDraftRecovery(cachedId);
-
       } else {
         localStorage.removeItem("active_agent_session_id");
         showLoginGateway(false);
@@ -1412,6 +1409,9 @@ document.querySelectorAll("input, textarea").forEach(el => {
     window.currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
+    caseTabs = [];
+    activeTabId = null;
+    if (typeof renderCaseTabsBar === "function") renderCaseTabsBar();
     if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("AGENT");
     showLoginGateway(false);
     if (typeof updateOutput === "function") updateOutput();
@@ -1452,7 +1452,186 @@ function showLoginGateway(isRegisterMode = false) {
 
 
 /* ==========================================================================
+   🗂️ MULTI-CASE TAB ENGINE (CLOUD-SYNCED, MAX 5 TABS)
+   ========================================================================== */
+let caseTabs = [];
+let activeTabId = null;
+const CASE_TAB_FIELD_IDS = ["case","concernType","voc","subj","name","min","company","email","thread","datetime","action","wocas"];
+const MAX_CASE_TABS = 5;
+
+function createBlankCaseTab() {
+  const fields = {};
+  CASE_TAB_FIELD_IDS.forEach(id => { fields[id] = ""; });
+  return {
+    id: "tab_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
+    fields
+  };
+}
+
+// Pulls whatever is currently sitting in the DOM into the active tab's in-memory record.
+// Called right before any operation that switches, saves, or serializes tabs.
+function captureActiveTabFieldsFromDom() {
+  const tab = caseTabs.find(t => t.id === activeTabId);
+  if (!tab) return;
+  CASE_TAB_FIELD_IDS.forEach(id => {
+    const el = $(id);
+    if (el) tab.fields[id] = el.value;
+  });
+}
+
+// Pushes a tab's stored fields back into the live DOM inputs and re-runs the
+// dependent UI updates (VOC datalist, output preview, playbook suggestions, validators).
+async function applyTabFieldsToDom(tab) {
+  if (!tab) return;
+  CASE_TAB_FIELD_IDS.forEach(id => {
+    const el = $(id);
+    if (el) el.value = tab.fields[id] || "";
+  });
+  // Rebuilds the VOC datalist options for the restored Concern Type, then
+  // restores the VOC text value we just set (preserveValue reads it back off the input).
+  updateVocOptions(true);
+  updateOutput();
+  await updateSuggestions();
+  if ($('case')) validateCaseField($('case'));
+  if ($('min')) validateMinField($('min'));
+}
+
+// A tab counts as having unsaved/meaningful content if any field besides the
+// auto-populated datetime has been filled in.
+function isTabDirty(tab) {
+  if (!tab) return false;
+  return CASE_TAB_FIELD_IDS.some(id => id !== "datetime" && tab.fields[id] && tab.fields[id].trim() !== "");
+}
+
+function renderCaseTabsBar() {
+  const bar = $("caseTabsBar");
+  const addBtn = $("addCaseTabBtn");
+  if (!bar) return;
+
+  if (!currentAgentId || currentAgentId === "SUPERVISOR" || caseTabs.length === 0) {
+    bar.innerHTML = "";
+    if (addBtn) addBtn.style.display = "none";
+    return;
+  }
+
+  if (addBtn) addBtn.style.display = "flex";
+
+  let html = "";
+  caseTabs.forEach((tab, idx) => {
+    const isActive = tab.id === activeTabId;
+    const rawLabel = tab.fields.case && tab.fields.case.trim() !== "" ? tab.fields.case.trim() : `Case ${idx + 1}`;
+    const dirty = isTabDirty(tab);
+    html += `
+      <div class="case-tab-item ${isActive ? 'active' : ''}" data-tab-id="${tab.id}" title="${rawLabel}">
+        ${dirty ? '<span class="case-tab-dirty-dot" title="Has unsaved entries"></span>' : ''}
+        <span class="case-tab-label">${rawLabel}</span>
+        <button type="button" class="case-tab-close" data-tab-id="${tab.id}" title="Close Tab" aria-label="Close Tab">&times;</button>
+      </div>
+    `;
+  });
+  bar.innerHTML = html;
+
+  if (addBtn) {
+    const atCap = caseTabs.length >= MAX_CASE_TABS;
+    addBtn.disabled = atCap;
+    addBtn.title = atCap ? `Maximum of ${MAX_CASE_TABS} case tabs reached` : "New Case Tab";
+  }
+}
+
+async function switchToCaseTab(tabId) {
+  if (!tabId || tabId === activeTabId) return;
+  const target = caseTabs.find(t => t.id === tabId);
+  if (!target) return;
+
+  captureActiveTabFieldsFromDom(); // preserve whatever's on screen into the tab we're leaving
+  activeTabId = tabId;
+  await applyTabFieldsToDom(target);
+  renderCaseTabsBar();
+  saveData(true);
+}
+
+async function addNewCaseTab() {
+  if (caseTabs.length >= MAX_CASE_TABS) {
+    showToast(`Maximum of ${MAX_CASE_TABS} case tabs reached. Close one to open another.`, true);
+    return;
+  }
+  captureActiveTabFieldsFromDom();
+
+  const newTab = createBlankCaseTab();
+  caseTabs.push(newTab);
+  activeTabId = newTab.id;
+
+  await applyTabFieldsToDom(newTab);
+  if ($("suggestions")) $("suggestions").innerHTML = "Select Concern & VOC to view matrix playbook options...";
+  const spielPanel = $('playbookSpielContainer');
+  if (spielPanel) {
+    spielPanel.innerHTML = `
+      <div style="padding: 12px; color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; border: 1px dashed var(--border-color); border-radius: 4px;">
+        The corresponding email spiel template will load automatically upon context verification.
+      </div>`;
+  }
+
+  renderCaseTabsBar();
+  await saveData(true);
+  showToast("New case tab opened.");
+}
+
+function closeCaseTab(tabId) {
+  const tab = caseTabs.find(t => t.id === tabId);
+  if (!tab) return;
+
+  // If we're closing the currently active tab, make sure we're checking against its freshest values
+  if (tabId === activeTabId) captureActiveTabFieldsFromDom();
+
+  const proceedClose = async () => {
+    const closingIndex = caseTabs.findIndex(t => t.id === tabId);
+    caseTabs = caseTabs.filter(t => t.id !== tabId);
+
+    if (caseTabs.length === 0) {
+      caseTabs.push(createBlankCaseTab());
+    }
+
+    if (tabId === activeTabId) {
+      const fallbackIndex = Math.max(0, closingIndex - 1);
+      const fallbackTab = caseTabs[fallbackIndex] || caseTabs[0];
+      activeTabId = fallbackTab.id;
+      await applyTabFieldsToDom(fallbackTab);
+    }
+
+    renderCaseTabsBar();
+    await saveData(true);
+    showToast("Case tab closed.");
+  };
+
+  if (isTabDirty(tab)) {
+    showSystemAlert(
+      "Unsaved Case Data",
+      "This tab still has entries in it. Closing it will remove this tab (your synced shift history is unaffected). Continue?",
+      true
+    );
+    const closeBtn = $('alertModalCloseBtn');
+    if (closeBtn) {
+      const confirmHandler = () => {
+        proceedClose();
+        closeBtn.textContent = "Acknowledge & Dismiss";
+        closeBtn.removeEventListener('click', confirmHandler);
+      };
+      closeBtn.textContent = "Confirm Close Tab";
+      closeBtn.addEventListener('click', confirmHandler);
+    }
+  } else {
+    proceedClose();
+  }
+}
+
+
+/* ==========================================================================
    ☁️ SECURE CLOUD DRAFT WORKSPACE MATRIX (ROAMING PROFILE ENGINE)
+   ⚠️ SUPERSEDED: This single-slot draft mechanism has been replaced by the
+   multi-case tab engine above, which now owns cloud persistence for case/min/
+   concernType/voc (and every other field) per-tab. The functions are left
+   here in case anything external still references them, but they are no
+   longer called anywhere in this file to avoid racing with tab restoration.
    ========================================================================== */
 
 // 📤 WRITE PIPELINE: Uploads draft states to Firestore securely
@@ -1521,13 +1700,7 @@ async function saveData(forceInstant = false) {
 
   const executeSave = async () => {
     updateSyncStatusUI('saving');
-    const data = {};
-    document.querySelectorAll("input, textarea").forEach(el => {
-      const isColorField = el.type === 'color';
-      if (el.id && el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName' && !isColorField) {
-        data[el.id] = el.value;
-      }
-    });
+    captureActiveTabFieldsFromDom();
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
 
@@ -1536,11 +1709,13 @@ async function saveData(forceInstant = false) {
       await setDoc(docRef, {
         agent_id: currentAgentId,
         case_number: caseNum,
-        form_data: data,
+        tabs: caseTabs,
+        active_tab_id: activeTabId,
         shift_manifest: globalShiftHistory,
         updated_at: Date.now()
       }, { merge: true });
       updateSyncStatusUI('online');
+      renderCaseTabsBar();
     } catch (error) {
       console.error("Firebase synchronization cloud drop:", error);
       updateSyncStatusUI('error');
@@ -1563,41 +1738,45 @@ async function pullLiveWorkspace() {
 
     if (docSnap.exists()) {
       const docData = docSnap.data();
-      const savedFormState = docData.form_data;
-      const lastSavedCase = docData.case_number || "Active Session Workspace";
-      
       globalShiftHistory = docData.shift_manifest || [];
 
-      if (savedFormState) {
-        Object.keys(savedFormState).forEach(id => {
-          const el = $(id);
-          if (el && id !== 'authEmail' && id !== 'authPassword' && id !== 'authName') {
-            el.value = savedFormState[id];
-            
-            /* 🎯 THE FIX (PART 1): Force inputs to register their new data values so 
-               any change-listeners across your interface register the update instantly */
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-          }
+      const cloudTabs = Array.isArray(docData.tabs) ? docData.tabs : [];
+
+      if (cloudTabs.length > 0) {
+        // Normalize so every tab has every expected field key, even if the
+        // cloud record predates a field being added.
+        caseTabs = cloudTabs.map(t => {
+          const fields = {};
+          CASE_TAB_FIELD_IDS.forEach(id => { fields[id] = (t.fields && t.fields[id]) || ""; });
+          return { id: t.id || createBlankCaseTab().id, fields };
+        }).slice(0, MAX_CASE_TABS);
+
+        activeTabId = (docData.active_tab_id && caseTabs.some(t => t.id === docData.active_tab_id))
+          ? docData.active_tab_id
+          : caseTabs[0].id;
+      } else if (docData.form_data && Object.keys(docData.form_data).length > 0) {
+        // 🎯 ONE-TIME MIGRATION: legacy single-form accounts fold into Tab 1
+        // instead of losing whatever they had in progress.
+        const legacyTab = createBlankCaseTab();
+        CASE_TAB_FIELD_IDS.forEach(id => {
+          legacyTab.fields[id] = docData.form_data[id] || "";
         });
-
-        // Force dropdown lists to re-build their child dependencies 
-        if ($("concernType")?.value) updateVocOptions(true);
-        if (savedFormState["voc"]) {
-          $("voc").value = savedFormState["voc"];
-          /* 🎯 THE FIX (PART 2): Force the VOC sub-string dropdown to register its state */
-          $("voc").dispatchEvent(new Event('change', { bubbles: true }));
-        }
-
-        /* 🎯 THE FIX (PART 3): Sequentially force-compile your layout view modules */
-        updateOutput();
-        await updateSuggestions(); // Await since it calls an async cloud fetch
-        
-        if($('case')) validateCaseField($('case'));
-        if($('min')) validateMinField($('min'));
-        
-        showToast(`Workspace synced live from cloud: [${lastSavedCase}]`);
+        caseTabs = [legacyTab];
+        activeTabId = legacyTab.id;
+      } else {
+        caseTabs = [createBlankCaseTab()];
+        activeTabId = caseTabs[0].id;
       }
+
+      const activeTab = caseTabs.find(t => t.id === activeTabId) || caseTabs[0];
+      await applyTabFieldsToDom(activeTab);
+      renderCaseTabsBar();
+
+      showToast(`Workspace synced live from cloud. ${caseTabs.length} case tab(s) restored.`);
+    } else {
+      caseTabs = [createBlankCaseTab()];
+      activeTabId = caseTabs[0].id;
+      renderCaseTabsBar();
     }
     
     await renderHistoryView();
@@ -2405,6 +2584,11 @@ async function executeLogOutRoutine() {
   currentAgentId = null;
   currentAgentName = "Unknown Agent";
   currentAgentLob = "UNKNOWN";
+
+  // 🗂️ Wipe multi-case tab state so the next agent on this station starts clean
+  caseTabs = [];
+  activeTabId = null;
+  if (typeof renderCaseTabsBar === "function") renderCaseTabsBar();
   
   // Reset the permanent Orb back to default ahead of browser reload pass
   const trackingOrbNode = document.getElementById('metaTrackerOrb') || $('metaTrackerOrb');
@@ -2435,8 +2619,11 @@ async function resetForm(event) {
   isResetting = true; 
 
   try {
-    document.querySelectorAll("input, textarea").forEach(el => {
-      if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName') {
+    // 🎯 SCOPED TO ACTIVE TAB: only clears the case-form fields for the tab
+    // currently open, leaving any other open case tabs untouched.
+    CASE_TAB_FIELD_IDS.forEach(id => {
+      const el = $(id);
+      if (el) {
         el.value = "";
         el.classList.remove('val-green', 'val-amber', 'val-crimson');
       }
@@ -2451,13 +2638,19 @@ async function resetForm(event) {
     const spielPanel = $('playbookSpielContainer');
     if (spielPanel) spielPanel.innerHTML = "";
 
+    const activeTab = caseTabs.find(t => t.id === activeTabId);
+    if (activeTab) {
+      CASE_TAB_FIELD_IDS.forEach(id => { activeTab.fields[id] = ""; });
+    }
+
     // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
     if (currentAgentId && !isSupervisorAuthenticated) {
       const docRef = doc(firestoreDb, "case_logs", currentAgentId);
-      await setDoc(docRef, { form_data: {} }, { merge: true });
+      await setDoc(docRef, { tabs: caseTabs, active_tab_id: activeTabId }, { merge: true });
     }
-    
-    showToast("Active workspace cleared.");
+
+    renderCaseTabsBar();
+    showToast("Active case tab cleared.");
   } catch(e) {
     console.error("Cloud database reset exception:", e);
     showToast("Error clearing cloud form properties.", true);
@@ -2481,15 +2674,22 @@ document.addEventListener("DOMContentLoaded", () => {
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
 
-   /* ==========================================================================
-      ☁️ LIVE CLOUD DRAFT MIRROR PIPELINE
-      ========================================================================== */
-  console.log("🛡️ Cloud Auto-Save Engine Armed: Uploading drafts securely...");
-
-  $('case')?.addEventListener('input', saveAgentDraftToCloud);
-  $('min')?.addEventListener('input', saveAgentDraftToCloud);
-  $('concernType')?.addEventListener('change', saveAgentDraftToCloud);
-  $('voc')?.addEventListener('change', saveAgentDraftToCloud);
+  /* ==========================================================================
+     🗂️ MULTI-CASE TAB BAR EVENT WIRING
+     ========================================================================== */
+  $('caseTabsBar')?.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('.case-tab-close');
+    if (closeBtn) {
+      e.stopPropagation();
+      closeCaseTab(closeBtn.getAttribute('data-tab-id'));
+      return;
+    }
+    const tabItem = e.target.closest('.case-tab-item');
+    if (tabItem) {
+      switchToCaseTab(tabItem.getAttribute('data-tab-id'));
+    }
+  });
+  $('addCaseTabBtn')?.addEventListener('click', addNewCaseTab);
 
   // 🛡️ REMAPPED & SECURED: Telemetry Portal Gate (Targeting Your New HTML ID)
   const openTelemetryBtn = document.getElementById('openTelemetryBtn');
@@ -2594,50 +2794,6 @@ applyDensityMode(savedDensity === "compact");
     renderChronologicalArchiveGrid();
   }
 }); // 🌟 FIX: Safely closes out your DOMContentLoaded wrapper block
-
-/* ==========================================================================
-     🚀 AGENT FORM DRAFT RECOVERY SEQUENCE (CLOUDBASED VERSION)
-     ========================================================================== */
-  setTimeout(async () => {
-    const agentId = typeof currentAgentId !== 'undefined' ? currentAgentId : "";
-    if (!agentId || agentId === "SUPERVISOR") return;
-
-    console.log(`🔄 Fetching cloud workspace draft for Agent: ${agentId}`);
-    
-    try {
-      const draftRef = doc(firestoreDb, "agent_drafts", agentId);
-      const draftSnap = await getDoc(draftRef);
-
-      if (draftSnap.exists()) {
-        const cloudDraft = draftSnap.data();
-
-        // 1. Recover plain text elements
-        if (cloudDraft.case && $("case")) $("case").value = cloudDraft.case;
-        if (cloudDraft.min && $("min")) $("min").value = cloudDraft.min;
-
-        // 2. Cascade down selection lists safely
-        if (cloudDraft.concernType && $("concernType")) {
-          $("concernType").value = cloudDraft.concernType;
-          $("concernType").dispatchEvent(new Event('change')); 
-
-          // Wait for matching child options arrays to render over the network
-          setTimeout(async () => {
-            if (cloudDraft.voc && $("voc")) {
-              $("voc").value = cloudDraft.voc;
-              $("voc").dispatchEvent(new Event('change'));
-              
-              // Re-fire suggestions/playbooks
-              if (typeof updateSuggestions === 'function') {
-                await updateSuggestions();
-              }
-            }
-          }, 250);
-        }
-      }
-    } catch (error) {
-      console.error("🚨 Failed to extract layout state backups from Firestore:", error);
-    }
-  }, 500); // 500ms delay to ensure user auth structures have completed negotiation
 
 // ==========================================================================
 // 🛡️ UNIFIED BLUEPRINT ENGINE: MORNING BRIEFING & PULSING ORB LAYER
