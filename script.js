@@ -1459,6 +1459,12 @@ let activeTabId = null;
 const CASE_TAB_FIELD_IDS = ["case","concernType","voc","subj","name","min","company","email","thread","datetime","action","wocas"];
 const MAX_CASE_TABS = 5;
 
+// 🔐 LOB GATE: multi-case tabs and the optional Thread Ref/Email section are
+// only exposed to EBG accounts. ES agents keep the classic single-case view.
+function isEbgAgent() {
+  return currentAgentLob === "EBG";
+}
+
 function createBlankCaseTab() {
   const fields = {};
   CASE_TAB_FIELD_IDS.forEach(id => { fields[id] = ""; });
@@ -1490,10 +1496,40 @@ async function applyTabFieldsToDom(tab) {
   // Rebuilds the VOC datalist options for the restored Concern Type, then
   // restores the VOC text value we just set (preserveValue reads it back off the input).
   updateVocOptions(true);
+  applyOptionalContactFieldsVisibility(tab);
   updateOutput();
   await updateSuggestions();
   if ($('case')) validateCaseField($('case'));
   if ($('min')) validateMinField($('min'));
+}
+
+// 🔐 EBG-only: Thread Ref + Email start collapsed behind a toggle. If the tab
+// already has data in either field, auto-expand so nothing looks hidden. For
+// non-EBG accounts, both fields stay always-visible (classic behavior).
+function applyOptionalContactFieldsVisibility(tab) {
+  const toggleBtn = $("toggleOptionalContactBtn");
+  const wrapper = $("optionalContactFieldsWrapper");
+  if (!toggleBtn || !wrapper) return;
+
+  if (!isEbgAgent()) {
+    toggleBtn.style.display = "none";
+    wrapper.classList.remove("optional-collapsed");
+    return;
+  }
+
+  toggleBtn.style.display = "flex";
+  const hasContactData = tab && (
+    (tab.fields.thread && tab.fields.thread.trim() !== "") ||
+    (tab.fields.email && tab.fields.email.trim() !== "")
+  );
+
+  if (hasContactData) {
+    wrapper.classList.remove("optional-collapsed");
+    toggleBtn.innerHTML = '<i class="fas fa-minus"></i> Hide Thread Ref / Email';
+  } else {
+    wrapper.classList.add("optional-collapsed");
+    toggleBtn.innerHTML = '<i class="fas fa-plus"></i> Add Thread Ref / Email (optional)';
+  }
 }
 
 // A tab counts as having unsaved/meaningful content if any field besides the
@@ -1506,13 +1542,24 @@ function isTabDirty(tab) {
 function renderCaseTabsBar() {
   const bar = $("caseTabsBar");
   const addBtn = $("addCaseTabBtn");
+  const tabsRow = document.querySelector('.case-tabs-row');
   if (!bar) return;
 
   if (!currentAgentId || currentAgentId === "SUPERVISOR" || caseTabs.length === 0) {
     bar.innerHTML = "";
     if (addBtn) addBtn.style.display = "none";
+    if (tabsRow) tabsRow.style.display = "none";
     return;
   }
+
+  // 🔐 ES (or any non-EBG) accounts never see the tab bar — they work the
+  // single active tab directly. Any extra tabs stay intact in the cloud
+  // record untouched, in case the account is ever reassigned to EBG.
+  if (!isEbgAgent()) {
+    if (tabsRow) tabsRow.style.display = "none";
+    return;
+  }
+  if (tabsRow) tabsRow.style.display = "flex";
 
   if (addBtn) addBtn.style.display = "flex";
 
@@ -1539,6 +1586,7 @@ function renderCaseTabsBar() {
 }
 
 async function switchToCaseTab(tabId) {
+  if (!isEbgAgent()) return; // defensive: tab bar is hidden for non-EBG anyway
   if (!tabId || tabId === activeTabId) return;
   const target = caseTabs.find(t => t.id === tabId);
   if (!target) return;
@@ -1551,6 +1599,10 @@ async function switchToCaseTab(tabId) {
 }
 
 async function addNewCaseTab() {
+  if (!isEbgAgent()) {
+    showToast("Multiple case tabs are only available for EBG accounts.", true);
+    return;
+  }
   if (caseTabs.length >= MAX_CASE_TABS) {
     showToast(`Maximum of ${MAX_CASE_TABS} case tabs reached. Close one to open another.`, true);
     return;
@@ -1577,6 +1629,7 @@ async function addNewCaseTab() {
 }
 
 function closeCaseTab(tabId) {
+  if (!isEbgAgent()) return; // defensive: close buttons aren't rendered for non-EBG anyway
   const tab = caseTabs.find(t => t.id === tabId);
   if (!tab) return;
 
@@ -1768,11 +1821,21 @@ async function pullLiveWorkspace() {
         activeTabId = caseTabs[0].id;
       }
 
+      // 🔐 LOB GATE: ES (or any non-EBG) accounts only ever work their first
+      // tab. Extra tabs stay untouched in `caseTabs` in memory — and get
+      // written straight back to Firestore unchanged on the next save — so
+      // nothing is lost if the account is later reassigned to EBG.
+      if (!isEbgAgent()) {
+        activeTabId = caseTabs[0].id;
+      }
+
       const activeTab = caseTabs.find(t => t.id === activeTabId) || caseTabs[0];
       await applyTabFieldsToDom(activeTab);
       renderCaseTabsBar();
 
-      showToast(`Workspace synced live from cloud. ${caseTabs.length} case tab(s) restored.`);
+      showToast(isEbgAgent()
+        ? `Workspace synced live from cloud. ${caseTabs.length} case tab(s) restored.`
+        : `Workspace synced live from cloud.`);
     } else {
       caseTabs = [createBlankCaseTab()];
       activeTabId = caseTabs[0].id;
@@ -2642,6 +2705,7 @@ async function resetForm(event) {
     if (activeTab) {
       CASE_TAB_FIELD_IDS.forEach(id => { activeTab.fields[id] = ""; });
     }
+    applyOptionalContactFieldsVisibility(activeTab); // re-collapses Thread Ref/Email for EBG since fields are now empty
 
     // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
     if (currentAgentId && !isSupervisorAuthenticated) {
@@ -2690,6 +2754,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   $('addCaseTabBtn')?.addEventListener('click', addNewCaseTab);
+
+  // 🔐 EBG-only: manual expand/collapse for the Thread Ref / Email section
+  $('toggleOptionalContactBtn')?.addEventListener('click', () => {
+    const wrapper = $('optionalContactFieldsWrapper');
+    const btn = $('toggleOptionalContactBtn');
+    if (!wrapper || !btn) return;
+    const isCollapsed = wrapper.classList.toggle('optional-collapsed');
+    btn.innerHTML = isCollapsed
+      ? '<i class="fas fa-plus"></i> Add Thread Ref / Email (optional)'
+      : '<i class="fas fa-minus"></i> Hide Thread Ref / Email';
+  });
 
   // 🛡️ REMAPPED & SECURED: Telemetry Portal Gate (Targeting Your New HTML ID)
   const openTelemetryBtn = document.getElementById('openTelemetryBtn');
