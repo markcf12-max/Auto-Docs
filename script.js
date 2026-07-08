@@ -1522,13 +1522,12 @@ async function saveData(forceInstant = false) {
   const executeSave = async () => {
     updateSyncStatusUI('saving');
     const data = {};
-document.querySelectorAll("input, textarea").forEach(el => {
-  const isColorField = el.type === 'color';
-  if (el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName' && !isColorField) {
-    el.value = "";
-    el.classList.remove('val-green', 'val-amber', 'val-crimson');
-  }
-});
+    document.querySelectorAll("input, textarea").forEach(el => {
+      const isColorField = el.type === 'color';
+      if (el.id && el.id !== 'authEmail' && el.id !== 'authPassword' && el.id !== 'authName' && !isColorField) {
+        data[el.id] = el.value;
+      }
+    });
 
     const caseNum = $("case")?.value.trim() || "DRAFT";
 
