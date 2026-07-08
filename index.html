@@ -180,21 +180,25 @@
         </div>
       </div>
 
-      <div class="form-grid">
-        <div class="form-group" style="grid-column: span 2;">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" autocomplete="email" placeholder="Enter contact email address">
-        </div>
+      <div class="form-group">
+        <label for="company">Company Name</label>
+        <input type="text" id="company">
       </div>
 
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="company">Company Name</label>
-          <input type="text" id="company">
-        </div>
+      <!-- 🔐 EBG-only optional section: Thread Ref + Email are collapsed by default
+           for EBG agents (agent can toggle to reveal), and stay always-visible for
+           ES agents. Controlled by applyOptionalContactFieldsVisibility() in script.js. -->
+      <button type="button" id="toggleOptionalContactBtn" class="optional-fields-toggle" style="display:none;">
+        <i class="fas fa-plus"></i> Add Thread Ref / Email (optional)
+      </button>
+      <div id="optionalContactFieldsWrapper" class="form-grid">
         <div class="form-group">
           <label for="thread">Interaction Thread Ref</label>
           <input type="text" id="thread" placeholder="Enter CRM thread reference identifier mapping">
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" autocomplete="email" placeholder="Enter contact email address">
         </div>
       </div>
 
