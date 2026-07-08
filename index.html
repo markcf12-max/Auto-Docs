@@ -121,6 +121,13 @@
     
     <!-- Entry Formulation Column Panel -->
     <section class="inputPanel" id="agentMainFormWrapper">
+      <!-- 🗂️ Multi-Case Tabs: cloud-synced, capped at 5. Switching tabs swaps the
+           form fields below in place; each tab keeps its own case data. -->
+      <div class="case-tabs-row">
+        <div id="caseTabsBar" class="case-tabs-bar"></div>
+        <button type="button" id="addCaseTabBtn" class="case-tab-add" title="New Case Tab">+</button>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label for="case">Case/SR Value</label>
@@ -237,6 +244,11 @@
   </div>
 
   </div>
+
+      <div class="buttons" style="margin-top: 15px;">
+        <button id="copyBtn" class="btn-primary"><i class="fas fa-copy"></i> Copy Output</button>
+        <button id="resetBtn" class="btn-secondary"><i class="fas fa-undo"></i> Reset</button>
+      </div>
     </section>
 
     <!-- Compilation Output & Historical Manifest Panel Column -->
