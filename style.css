@@ -1672,3 +1672,117 @@ body.density-compact .monitor-config-subpane {
 body.density-compact #densityToggleBtn i::before {
   content: "\f065"; /* fa-expand-alt */
 }
+
+/* ==========================================================================
+   🗂️ 13. MULTI-CASE TAB BAR (Cloud-synced, max 5 tabs)
+   ========================================================================== */
+.case-tabs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.case-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  padding: 2px 2px 4px 2px;
+}
+
+.case-tabs-bar::-webkit-scrollbar { height: 4px; }
+.case-tabs-bar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+
+.case-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 150px;
+  padding: 7px 8px 7px 10px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.dark-mode .case-tab-item, body.dark-theme .case-tab-item {
+  background: rgba(255,255,255,0.03);
+}
+
+.case-tab-item:hover {
+  border-color: var(--primary);
+  color: var(--text-main);
+}
+
+.case-tab-item.active {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.case-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 88px;
+}
+
+.case-tab-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.55;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.case-tab-close:hover {
+  opacity: 1;
+  color: #ef4444;
+}
+
+.case-tab-dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+
+.case-tab-add {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--primary);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.case-tab-add:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.case-tab-add:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
