@@ -1786,3 +1786,32 @@ body.density-compact #densityToggleBtn i::before {
   opacity: 0.35;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   🔐 14. EBG-ONLY OPTIONAL CONTACT FIELDS (Thread Ref / Email toggle)
+   ========================================================================== */
+.optional-fields-toggle {
+  display: none; /* flipped to flex via JS only for EBG accounts */
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  width: 100%;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.optional-fields-toggle:hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: var(--primary);
+}
+
+#optionalContactFieldsWrapper.optional-collapsed {
+  display: none !important;
+}
