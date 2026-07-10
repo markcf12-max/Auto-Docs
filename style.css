@@ -1711,9 +1711,21 @@ body.density-compact #densityToggleBtn i::before {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.15s ease;
   user-select: none;
+}
+.case-tab-item:active {
+  cursor: grabbing;
+}
+.case-tab-item.dragging {
+  opacity: 0.4;
+}
+.case-tab-item.drag-over-before {
+  box-shadow: -3px 0 0 0 var(--primary);
+}
+.case-tab-item.drag-over-after {
+  box-shadow: 3px 0 0 0 var(--primary);
 }
 .dark-mode .case-tab-item, body.dark-theme .case-tab-item {
   background: rgba(255,255,255,0.03);
