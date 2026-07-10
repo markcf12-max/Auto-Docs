@@ -1569,7 +1569,7 @@ function renderCaseTabsBar() {
     const rawLabel = tab.fields.case && tab.fields.case.trim() !== "" ? tab.fields.case.trim() : `Case ${idx + 1}`;
     const dirty = isTabDirty(tab);
     html += `
-      <div class="case-tab-item ${isActive ? 'active' : ''}" data-tab-id="${tab.id}" title="${rawLabel}">
+      <div class="case-tab-item ${isActive ? 'active' : ''}" data-tab-id="${tab.id}" draggable="true" title="${rawLabel}">
         ${dirty ? '<span class="case-tab-dirty-dot" title="Has unsaved entries"></span>' : ''}
         <span class="case-tab-label">${rawLabel}</span>
         <button type="button" class="case-tab-close" data-tab-id="${tab.id}" title="Close Tab" aria-label="Close Tab">&times;</button>
@@ -1675,6 +1675,34 @@ function closeCaseTab(tabId) {
   } else {
     proceedClose();
   }
+}
+
+// 🖐️ DRAG-TO-REORDER: moves a tab to sit before or after a drop target.
+// e.g. dragging Tab 5 and dropping it on Tab 1 (before) gives 5,1,2,3,4.
+let draggedTabId = null;
+
+function reorderCaseTabs(draggedId, targetId, dropBefore) {
+  if (!isEbgAgent()) return;
+  if (!draggedId || !targetId || draggedId === targetId) return;
+
+  captureActiveTabFieldsFromDom(); // preserve any live edits before we shuffle the array
+
+  const fromIndex = caseTabs.findIndex(t => t.id === draggedId);
+  if (fromIndex === -1) return;
+
+  const [movedTab] = caseTabs.splice(fromIndex, 1);
+
+  const targetIndex = caseTabs.findIndex(t => t.id === targetId);
+  if (targetIndex === -1) {
+    caseTabs.push(movedTab); // safety fallback, shouldn't normally happen
+  } else {
+    const insertIndex = dropBefore ? targetIndex : targetIndex + 1;
+    caseTabs.splice(insertIndex, 0, movedTab);
+  }
+
+  renderCaseTabsBar();
+  saveData(true);
+  showToast("Case tab order updated.");
 }
 
 
@@ -2754,6 +2782,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   $('addCaseTabBtn')?.addEventListener('click', addNewCaseTab);
+
+  // 🖐️ DRAG-TO-REORDER: grab a tab and drop it before/after another to reorder.
+  $('caseTabsBar')?.addEventListener('dragstart', (e) => {
+    const tabItem = e.target.closest('.case-tab-item');
+    if (!tabItem) return;
+    draggedTabId = tabItem.getAttribute('data-tab-id');
+    tabItem.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedTabId);
+  });
+
+  $('caseTabsBar')?.addEventListener('dragend', (e) => {
+    const tabItem = e.target.closest('.case-tab-item');
+    if (tabItem) tabItem.classList.remove('dragging');
+    document.querySelectorAll('.case-tab-item.drag-over-before, .case-tab-item.drag-over-after').forEach(el => {
+      el.classList.remove('drag-over-before', 'drag-over-after');
+    });
+    draggedTabId = null;
+  });
+
+  $('caseTabsBar')?.addEventListener('dragover', (e) => {
+    const tabItem = e.target.closest('.case-tab-item');
+    if (!tabItem || !draggedTabId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    document.querySelectorAll('.case-tab-item.drag-over-before, .case-tab-item.drag-over-after').forEach(el => {
+      if (el !== tabItem) el.classList.remove('drag-over-before', 'drag-over-after');
+    });
+
+    const rect = tabItem.getBoundingClientRect();
+    const isBefore = (e.clientX - rect.left) < rect.width / 2;
+    tabItem.classList.toggle('drag-over-before', isBefore);
+    tabItem.classList.toggle('drag-over-after', !isBefore);
+  });
+
+  $('caseTabsBar')?.addEventListener('drop', (e) => {
+    const tabItem = e.target.closest('.case-tab-item');
+    if (!tabItem || !draggedTabId) return;
+    e.preventDefault();
+
+    const targetTabId = tabItem.getAttribute('data-tab-id');
+    const rect = tabItem.getBoundingClientRect();
+    const dropBefore = (e.clientX - rect.left) < rect.width / 2;
+
+    reorderCaseTabs(draggedTabId, targetTabId, dropBefore);
+
+    document.querySelectorAll('.case-tab-item.drag-over-before, .case-tab-item.drag-over-after').forEach(el => {
+      el.classList.remove('drag-over-before', 'drag-over-after');
+    });
+  });
 
   // 🔐 EBG-only: manual expand/collapse for the Thread Ref / Email section
   $('toggleOptionalContactBtn')?.addEventListener('click', () => {
