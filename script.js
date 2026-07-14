@@ -2489,6 +2489,76 @@ function showSupervisorPanel() {
   }
 }
 
+/* ==========================================================================
+   📊 INTENT DISTRIBUTION MATRIX (Excel .xlsx export, date + LOB filtered)
+   ========================================================================== */
+async function extractIntentDistributionMatrix(selectedLobFilter, startDateFilter, endDateFilter) {
+  if (typeof XLSX === "undefined") {
+    showSystemAlert("Missing Library", "The Excel export library (SheetJS) failed to load. Check your internet connection and reload the page.");
+    return;
+  }
+
+  showToast(`Compiling intent distribution for ${selectedLobFilter} (${startDateFilter} → ${endDateFilter})...`);
+
+  try {
+    const performanceRef = collection(firestoreDb, "cases_performance_metrics");
+    const q = query(
+      performanceRef,
+      where("submission_date", ">=", startDateFilter),
+      where("submission_date", "<=", endDateFilter)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      showSystemAlert("Data Void", "No case records match this date range query.");
+      return;
+    }
+
+    const intentCounts = {};
+    let totalMatched = 0;
+
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const agentLob = data.lob || "UNKNOWN";
+      if (selectedLobFilter !== "ALL" && agentLob !== selectedLobFilter) return;
+
+      const rawVoc = (data.snapshot && data.snapshot.voc) ? data.snapshot.voc.trim() : "";
+      const cleanVoc = rawVoc.toUpperCase();
+      if (!cleanVoc || cleanVoc === "SELECT VOC" || cleanVoc === "UNDEFINED") return;
+
+      intentCounts[cleanVoc] = (intentCounts[cleanVoc] || 0) + 1;
+      totalMatched++;
+    });
+
+    if (totalMatched === 0) {
+      showSystemAlert("Zero Results", `No VOC-tagged records matched the ${selectedLobFilter} filter within this date range.`);
+      return;
+    }
+
+    const rows = Object.keys(intentCounts)
+      .map(voc => ({
+        "Intent / VOC": voc,
+        "Volume": intentCounts[voc],
+        "% of Total": totalMatched > 0 ? `${((intentCounts[voc] / totalMatched) * 100).toFixed(2)}%` : "0%"
+      }))
+      .sort((a, b) => b.Volume - a.Volume);
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [{ wch: 42 }, { wch: 10 }, { wch: 12 }];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Intent Distribution");
+
+    const filename = `Intent_Distribution_${selectedLobFilter}_${startDateFilter}_to_${endDateFilter}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+
+    showToast(`Intent Distribution Matrix exported: ${rows.length} unique VOC(s), ${totalMatched} total case(s).`);
+  } catch (error) {
+    console.error("Intent distribution extraction failure:", error);
+    showSystemAlert("Extraction Error", `Pipeline processing broke: ${error.message}`);
+  }
+}
+
 async function executeSupervisorExtraction() {
   try {
     const reportType = $('adminFilterDataType')?.value || "CASES";
@@ -2498,6 +2568,15 @@ async function executeSupervisorExtraction() {
 
     if (!startDateFilter || !endDateFilter) {
       showSystemAlert("Parameter Under-specified", "Supervisors must define both Start and End boundary parameters.");
+      return;
+    }
+
+    // 📊 INTENT DISTRIBUTION MATRIX: separate pipeline — sourced from
+    // cases_performance_metrics (has clean per-record submission_date, lob,
+    // and VOC fields already), output as a real .xlsx via SheetJS instead of
+    // the CSV pipeline the other two report types use below.
+    if (reportType === "INTENT") {
+      await extractIntentDistributionMatrix(selectedLobFilter, startDateFilter, endDateFilter);
       return;
     }
 
