@@ -1,0 +1,311 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #0f172a;
+  color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+.sim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(4, 6, 10, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sim-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+.sim-header-title i {
+  color: #a855f7;
+}
+.sim-header-badge {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a855f7;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   MAIN LAYOUT
+   ========================================================================== */
+.sim-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sim-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.sim-attribution label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.sim-attribution input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.sim-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   RECORD TYPE MODAL
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal-container {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 28px;
+  width: 90%;
+  max-width: 460px;
+}
+.modal-container h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #fff;
+}
+.modal-container hr {
+  border: none;
+  border-top: 1px solid #334155;
+  margin: 14px 0;
+}
+.modal-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 14px;
+}
+.record-type-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.record-type-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+.record-type-option input {
+  accent-color: #2563eb;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   CASE FORM
+   ========================================================================== */
+.sim-form-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #334155;
+}
+#selectedRecordTypeLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: #60a5fa;
+}
+.link-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover {
+  color: #60a5fa;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+.form-group select,
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.form-group select:focus,
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  border-color: #2563eb;
+}
+.form-group select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.form-group textarea {
+  resize: vertical;
+}
+
+.sim-section-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-top: 1px solid #334155;
+  padding-top: 16px;
+  margin: 8px 0 16px;
+}
+
+.sim-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #334155;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.btn-primary, .btn-secondary, .btn-tertiary {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+.btn-secondary {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.05);
+}
+.btn-tertiary {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a855f7;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+.btn-tertiary:hover {
+  background: rgba(124, 58, 237, 0.25);
+}
+
+/* ==========================================================================
+   COMPLETION STATE
+   ========================================================================== */
+.sim-completion {
+  text-align: center;
+  padding: 40px 24px;
+}
+.sim-completion-icon {
+  font-size: 48px;
+  color: #10b981;
+  margin-bottom: 16px;
+}
+.sim-completion h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #fff;
+}
+.sim-completion .sim-hint {
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   STATUS LINE
+   ========================================================================== */
+.sim-status {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  min-height: 18px;
+}
+.sim-status.error {
+  color: #ef4444;
+  font-weight: 600;
+}
