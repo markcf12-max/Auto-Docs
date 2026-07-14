@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case Creation Practice Simulator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="training-case-simulator.css">
+</head>
+<body>
+
+  <header class="sim-header">
+    <div class="sim-header-title">
+      <i class="fas fa-graduation-cap"></i>
+      <span>Case Creation Practice Simulator</span>
+    </div>
+    <span class="sim-header-badge">TRAINING — Not connected to production CRM</span>
+  </header>
+
+  <main class="sim-main">
+
+    <!-- Attribution: who is practicing (no full auth needed for a standalone practice tool) -->
+    <div class="sim-card sim-attribution" id="attributionCard">
+      <label for="attributionInput">Your Name / WinID</label>
+      <input type="text" id="attributionInput" placeholder="e.g. J.DELACRUZ or your WinID">
+      <p class="sim-hint">Entered once, used to tag your practice reps so your trainer can review them later.</p>
+    </div>
+
+    <!-- STEP 1: Record Type Modal (mirrors the real "New Case" record type picker) -->
+    <div id="recordTypeModal" class="modal-overlay">
+      <div class="modal-container">
+        <h2>New Case</h2>
+        <hr>
+        <p class="modal-subtitle">Select a record type</p>
+        <div class="record-type-options">
+          <label class="record-type-option">
+            <input type="radio" name="recordType" value="SMART Complaint" checked>
+            <span>SMART Complaint</span>
+          </label>
+          <label class="record-type-option">
+            <input type="radio" name="recordType" value="SMART Inquiry">
+            <span>SMART Inquiry</span>
+          </label>
+          <label class="record-type-option">
+            <input type="radio" name="recordType" value="SMART Service Request">
+            <span>SMART Service Request</span>
+          </label>
+        </div>
+        <hr>
+        <div class="modal-footer">
+          <button type="button" id="cancelRecordTypeBtn" class="btn-secondary">Cancel</button>
+          <button type="button" id="nextRecordTypeBtn" class="btn-primary">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Case Form -->
+    <div id="caseFormPanel" class="sim-card" style="display:none;">
+      <div class="sim-form-breadcrumb">
+        <span id="selectedRecordTypeLabel">SMART Complaint</span>
+        <button type="button" id="backToRecordTypeBtn" class="link-btn">Change record type</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>*Type of Customer Request</label>
+          <select id="typeOfCustomerRequest">
+            <option value="">--None--</option>
+            <option value="Complaint">Complaint</option>
+            <option value="Inquiry">Inquiry</option>
+            <option value="Service Request">Service Request</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>*Case Origin</label>
+          <select id="caseOrigin">
+            <option value="">--None--</option>
+            <option value="Internal User">Internal User</option>
+            <option value="Phone">Phone</option>
+            <option value="Email">Email</option>
+            <option value="Web">Web</option>
+            <option value="Chat">Chat</option>
+            <option value="Social Media">Social Media</option>
+            <option value="Walk-in">Walk-in</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>*Type</label>
+          <select id="caseType">
+            <option value="">--None--</option>
+            <option value="Technical">Technical</option>
+            <option value="Non-Technical">Non-Technical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>*Status</label>
+          <select id="caseStatus">
+            <option value="">--None--</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Escalated">Escalated</option>
+            <option value="Pending Customer">Pending Customer</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>*High Level Transaction Classification</label>
+        <select id="highLevelClassification">
+          <option value="">--None--</option>
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>*Transaction Type</label>
+          <select id="transactionType" disabled>
+            <option value="">Select Classification first...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>*Transaction Sub Type</label>
+          <select id="transactionSubType" disabled>
+            <option value="">Select Transaction Type first...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Transaction Reason</label>
+        <select id="transactionReason" disabled>
+          <option value="">Select Transaction Sub Type first...</option>
+        </select>
+      </div>
+
+      <div class="sim-section-header">Description Information</div>
+
+      <div class="form-group">
+        <label>*Subject</label>
+        <input type="text" id="subject" placeholder="Summarize the customer's concern">
+        <p class="sim-hint">Write this the way you'd phrase the customer's actual VOC (voice of customer).</p>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="description" rows="4" placeholder="Document the full case details as you would for internal reference"></textarea>
+        <p class="sim-hint">This is your documentation practice — write it like a real case note.</p>
+      </div>
+
+      <div class="sim-form-footer">
+        <button type="button" id="cancelCaseBtn" class="btn-secondary">Cancel</button>
+        <button type="button" id="saveNewCaseBtn" class="btn-tertiary">Save &amp; New</button>
+        <button type="button" id="saveCaseBtn" class="btn-primary">Save</button>
+      </div>
+    </div>
+
+    <!-- Completion state -->
+    <div id="completionPanel" class="sim-card sim-completion" style="display:none;">
+      <div class="sim-completion-icon"><i class="fas fa-check-circle"></i></div>
+      <h2>Practice Case Logged</h2>
+      <p id="completionSummary" class="sim-hint"></p>
+      <button type="button" id="practiceAnotherBtn" class="btn-primary">Practice Another Case</button>
+    </div>
+
+    <div id="simStatus" class="sim-status"></div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="training-case-simulator.js"></script>
+</body>
+</html>
