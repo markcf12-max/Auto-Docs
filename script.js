@@ -753,6 +753,8 @@ async function handleAuthSubmission(e) {
           currentAgentEmail = agentEmail;
           currentAgentName = "Operations Supervisor";
           currentAgentLob = "MANAGEMENT";
+          trainingModeActive = false;
+          window.trainingModeActive = false;
           localStorage.setItem("active_agent_session_id", "SUPERVISOR");
           document.body.classList.add('role-supervisor');
 
@@ -839,6 +841,8 @@ if (currentAuthMode === "LOGIN") {
           currentAgentEmail = profileData.email || "";
           currentAgentName = profileData.full_name || "Agent";
           currentAgentLob = profileData.lob || "UNKNOWN";
+          trainingModeActive = profileData.training_mode_enabled === true;
+          window.trainingModeActive = trainingModeActive;
           localStorage.setItem("active_agent_session_id", currentAgentId);
           document.body.classList.remove('role-supervisor');
           
@@ -906,6 +910,15 @@ if (currentAuthMode === "LOGIN") {
         return;
       }
       
+      // 🎓 TRAINING MODE SEED: if the roster has Nesting/Prod dates for this
+      // agent, default training mode ON until their Prod Date arrives. If
+      // either date is missing, this agent registers as a regular (non-training)
+      // account. A supervisor can always flip this manually afterward.
+      const rosterNestingDate = rosterDocData.nesting_date || null;
+      const rosterProdDate = rosterDocData.prod_date || null;
+      const todayDateStr = getSystemDateString();
+      const initialTrainingModeEnabled = !!(rosterProdDate && todayDateStr < rosterProdDate);
+
       // Document ID falls back to roster winid mapping or random hash safely auto-generated
       const generatedProfileId = rosterQuerySnap.docs[0].id || "agent_" + Date.now();
 
@@ -916,7 +929,10 @@ if (currentAuthMode === "LOGIN") {
         password: password,
         lob: selectedLob,
         created_at: Date.now(),
-        last_active_at: Date.now()
+        last_active_at: Date.now(),
+        training_mode_enabled: initialTrainingModeEnabled,
+        nesting_date: rosterNestingDate,
+        prod_date: rosterProdDate
       });
       
       showToast("Registration successful! Account provisioned.");
@@ -941,6 +957,12 @@ async function handleSessionLoginTransition() {
   $('authModal').style.display = "none";
   if ($('logoutBtn')) $('logoutBtn').style.display = "block";
   updateSyncStatusUI('online');
+
+  // 🎓 TRAINING MODE: reflect current state in the persistent banner
+  const trainingBanner = $('trainingModeBanner');
+  if (trainingBanner) {
+    trainingBanner.style.display = trainingModeActive ? "flex" : "none";
+  }
   
   updateVocOptions(true);
   updateOutput();
@@ -976,11 +998,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const orb = document.getElementById('metaTrackerOrb');
       const bubble = document.getElementById('messengerNotificationBubble');
       const drawer = document.getElementById('metaTrackerDrawer');
+      const trainingBanner = document.getElementById('trainingModeBanner');
 
       // 2. Erase them from the screen completely 
       if (orb) orb.style.setProperty('display', 'none', 'important');
       if (bubble) bubble.style.setProperty('display', 'none', 'important');
       if (drawer) drawer.classList.remove('open-drawer', 'drawer-open');
+      if (trainingBanner) trainingBanner.style.display = "none";
 
       // 3. Kill the background countdown processing engine loop
       if (window.ongoingQueueTrackingLoop) {
@@ -1307,6 +1331,71 @@ const updateData = {
   }
 }
 
+/* ==========================================================================
+   🎓 TRAINING MODE MANAGER (SUPERVISOR-ONLY)
+   ========================================================================== */
+let trainingLookupTargetId = null; // caches the agent_profiles doc id from the last successful lookup
+
+async function executeTrainingModeLookup() {
+  if (!isSupervisorAuthenticated) return;
+
+  const rawInput = $('trainingLookupInput')?.value.trim();
+  const resultBox = $('trainingLookupResult');
+  if (!rawInput) {
+    showSystemAlert("Missing Input", "Enter an agent's email or WinID to look them up.");
+    return;
+  }
+
+  try {
+    // Try matching by email first, then fall back to matching by agent_id/WinID
+    const profilesRef = collection(firestoreDb, "agent_profiles");
+    let snap = await getDocs(query(profilesRef, where("email", "==", rawInput)));
+    if (snap.empty) {
+      snap = await getDocs(query(profilesRef, where("agent_id", "==", rawInput)));
+    }
+
+    if (snap.empty) {
+      if (resultBox) resultBox.style.display = "none";
+      trainingLookupTargetId = null;
+      showSystemAlert("Not Found", `No agent profile found matching "${rawInput}".`);
+      return;
+    }
+
+    const targetDoc = snap.docs[0];
+    const data = targetDoc.data();
+    trainingLookupTargetId = targetDoc.id;
+
+    if ($('trainingLookupName')) $('trainingLookupName').textContent = `${data.full_name || 'Unknown'} (${data.lob || 'N/A'})`;
+    if ($('trainingLookupNesting')) $('trainingLookupNesting').textContent = data.nesting_date || 'Not on file';
+    if ($('trainingLookupProd')) $('trainingLookupProd').textContent = data.prod_date || 'Not on file';
+    if ($('trainingLookupToggle')) $('trainingLookupToggle').checked = data.training_mode_enabled === true;
+
+    if (resultBox) resultBox.style.display = "block";
+  } catch (err) {
+    console.error("Training mode lookup failure:", err);
+    showSystemAlert("Lookup Error", `Database query failed: ${err.message}`);
+  }
+}
+
+async function saveTrainingModeToggle() {
+  if (!isSupervisorAuthenticated) return;
+  if (!trainingLookupTargetId) {
+    showSystemAlert("No Agent Selected", "Look up an agent before saving a training mode change.");
+    return;
+  }
+
+  const newValue = $('trainingLookupToggle')?.checked === true;
+
+  try {
+    const docRef = doc(firestoreDb, "agent_profiles", trainingLookupTargetId);
+    await setDoc(docRef, { training_mode_enabled: newValue }, { merge: true });
+    showToast(`Training mode ${newValue ? "enabled" : "disabled"} for this agent. Takes effect on their next login.`);
+  } catch (err) {
+    console.error("Training mode save failure:", err);
+    showSystemAlert("Save Error", `Could not update training mode: ${err.message}`);
+  }
+}
+
 
 /* ==========================================================================
    🔒 SESSION SYSTEM MONITOR & PORTAL ROUTERS (STATION SYNC FIXES EMBEDDED)
@@ -1356,6 +1445,8 @@ document.querySelectorAll("input, textarea").forEach(el => {
     if (cachedId === "SUPERVISOR") {
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
+      trainingModeActive = false;
+      window.trainingModeActive = false;
       
       isSupervisorAuthenticated = true; 
       if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("SUPERVISOR");
@@ -1381,6 +1472,8 @@ document.querySelectorAll("input, textarea").forEach(el => {
       if(snap.exists()) {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
         currentAgentLob = snap.data().lob || "UNKNOWN";
+        trainingModeActive = snap.data().training_mode_enabled === true;
+        window.trainingModeActive = trainingModeActive;
         
         localStorage.removeItem('workbench_queue_cache');
         localStorage.removeItem('shift_history_cache_key');
@@ -1409,6 +1502,8 @@ document.querySelectorAll("input, textarea").forEach(el => {
     window.currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
+    trainingModeActive = false;
+    window.trainingModeActive = false;
     caseTabs = [];
     activeTabId = null;
     if (typeof renderCaseTabsBar === "function") renderCaseTabsBar();
@@ -1463,6 +1558,16 @@ const MAX_CASE_TABS = 5;
 // only exposed to EBG accounts. ES agents keep the classic single-case view.
 function isEbgAgent() {
   return currentAgentLob === "EBG";
+}
+
+// 🎓 TRAINING MODE: when active, all case content writes route to parallel
+// training_* Firestore collections instead of the real production ones.
+// Attendance telemetry (daily_compliance_telemetry) is NOT forked — that's
+// about login/logout access, not case content, so it always stays real.
+let trainingModeActive = false;
+
+function scopedCollectionName(baseName) {
+  return trainingModeActive ? `training_${baseName}` : baseName;
 }
 
 function createBlankCaseTab() {
@@ -1786,7 +1891,7 @@ async function saveData(forceInstant = false) {
     const caseNum = $("case")?.value.trim() || "DRAFT";
 
     try {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      const docRef = doc(firestoreDb, scopedCollectionName("case_logs"), currentAgentId);
       await setDoc(docRef, {
         agent_id: currentAgentId,
         case_number: caseNum,
@@ -1814,7 +1919,7 @@ async function pullLiveWorkspace() {
   if (!currentAgentId || currentAgentId === "SUPERVISOR") return;
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+    const docRef = doc(firestoreDb, scopedCollectionName("case_logs"), currentAgentId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -1935,7 +2040,7 @@ async function logCaseSubmissionToAnalytics(caseNumber) {
 
   const dateString = getSystemDateString();
   const metricDocId = `${currentAgentId}-${Date.now()}`;
-  const metricRef = doc(firestoreDb, "cases_performance_metrics", metricDocId);
+  const metricRef = doc(firestoreDb, scopedCollectionName("cases_performance_metrics"), metricDocId);
 
   const getCleanVal = (elementId) => {
     const el = document.getElementById(elementId);
@@ -2001,7 +2106,7 @@ async function pushToHistory(caseNumber, textContent) {
   if (globalShiftHistory.length > 50) globalShiftHistory.pop(); 
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+    const docRef = doc(firestoreDb, scopedCollectionName("case_logs"), currentAgentId);
     await updateDoc(docRef, { shift_manifest: globalShiftHistory });
     await logCaseSubmissionToAnalytics(displayId);
   } catch (err) {
@@ -2018,7 +2123,7 @@ async function deleteHistoryItem(index) {
   globalShiftHistory.splice(index, 1);
 
   try {
-    const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+    const docRef = doc(firestoreDb, scopedCollectionName("case_logs"), currentAgentId);
     await updateDoc(docRef, { shift_manifest: globalShiftHistory });
     showToast("Selected log deleted from your cloud history container.");
   } catch(err) {
@@ -2214,7 +2319,7 @@ function clearShiftHistory() {
   const structuralOverride = async () => {
     globalShiftHistory = [];
     try {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      const docRef = doc(firestoreDb, scopedCollectionName("case_logs"), currentAgentId);
       await updateDoc(docRef, { shift_manifest: [] });
       showToast("Shift summary manifest history flushed completely.");
     } catch (e) {
@@ -2675,6 +2780,8 @@ async function executeLogOutRoutine() {
   currentAgentId = null;
   currentAgentName = "Unknown Agent";
   currentAgentLob = "UNKNOWN";
+  trainingModeActive = false;
+  window.trainingModeActive = false;
 
   // 🗂️ Wipe multi-case tab state so the next agent on this station starts clean
   caseTabs = [];
@@ -2737,7 +2844,7 @@ async function resetForm(event) {
 
     // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
     if (currentAgentId && !isSupervisorAuthenticated) {
-      const docRef = doc(firestoreDb, "case_logs", currentAgentId);
+      const docRef = doc(firestoreDb, scopedCollectionName("case_logs"), currentAgentId);
       await setDoc(docRef, { tabs: caseTabs, active_tab_id: activeTabId }, { merge: true });
     }
 
@@ -2765,6 +2872,16 @@ document.addEventListener("DOMContentLoaded", () => {
   $('publishBroadcastBtn')?.addEventListener('click', executeLiveBroadcastPublish);
   $('clearBroadcastBtn')?.addEventListener('click', executeClearActiveBroadcast);
   $('supePublishBtn')?.addEventListener('click', saveMasterPlaybookConfiguration);
+
+  // 🎓 TRAINING MODE MANAGER: lookup + toggle
+  $('trainingLookupBtn')?.addEventListener('click', executeTrainingModeLookup);
+  $('trainingLookupSaveBtn')?.addEventListener('click', saveTrainingModeToggle);
+  $('trainingLookupInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeTrainingModeLookup();
+    }
+  });
 
   /* ==========================================================================
      🗂️ MULTI-CASE TAB BAR EVENT WIRING
@@ -3307,7 +3424,7 @@ window.syncAgentSessionFromCloud = async function(agentId) {
   }
   
   try {
-    const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+    const agentRecordRef = doc(firestoreDb, scopedCollectionName("agent_workbenches"), agentId);
     const docSnap = await getDoc(agentRecordRef);
     
     if (docSnap.exists()) {
@@ -3349,7 +3466,7 @@ async function dispatchWorkbenchPayloadToCloud() {
   if (!agentId || typeof firestoreDb === 'undefined') return;
 
   try {
-    const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+    const agentRecordRef = doc(firestoreDb, scopedCollectionName("agent_workbenches"), agentId);
     await setDoc(agentRecordRef, {
       shiftHistory: globalShiftHistory || [],
       activeQueue: activeUrgentQueueItems || [],
@@ -3538,7 +3655,7 @@ function runActiveQueueCountdownEngine() {
       const agentId = window.currentAgentId || (typeof currentAgentId !== 'undefined' ? currentAgentId : null);
       if (agentId && typeof firestoreDb !== 'undefined') {
         try {
-          const agentRecordRef = doc(firestoreDb, "agent_workbenches", agentId);
+          const agentRecordRef = doc(firestoreDb, scopedCollectionName("agent_workbenches"), agentId);
           const docSnap = await getDoc(agentRecordRef);
           if (docSnap.exists()) {
             const remoteData = docSnap.data();
