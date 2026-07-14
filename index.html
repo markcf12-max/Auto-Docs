@@ -6,6 +6,8 @@
   <title>Agent Documentation Suite</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
+  <!-- 📊 SheetJS: used to generate real .xlsx files for the Intent Distribution Matrix export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -627,6 +629,7 @@
         <select id="adminFilterDataType">
           <option value="CASES" selected>Detailed Case Records Workbook (Full Form Fields Data)</option>
           <option value="TELEMETRY">Agent Shift Metrics Tracking (Logins / Logouts / Drop Crashes)</option>
+          <option value="INTENT">Intent Distribution Matrix — VOC Frequency (Excel .xlsx)</option>
         </select>
       </div>
 
