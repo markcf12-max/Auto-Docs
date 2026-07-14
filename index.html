@@ -79,6 +79,18 @@
     </div>
   </div>
 
+  <!-- 🎓 Training Mode: persistent banner so it's never ambiguous that this
+       session's cases are practice-only and not saved to production records. -->
+  <div id="trainingModeBanner" class="training-mode-banner" style="display: none;">
+    <div class="training-mode-content">
+      <i class="fas fa-graduation-cap"></i>
+      <span>TRAINING MODE — Practice cases here are <strong>not</strong> saved to production records.</span>
+      <a href="training-case-simulator.html" target="_blank" rel="noopener noreferrer" class="training-mode-sim-link">
+        <i class="fas fa-external-link-alt"></i> Practice Case Creation
+      </a>
+    </div>
+  </div>
+
   <header class="workspace-brand-header">
     <div class="brand-identity-wrapper">
       <div class="brand-logo-circle-large">
@@ -421,6 +433,34 @@
                 <i class="fas fa-trash-alt"></i> Clear
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- 🎓 TRAINING MODE MANAGER: lookup an agent, view their roster nesting/prod
+             dates, and manually flip their training mode flag anytime. -->
+        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 6px;">
+          <h4 style="margin: 0 0 8px 0; color: #a855f7; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-graduation-cap"></i> Training Mode Manager
+          </h4>
+          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Look up an agent to view their roster Nesting/Prod dates and manually enable or disable Training Mode (isolates their case saves from production data).</p>
+
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="trainingLookupInput" placeholder="Agent Email or WinID" style="flex: 1; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box;">
+            <button id="trainingLookupBtn" type="button" style="background: #7c3aed; color: #fff; border: none; padding: 0 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
+              <i class="fas fa-search"></i> Look Up
+            </button>
+          </div>
+
+          <div id="trainingLookupResult" style="display: none; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 14px;">
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #f8fafc;">Agent: <strong id="trainingLookupName">—</strong></p>
+            <p style="margin: 0 0 12px 0; font-size: 12px; color: #94a3b8;">Roster Nesting Date: <span id="trainingLookupNesting">—</span> &nbsp;→&nbsp; Prod Date: <span id="trainingLookupProd">—</span></p>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">
+              <input type="checkbox" id="trainingLookupToggle" style="width: auto; cursor: pointer;">
+              Training Mode Enabled (case saves route to isolated training collections)
+            </label>
+            <button id="trainingLookupSaveBtn" type="button" style="background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
+              <i class="fas fa-save"></i> Save
+            </button>
           </div>
         </div>
 
