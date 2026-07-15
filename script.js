@@ -334,8 +334,10 @@ function isolateWorkspaceUI(role) {
   if (normalizedRole === "SUPERVISOR") {
     // 1. Maintain layout grid positioning architecture
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.setProperty('display', 'grid', 'important');
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.setProperty('display', 'flex', 'important');
-    if (playbookPanel) playbookPanel.style.setProperty('display', 'block', 'important');
+    // 🎯 Playbooks (and the mobile "View Playbooks" toggle) are an agent-only
+    // concept — hide both entirely for supervisors instead of forcing them visible.
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.setProperty('display', 'none', 'important');
+    if (playbookPanel) playbookPanel.style.setProperty('display', 'none', 'important');
 
     // 2. 🛡️ RECLAIM SPACE: Aggressively target and overwrite agent input elements
     agentFormSelectors.forEach(element => {
@@ -611,60 +613,10 @@ function updateKpiTextDisplays(totalVal, topDriver, floorStatus) {
   }
 }
 
-/**
- * 📥 EXPORT ENGINE MATRIX: Formats compiled metrics directly into a CSV spreadsheet download link
- */
-function downloadIntentDistributionReport() {
-  if (!currentActiveDashboardData || currentActiveDashboardData.length === 0) {
-    if (typeof showToast === 'function') showToast("Export aborted: No analytics metrics compiled inside cache.", true);
-    return;
-  }
-
-  console.log("🛠️ Processing Standalone CSV Export Pipeline for Intent Distribution Metrics Matrix.");
-
-  // Build structure headings layout line
-  let csvPayloadRawContent = "Intent Classification,Shift Volume,Baseline Average Reference,Weekly Trend Deviation Variance %\r\n";
-
-  currentActiveDashboardData.forEach(row => {
-    const sanitizedIntentStr = row.intent.replace(/"/g, '""');
-    const computedDeviationLabel = `${row.deviation >= 0 ? "+" : ""}${row.deviation.toFixed(2)}%`;
-    
-    csvPayloadRawContent += `"${sanitizedIntentStr}",${row.volume},${row.baseline},"${computedDeviationLabel}"\r\n`;
-  });
-
-  const calendarDateStamp = getSystemDateString().replace(/\//g, "-");
-  const fileNameOutput = `INTENT_TREND_MATRIX_${calendarDateStamp}.csv`;
-
-  const dynamicBlobPayload = new Blob([csvPayloadRawContent], { type: 'text/csv;charset=utf-8;' });
-  
-  if (navigator.msSaveBlob) {
-    navigator.msSaveBlob(dynamicBlobPayload, fileNameOutput);
-    return;
-  }
-
-  const invisibleAnchorNode = document.createElement("a");
-  const downloadUrlReference = URL.createObjectURL(dynamicBlobPayload);
-  
-  invisibleAnchorNode.setAttribute("href", downloadUrlReference);
-  invisibleAnchorNode.setAttribute("download", fileNameOutput);
-  invisibleAnchorNode.style.visibility = 'hidden';
-  
-  document.body.appendChild(invisibleAnchorNode);
-  invisibleAnchorNode.click();
-  document.body.removeChild(invisibleAnchorNode);
-
-  if (typeof showToast === 'function') {
-    showToast("Intent Trend Matrix spreadsheet exported successfully!");
-  }
-}
-
-// 🔏 ATTACH CLICK LISTENERS DURING BOOT SEQUENCE STRIP
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById('exportIntentMatrixBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    downloadIntentDistributionReport();
-  });
-});
+// 🎯 NOTE: The old standalone "Export Intent Matrix (CSV)" button/function that
+// used to live here has been removed — superseded by extractIntentDistributionMatrix()
+// in the Telemetry Reports modal, which adds date-range + LOB filtering and
+// exports real .xlsx instead of an unfiltered live-snapshot CSV.
 
 /* ==========================================================================
    Listen To Dynamic VOC LSIT
@@ -3214,7 +3166,15 @@ if (glassmorphicReminderModal) {
 window.evaluateShiftCheckInModal = function() {
   if (!glassmorphicReminderModal) return;
 
-  if (currentAgentId === "SUPERVISOR" || localStorage.getItem("shift_reminder_cleared")) {
+  // 🎯 The case-tracking orb + shift check-in reminder are agent-only concepts.
+  // Never show either for supervisors.
+  if (currentAgentId === "SUPERVISOR") {
+    glassmorphicReminderModal.style.display = 'none';
+    setOrbVisibility(false);
+    return;
+  }
+
+  if (localStorage.getItem("shift_reminder_cleared")) {
     glassmorphicReminderModal.style.display = 'none';
     setOrbVisibility(true);
     if (shiftCheckInOrb) shiftCheckInOrb.className = "meta-orb-trigger rgb-mode all-clear";
