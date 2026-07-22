@@ -26,6 +26,14 @@ import {
   orderBy,
   arrayUnion,
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  deleteUser
+} from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC3I-o7HZQ_UfvlxHOXBWYxPNtCx9Os63I",
@@ -39,6 +47,185 @@ const firebaseConfig = {
 // Initialize Firebase Core Firestore Database Engine
 const app = initializeApp(firebaseConfig);
 const firestoreDb = getFirestore(app);
+
+/* ==========================================================================
+   🎯 QUALITY SCORE DASHBOARD — SECOND FIREBASE PROJECT (READ-ONLY LINK)
+   Separate Firebase project. Requires signing the agent into THAT project's
+   Firebase Auth (matching their Quality dashboard email/password), since its
+   Firestore rules only allow an agent to read audit rows tied to their own
+   authenticated email.
+   ========================================================================== */
+const qualityFirebaseConfig = {
+  apiKey: "AIzaSyAla_DIUPqhfMPIJQkMLpBIl_evaBbCtZM",
+  authDomain: "smartscore-43fa8.firebaseapp.com",
+  projectId: "smartscore-43fa8",
+  storageBucket: "smartscore-43fa8.firebasestorage.app",
+  messagingSenderId: "466358767899",
+  appId: "1:466358767899:web:441d3ccd5e31eda083c3be"
+};
+const qualityApp = initializeApp(qualityFirebaseConfig, "qualityProject");
+const qualityDb = getFirestore(qualityApp);
+const qualityAuth = getAuth(qualityApp);
+
+// Restores the QA score panel on page refresh if this browser already has a
+// linked Quality session — no need to re-enter the password every reload.
+onAuthStateChanged(qualityAuth, (user) => {
+    if (user && currentAgentId && currentAgentId !== 'SUPERVISOR' && !isSupervisorAuthenticated) {
+        qsLoadAndRenderScores(user.email);
+    } else {
+        qsHidePanel();
+    }
+});
+
+/* --- Ported from the Quality dashboard's own parameter-flag logic, so audit
+   cards here look/behave the same as they do on that dashboard. --- */
+const QS_NON_ISSUE_VALUES = new Set(['', 'NO OPPORTUNITY', 'NA', 'N/A', 'NO', 'NONE']);
+const QS_HIT_PARAMS = [
+    { col: 'IRRELEVANT SOLUTION', category: 'Reliable', label: 'Irrelevant solution given', type: 'descriptive' },
+    { col: 'INCOMPLETE SOLUTION', category: 'Reliable', label: 'Incomplete solution given', type: 'descriptive' },
+    { col: 'UNTIMELY SOLUTION ( ZTP)', category: 'Reliable', label: 'Untimely solution (ZTP)', type: 'descriptive' },
+    { col: 'UNCLEAR SOLUTION', category: 'Reliable', label: 'Unclear solution given', type: 'descriptive' },
+    { col: 'Poor Listening Skills?', category: 'Personable', label: 'Poor listening skills', type: 'descriptive' },
+    { col: 'Customer Validation and Empathy Gap?', category: 'Personable', label: 'Empathy / validation gap', type: 'descriptive' },
+    { col: 'Did not adjust the tone/pace to match the customer?', category: 'Personable', label: 'Tone/pace not matched to customer', type: 'descriptive' },
+    { col: 'Did not adjust to the customers language?', category: 'Personable', label: 'Language not adjusted to customer', type: 'descriptive' },
+    { col: 'Negative Words, Phrasing and Limitations?', category: 'Personable', label: 'Negative words / phrasing used', type: 'descriptive' },
+    { col: 'Unfriendly/discourteous/sarcastic?', category: 'Personable', label: 'Unfriendly, discourteous, or sarcastic tone', type: 'descriptive' },
+    { col: 'FAST: Were there other Agent factors observed that affected the customer experience?', category: 'Fast', label: 'Other agent factor slowed the resolution', type: 'descriptive' },
+    { col: 'DID WE FOLLOW THE CUSTOMER AUTHENTICATION PROCESS?', category: 'Safe & Secure', label: 'Customer authentication process missed', type: 'boolean', hitValue: 'NO' },
+    { col: 'DID WE FOLLOW THE DATA PRIVACY POLICY?', category: 'Safe & Secure', label: 'Data privacy policy not followed', type: 'boolean', hitValue: 'NO' },
+    { col: 'DID WE UPDATE THE CUSTOMER INFORMATION IN THE TOOL?', category: 'Safe & Secure', label: 'Customer info not updated in tool', type: 'boolean', hitValue: 'NO' },
+    { col: 'DID WE FOLLOW THE CSAT/NPS PROCESS?', category: 'Safe & Secure', label: 'CSAT/NPS process not followed', type: 'boolean', hitValue: 'NO' },
+    { col: 'DID WE FOLLOW THE SYSTEM DOCUMENTATION PROCESS?', category: 'Safe & Secure', label: 'System documentation process missed', type: 'boolean', hitValue: 'NO' },
+    { col: 'DID WE FOLLOW THE SYSTEM TAGGING PROCESS?', category: 'Safe & Secure', label: 'System tagging process missed', type: 'boolean', hitValue: 'NO' },
+    { col: 'DID WE FOLLOW CORRECT GRAMMAR, TECHNICAL WRITING & THE PRESCRIBED LANGUAGE?', category: 'Safe & Secure', label: 'Grammar / prescribed language standard missed', type: 'boolean', hitValue: 'NO' },
+    { col: "IS THIS A POTENTIAL CUSTOMER MISTREAT?", category: 'Mistreat', label: 'Potential customer mistreat flagged', type: 'boolean', hitValue: 'YES' }
+];
+function qsNormVal(v) { return (v === undefined || v === null) ? '' : String(v).trim().toUpperCase(); }
+function qsEscapeHtml(s) {
+    return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function qsGetRowIssues(row) {
+    const issues = [];
+    QS_HIT_PARAMS.forEach(p => {
+        const raw = row[p.col];
+        const v = qsNormVal(raw);
+        if (!v) return;
+        if (p.type === 'boolean') {
+            if (v === p.hitValue) issues.push({ label: p.label, category: p.category });
+            return;
+        }
+        if (!QS_NON_ISSUE_VALUES.has(v)) {
+            const detail = v !== 'YES' ? String(raw).trim() : '';
+            issues.push({ label: detail ? `${p.label} — ${detail}` : p.label, category: p.category });
+        }
+    });
+    return issues;
+}
+
+function qsHidePanel() {
+    const el = document.getElementById('qsScorePanel');
+    if (el) el.style.display = 'none';
+}
+
+async function qsRenderPanel(rows) {
+    const panel = document.getElementById('qsScorePanel');
+    const body = document.getElementById('qsScoreBody');
+    if (!panel || !body) return;
+
+    if (!rows.length) {
+        body.innerHTML = `<div class="qs-empty">No audits found yet under your name in the Quality dashboard.</div>`;
+        panel.style.display = 'block';
+        return;
+    }
+
+    const sorted = rows.slice().sort((a, b) => String(b['WEEKENDING'] || '').localeCompare(String(a['WEEKENDING'] || '')));
+    const scored = sorted.map(r => r['OVERALL SCORE']).filter(v => v !== null && v !== undefined && !isNaN(v));
+    const avgScore = scored.length ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length) : null;
+
+    const cardsHtml = sorted.map(r => {
+        const issues = qsGetRowIssues(r);
+        const score = r['OVERALL SCORE'];
+        const passed = r['OVERALL PASSRATE'] ? r['OVERALL PASSRATE'] === 'PASSED' : (score !== null && score >= 85);
+        const tagsHtml = issues.length
+            ? issues.map(i => `<span class="qs-tag">${qsEscapeHtml(i.label)}</span>`).join('')
+            : `<span class="qs-no-issues">✓ No parameters flagged on this audit.</span>`;
+        const caseLabel = qsNormVal(r['BRAND']) === 'SMART EBG' ? 'Call ID' : 'Case #';
+        const caseLine = r['CALL ID / CASE NUMBER'] ? ` · ${caseLabel}: ${qsEscapeHtml(r['CALL ID / CASE NUMBER'])}` : '';
+        return `<div class="qs-audit-card">
+            <div class="qs-audit-head">
+                <span>${qsEscapeHtml(r['WEEKENDING'])} · ${qsEscapeHtml(r['FORM TYPE'])} · ${qsEscapeHtml(r['BRAND'])}</span>
+                <span class="qs-score-pill ${passed ? 'qs-pass' : 'qs-fail'}">${score === null ? '-' : score + '%'}</span>
+            </div>
+            <div class="qs-audit-meta">Team Leader: ${qsEscapeHtml(r['TEAM LEADER']) || '—'} · Month: ${qsEscapeHtml(r['MONTH']) || '—'}${caseLine}</div>
+            <div class="qs-tags-row">${tagsHtml}</div>
+        </div>`;
+    }).join('');
+
+    body.innerHTML = `
+        <div class="qs-summary">
+            <div class="qs-summary-score">${avgScore === null ? '—' : avgScore + '%'}</div>
+            <div class="qs-summary-label">Average score across ${sorted.length} audit${sorted.length === 1 ? '' : 's'}</div>
+        </div>
+        ${cardsHtml}`;
+    panel.style.display = 'block';
+}
+
+async function qsLoadAndRenderScores(email) {
+    try {
+        const q = query(collection(qualityDb, 'auditData'), where('agentEmailLower', '==', email.toLowerCase()));
+        const snap = await getDocs(q);
+        await qsRenderPanel(snap.docs.map(d => d.data()));
+    } catch (err) {
+        console.warn('Quality Score link: could not load scores.', err);
+        qsHidePanel();
+    }
+}
+
+/* Best-effort link: sign the agent into the Quality project using the same
+   credentials they just used here. Auto-provisions a Quality account the
+   first time, IF their email is on the Quality roster. Never throws — a
+   failure here should never block the agent's main Documentation Suite login. */
+async function linkQualityScoreAccount(email, password) {
+    if (!email) { qsHidePanel(); return; }
+    try {
+        await signInWithEmailAndPassword(qualityAuth, email, password);
+    } catch (signInErr) {
+        try {
+            await createUserWithEmailAndPassword(qualityAuth, email, password);
+        } catch (createErr) {
+            if (createErr.code === 'auth/email-already-in-use') {
+                console.warn('Quality Score link: account exists under a different password than this Documentation Suite login.');
+            } else {
+                console.warn('Quality Score link: could not create account.', createErr);
+            }
+            qsHidePanel();
+            return;
+        }
+        try {
+            const rosterSnap = await getDoc(doc(qualityDb, 'roster', email));
+            if (!rosterSnap.exists()) {
+                const strayUser = qualityAuth.currentUser;
+                await signOut(qualityAuth);
+                if (strayUser) await deleteUser(strayUser).catch(() => {});
+                qsHidePanel();
+                return;
+            }
+            const rosterData = rosterSnap.data();
+            await setDoc(doc(qualityDb, 'users', qualityAuth.currentUser.uid), {
+                email,
+                role: 'agent',
+                agentName: rosterData.agentName || '',
+                agentId: rosterData.agentId || ''
+            });
+        } catch (provisionErr) {
+            console.warn('Quality Score link: provisioning failed.', provisionErr);
+            qsHidePanel();
+            return;
+        }
+    }
+    await qsLoadAndRenderScores(email);
+}
 
 const THEME_KEY = "auto_docs_theme";
 let bannerTimeout = null; 
@@ -820,6 +1007,9 @@ if (currentAuthMode === "LOGIN") {
           isolateWorkspaceUI("AGENT");
           await handleSessionLoginTransition();
           showToast(`Identity verified. ${currentAgentLob} Session Clear!`);
+
+          // 🎯 Link to Quality Score dashboard (best-effort, never blocks main login)
+          linkQualityScoreAccount(currentAgentEmail, password);
         } else {
           showSystemAlert("Authorization Failure", "Incorrect password entered for this security gateway.");
           $('authPassword').value = ""; 
@@ -1401,6 +1591,7 @@ document.querySelectorAll("input, textarea").forEach(el => {
       window.trainingModeActive = false;
       
       isSupervisorAuthenticated = true; 
+      qsHidePanel();
       if (typeof isolateWorkspaceUI === "function") isolateWorkspaceUI("SUPERVISOR");
       
       if ($('authModal')) $('authModal').style.display = "none";
@@ -2781,6 +2972,10 @@ function terminateAgentSession() {
 
 async function executeLogOutRoutine() {
   if (saveTimeout) clearTimeout(saveTimeout);
+
+  // 🎯 Unlink Quality Score dashboard session too
+  qsHidePanel();
+  signOut(qualityAuth).catch(() => {});
   
   if (typeof terminateSupervisorSession === "function") {
     terminateSupervisorSession();
