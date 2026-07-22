@@ -350,15 +350,19 @@
           The corresponding email spiel template will load automatically upon context verification.
         </div>
       </div>
-
-      <div id="qsScorePanel" class="qs-score-panel" style="display:none; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <div class="panel-header">
-          <h3><i class="fas fa-chart-line"></i> My Quality Score</h3>
-        </div>
-        <div id="qsScoreBody" class="qs-score-body"></div>
-      </div>
     </section>
   </main>
+
+  <!-- My Quality Score — standalone panel, deliberately outside the Playbooks
+       drawer so it's always visible and unaffected by the mobile drawer toggle. -->
+  <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box;">
+    <section id="qsScorePanel" class="qs-standalone-panel" style="display:none;">
+      <div class="panel-header">
+        <h3><i class="fas fa-chart-line"></i> My Quality Score</h3>
+      </div>
+      <div id="qsScoreBody" class="qs-score-body"></div>
+    </section>
+  </div>
 
   <!-- Supervisor Master Management Panel Component Interface Portal -->
   <div style="max-width: 1400px; margin: 0 auto 40px auto; padding: 0 20px; box-sizing: border-box;">
