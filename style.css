@@ -1873,8 +1873,20 @@ body.density-compact #densityToggleBtn i::before {
 
 /* ==========================================================================
    🎯 MY QUALITY SCORE PANEL (linked from Quality Score dashboard)
+   Deliberately styled as its own standalone card — not part of the
+   Playbooks/Knowledge Maps drawer, so it's unaffected by the mobile drawer
+   toggle and always visible on its own.
    ========================================================================== */
-.qs-score-body { display: flex; flex-direction: column; gap: 10px; }
+.qs-standalone-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  margin-top: 16px;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+.qs-score-body { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .qs-empty { color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; padding: 12px; border: 1px dashed var(--border-color); border-radius: 4px; }
 .qs-summary {
   display: flex; align-items: baseline; gap: 10px;
