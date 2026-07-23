@@ -128,6 +128,10 @@ function qsHidePanel() {
     if (el) el.style.display = 'none';
 }
 
+/* TODO: set this to your actual live Quality dashboard URL */
+const QUALITY_DASHBOARD_URL = 'https://markcf12-max.github.io/Smart-Quality-Score-Management/';
+const QS_PREVIEW_COUNT = 6;
+
 async function qsRenderPanel(rows) {
     const panel = document.getElementById('qsScorePanel');
     const body = document.getElementById('qsScoreBody');
@@ -142,8 +146,9 @@ async function qsRenderPanel(rows) {
     const sorted = rows.slice().sort((a, b) => String(b['WEEKENDING'] || '').localeCompare(String(a['WEEKENDING'] || '')));
     const scored = sorted.map(r => r['OVERALL SCORE']).filter(v => v !== null && v !== undefined && !isNaN(v));
     const avgScore = scored.length ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length) : null;
+    const preview = sorted.slice(0, QS_PREVIEW_COUNT);
 
-    const cardsHtml = sorted.map(r => {
+    const cardHtml = (r) => {
         const issues = qsGetRowIssues(r);
         const score = r['OVERALL SCORE'];
         const passed = r['OVERALL PASSRATE'] ? r['OVERALL PASSRATE'] === 'PASSED' : (score !== null && score >= 85);
@@ -160,14 +165,25 @@ async function qsRenderPanel(rows) {
             <div class="qs-audit-meta">Team Leader: ${qsEscapeHtml(r['TEAM LEADER']) || '—'} · Month: ${qsEscapeHtml(r['MONTH']) || '—'}${caseLine}</div>
             <div class="qs-tags-row">${tagsHtml}</div>
         </div>`;
-    }).join('');
+    };
+
+    const cardsHtml = preview.map(cardHtml).join('');
+    const viewMoreUrl = `${QUALITY_DASHBOARD_URL}?email=${encodeURIComponent(currentAgentEmail || '')}`;
+    const viewMoreHtml = sorted.length > QS_PREVIEW_COUNT
+        ? `<button type="button" class="qs-view-more-btn" onclick="window.open('${viewMoreUrl}', '_blank')">
+             View Full History (${sorted.length} audits) on Quality Dashboard <i class="fas fa-arrow-up-right-from-square"></i>
+           </button>`
+        : `<button type="button" class="qs-view-more-btn qs-view-more-secondary" onclick="window.open('${viewMoreUrl}', '_blank')">
+             Open Full Quality Dashboard <i class="fas fa-arrow-up-right-from-square"></i>
+           </button>`;
 
     body.innerHTML = `
         <div class="qs-summary">
             <div class="qs-summary-score">${avgScore === null ? '—' : avgScore + '%'}</div>
             <div class="qs-summary-label">Average score across ${sorted.length} audit${sorted.length === 1 ? '' : 's'}</div>
         </div>
-        ${cardsHtml}`;
+        ${cardsHtml}
+        ${viewMoreHtml}`;
     panel.style.display = 'block';
 }
 
@@ -550,7 +566,7 @@ function isolateWorkspaceUI(role) {
   } else {
     // 🔓 STANDARD AGENT ROUTING LOGIC & RESET SEQUENCE
     if (mainWorkspaceLayout) mainWorkspaceLayout.style.setProperty('display', 'grid');
-    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.setProperty('display', 'flex');
+    if (viewPlaybooksDrawerBtn) viewPlaybooksDrawerBtn.style.removeProperty('display');
     if (playbookPanel) playbookPanel.style.setProperty('display', 'block');
 
     // Restore full functionality to agent tracking forms
