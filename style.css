@@ -272,7 +272,7 @@ body {
   display: grid;
   grid-template-columns: 1.1fr 1fr 0.9fr;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .inputPanel, .outputPanel, .suggestionPanel {
@@ -282,6 +282,8 @@ body {
   padding: 16px;
   box-shadow: var(--shadow);
   transition: background-color 0.3s, border-color 0.3s;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 🎯 DESKTOP SAFETY RULE: Explicitly hide mobile elements on normal monitors */
@@ -1886,6 +1888,19 @@ body.density-compact #densityToggleBtn i::before {
   margin-top: 16px;
   transition: background-color 0.3s, border-color 0.3s;
 }
+.qs-standalone-panel .panel-header { display: flex; align-items: center; justify-content: space-between; }
+.qs-collapse-btn {
+  background: transparent; border: 0.5px solid var(--border-color); border-radius: 4px;
+  color: var(--text-muted); font-size: 11px; padding: 4px 10px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+}
+.qs-collapse-btn:hover { background: rgba(255,255,255,0.05); }
+
+.qs-compact-card {
+  margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;
+}
+.qs-compact-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.qs-compact-title i { color: #60a5fa; }
 .qs-score-body { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .qs-empty { color: var(--text-muted); font-style: italic; font-size: 13px; text-align: center; padding: 12px; border: 1px dashed var(--border-color); border-radius: 4px; }
 .qs-summary {
@@ -1905,3 +1920,12 @@ body.density-compact #densityToggleBtn i::before {
 .qs-tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .qs-tag { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 10px; padding: 2px 8px; border-radius: 10px; }
 .qs-no-issues { color: #10b981; font-size: 11px; font-style: italic; margin-top: 8px; display: inline-block; }
+.qs-view-more-btn {
+  width: 100%; margin-top: 4px; padding: 11px; border: none; border-radius: 6px;
+  background: #2563eb; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.15s ease;
+}
+.qs-view-more-btn:hover { background: #1d4ed8; }
+.qs-view-more-btn.qs-view-more-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+.qs-view-more-btn.qs-view-more-secondary:hover { background: rgba(255,255,255,0.05); }
