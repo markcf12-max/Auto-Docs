@@ -124,67 +124,90 @@ function qsGetRowIssues(row) {
 }
 
 function qsHidePanel() {
-    const el = document.getElementById('qsScorePanel');
-    if (el) el.style.display = 'none';
+    const compact = document.getElementById('qsCompactCard');
+    const expanded = document.getElementById('qsExpandedPanel');
+    if (compact) compact.style.display = 'none';
+    if (expanded) expanded.style.display = 'none';
 }
 
 /* TODO: set this to your actual live Quality dashboard URL */
 const QUALITY_DASHBOARD_URL = 'https://markcf12-max.github.io/Smart-Quality-Score-Management/';
-const QS_PREVIEW_COUNT = 6;
+const QS_COMPACT_PREVIEW_COUNT = 1;
+const QS_EXPANDED_PREVIEW_COUNT = 12;
+
+function qsCardHtml(r) {
+    const issues = qsGetRowIssues(r);
+    const score = r['OVERALL SCORE'];
+    const passed = r['OVERALL PASSRATE'] ? r['OVERALL PASSRATE'] === 'PASSED' : (score !== null && score >= 85);
+    const tagsHtml = issues.length
+        ? issues.map(i => `<span class="qs-tag">${qsEscapeHtml(i.label)}</span>`).join('')
+        : `<span class="qs-no-issues">✓ No parameters flagged on this audit.</span>`;
+    const caseLabel = qsNormVal(r['BRAND']) === 'SMART EBG' ? 'Call ID' : 'Case #';
+    const caseLine = r['CALL ID / CASE NUMBER'] ? ` · ${caseLabel}: ${qsEscapeHtml(r['CALL ID / CASE NUMBER'])}` : '';
+    return `<div class="qs-audit-card">
+        <div class="qs-audit-head">
+            <span>${qsEscapeHtml(r['WEEKENDING'])} · ${qsEscapeHtml(r['FORM TYPE'])} · ${qsEscapeHtml(r['BRAND'])}</span>
+            <span class="qs-score-pill ${passed ? 'qs-pass' : 'qs-fail'}">${score === null ? '-' : score + '%'}</span>
+        </div>
+        <div class="qs-audit-meta">Team Leader: ${qsEscapeHtml(r['TEAM LEADER']) || '—'} · Month: ${qsEscapeHtml(r['MONTH']) || '—'}${caseLine}</div>
+        <div class="qs-tags-row">${tagsHtml}</div>
+    </div>`;
+}
 
 async function qsRenderPanel(rows) {
-    const panel = document.getElementById('qsScorePanel');
-    const body = document.getElementById('qsScoreBody');
-    if (!panel || !body) return;
+    const compactCard = document.getElementById('qsCompactCard');
+    const compactBody = document.getElementById('qsCompactBody');
+    const expandedPanel = document.getElementById('qsExpandedPanel');
+    const expandedBody = document.getElementById('qsExpandedBody');
+    if (!compactCard || !compactBody) return;
 
     if (!rows.length) {
-        body.innerHTML = `<div class="qs-empty">No audits found yet under your name in the Quality dashboard.</div>`;
-        panel.style.display = 'block';
+        compactBody.innerHTML = `<div class="qs-empty">No audits found yet under your name in the Quality dashboard.</div>`;
+        compactCard.style.display = 'block';
         return;
     }
 
     const sorted = rows.slice().sort((a, b) => String(b['WEEKENDING'] || '').localeCompare(String(a['WEEKENDING'] || '')));
     const scored = sorted.map(r => r['OVERALL SCORE']).filter(v => v !== null && v !== undefined && !isNaN(v));
     const avgScore = scored.length ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length) : null;
-    const preview = sorted.slice(0, QS_PREVIEW_COUNT);
 
-    const cardHtml = (r) => {
-        const issues = qsGetRowIssues(r);
-        const score = r['OVERALL SCORE'];
-        const passed = r['OVERALL PASSRATE'] ? r['OVERALL PASSRATE'] === 'PASSED' : (score !== null && score >= 85);
-        const tagsHtml = issues.length
-            ? issues.map(i => `<span class="qs-tag">${qsEscapeHtml(i.label)}</span>`).join('')
-            : `<span class="qs-no-issues">✓ No parameters flagged on this audit.</span>`;
-        const caseLabel = qsNormVal(r['BRAND']) === 'SMART EBG' ? 'Call ID' : 'Case #';
-        const caseLine = r['CALL ID / CASE NUMBER'] ? ` · ${caseLabel}: ${qsEscapeHtml(r['CALL ID / CASE NUMBER'])}` : '';
-        return `<div class="qs-audit-card">
-            <div class="qs-audit-head">
-                <span>${qsEscapeHtml(r['WEEKENDING'])} · ${qsEscapeHtml(r['FORM TYPE'])} · ${qsEscapeHtml(r['BRAND'])}</span>
-                <span class="qs-score-pill ${passed ? 'qs-pass' : 'qs-fail'}">${score === null ? '-' : score + '%'}</span>
-            </div>
-            <div class="qs-audit-meta">Team Leader: ${qsEscapeHtml(r['TEAM LEADER']) || '—'} · Month: ${qsEscapeHtml(r['MONTH']) || '—'}${caseLine}</div>
-            <div class="qs-tags-row">${tagsHtml}</div>
-        </div>`;
-    };
-
-    const cardsHtml = preview.map(cardHtml).join('');
-    const viewMoreUrl = `${QUALITY_DASHBOARD_URL}?email=${encodeURIComponent(currentAgentEmail || '')}`;
-    const viewMoreHtml = sorted.length > QS_PREVIEW_COUNT
-        ? `<button type="button" class="qs-view-more-btn" onclick="window.open('${viewMoreUrl}', '_blank')">
-             View Full History (${sorted.length} audits) on Quality Dashboard <i class="fas fa-arrow-up-right-from-square"></i>
-           </button>`
-        : `<button type="button" class="qs-view-more-btn qs-view-more-secondary" onclick="window.open('${viewMoreUrl}', '_blank')">
-             Open Full Quality Dashboard <i class="fas fa-arrow-up-right-from-square"></i>
-           </button>`;
-
-    body.innerHTML = `
+    // --- Compact preview (column 3) ---
+    const compactPreview = sorted.slice(0, QS_COMPACT_PREVIEW_COUNT).map(qsCardHtml).join('');
+    compactBody.innerHTML = `
         <div class="qs-summary">
             <div class="qs-summary-score">${avgScore === null ? '—' : avgScore + '%'}</div>
-            <div class="qs-summary-label">Average score across ${sorted.length} audit${sorted.length === 1 ? '' : 's'}</div>
+            <div class="qs-summary-label">Average across ${sorted.length} audit${sorted.length === 1 ? '' : 's'}</div>
         </div>
-        ${cardsHtml}
-        ${viewMoreHtml}`;
-    panel.style.display = 'block';
+        ${compactPreview}
+        <button type="button" id="qsViewMoreBtn" class="qs-view-more-btn">
+            View more (${sorted.length}) <i class="fas fa-chevron-down"></i>
+        </button>`;
+    compactCard.style.display = 'block';
+
+    // --- Expanded full-width panel (revealed by "View more") ---
+    if (expandedPanel && expandedBody) {
+        const expandedPreview = sorted.slice(0, QS_EXPANDED_PREVIEW_COUNT).map(qsCardHtml).join('');
+        const viewMoreUrl = `${QUALITY_DASHBOARD_URL}?email=${encodeURIComponent(currentAgentEmail || '')}`;
+        const fullLinkHtml = `<a href="${viewMoreUrl}" target="_blank" rel="noopener" class="qs-view-more-btn qs-view-more-secondary" style="text-decoration:none; box-sizing:border-box;">
+            Open Full Quality Dashboard <i class="fas fa-arrow-up-right-from-square"></i>
+        </a>`;
+        expandedBody.innerHTML = `${expandedPreview}${fullLinkHtml}`;
+
+        const viewMoreBtn = document.getElementById('qsViewMoreBtn');
+        if (viewMoreBtn) {
+            viewMoreBtn.onclick = () => {
+                expandedPanel.style.display = 'block';
+                expandedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
+        const collapseBtn = document.getElementById('qsCollapseBtn');
+        if (collapseBtn) {
+            collapseBtn.onclick = () => {
+                expandedPanel.style.display = 'none';
+                compactCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
+    }
 }
 
 async function qsLoadAndRenderScores(email) {
