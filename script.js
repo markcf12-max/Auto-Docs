@@ -197,6 +197,7 @@ async function qsRenderPanel(rows) {
         if (viewMoreBtn) {
             viewMoreBtn.onclick = () => {
                 expandedPanel.style.display = 'block';
+                viewMoreBtn.style.display = 'none';
                 expandedPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
             };
         }
@@ -204,6 +205,7 @@ async function qsRenderPanel(rows) {
         if (collapseBtn) {
             collapseBtn.onclick = () => {
                 expandedPanel.style.display = 'none';
+                if (viewMoreBtn) viewMoreBtn.style.display = 'flex';
                 compactCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
             };
         }
