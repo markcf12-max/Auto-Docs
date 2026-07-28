@@ -214,12 +214,14 @@ async function qsRenderPanel(rows) {
 }
 
 let qsUnsubscribe = null;
+let qsKnownAuditIds = null;
 
 function qsStopListening() {
     if (qsUnsubscribe) {
         qsUnsubscribe();
         qsUnsubscribe = null;
     }
+    qsKnownAuditIds = null;
 }
 
 function qsLoadAndRenderScores(email) {
@@ -227,7 +229,21 @@ function qsLoadAndRenderScores(email) {
     try {
         const q = query(collection(qualityDb, 'auditData'), where('agentEmailLower', '==', email.toLowerCase()));
         qsUnsubscribe = onSnapshot(q,
-            (snap) => { qsRenderPanel(snap.docs.map(d => d.data())); },
+            (snap) => {
+                const currentIds = new Set(snap.docs.map(d => d.id));
+                if (qsKnownAuditIds === null) {
+                    qsKnownAuditIds = currentIds;
+                } else {
+                    const newIds = [...currentIds].filter(id => !qsKnownAuditIds.has(id));
+                    if (newIds.length) {
+                        showToast(newIds.length === 1
+                            ? 'New quality audit added — check My Quality Score.'
+                            : `${newIds.length} new quality audits added — check My Quality Score.`);
+                    }
+                    qsKnownAuditIds = currentIds;
+                }
+                qsRenderPanel(snap.docs.map(d => d.data()));
+            },
             (err) => { console.warn('Quality Score link: live listener error.', err); qsHidePanel(); }
         );
     } catch (err) {
@@ -279,6 +295,160 @@ async function linkQualityScoreAccount(email, password) {
         }
     }
     await qsLoadAndRenderScores(email);
+}
+
+/* ==========================================================================
+   🎯 CSAT SURVEY COOLDOWN TRACKER
+   Enterprise Support / EBRO agents only. Tracks (does not send) whether a
+   CSAT survey was already logged for a customer's email within the last 30
+   days. Agents are blocked from re-marking within that window; a Supervisor
+   can override with their master credentials.
+   ========================================================================== */
+const CSAT_ELIGIBLE_LOBS = ['SMART ENTERPRISE SUPPORT', 'SMART EBRO'];
+const CSAT_COOLDOWN_DAYS = 30;
+let csatOverrideActive = false; // true once a Supervisor has approved an override for the current email
+
+function csatIsLobEligible(lob) {
+    return CSAT_ELIGIBLE_LOBS.includes(String(lob || '').trim().toUpperCase());
+}
+
+function csatShowSubpaneIfEligible() {
+    const subpane = document.getElementById('csatTrackerSubpane');
+    if (!subpane) return;
+    subpane.style.display = csatIsLobEligible(currentAgentLob) ? 'block' : 'none';
+}
+
+function csatNormalizeEmail(email) {
+    return String(email || '').trim().toLowerCase();
+}
+
+function csatDaysSince(isoString) {
+    const then = new Date(isoString).getTime();
+    if (isNaN(then)) return Infinity;
+    return Math.floor((Date.now() - then) / (1000 * 60 * 60 * 24));
+}
+
+async function csatCheckCooldown() {
+    const statusArea = document.getElementById('csatStatusArea');
+    const emailField = document.getElementById('email');
+    if (!statusArea || !emailField) return;
+
+    csatOverrideActive = false;
+    const email = csatNormalizeEmail(emailField.value);
+
+    if (!email || !email.includes('@')) {
+        statusArea.innerHTML = `<div class="csat-note">Enter a valid customer email above to check survey status.</div>`;
+        return;
+    }
+
+    statusArea.innerHTML = `<div class="csat-note"><i class="fas fa-spinner fa-spin"></i> Checking survey history...</div>`;
+
+    try {
+        const logSnap = await getDoc(doc(firestoreDb, 'csat_survey_log', email));
+        if (!logSnap.exists()) {
+            csatRenderEligible(email, null);
+            return;
+        }
+        const data = logSnap.data();
+        const daysSince = csatDaysSince(data.lastSentAt);
+        if (daysSince >= CSAT_COOLDOWN_DAYS) {
+            csatRenderEligible(email, data);
+        } else {
+            csatRenderBlocked(email, data, daysSince);
+        }
+    } catch (err) {
+        console.warn('CSAT tracker: could not check survey log.', err);
+        statusArea.innerHTML = `<div class="csat-note csat-note-error">Could not check survey history right now.</div>`;
+    }
+}
+
+function csatRenderEligible(email, priorData) {
+    const statusArea = document.getElementById('csatStatusArea');
+    if (!statusArea) return;
+    const priorLine = priorData
+        ? `<div class="csat-note">Last sent ${csatDaysSince(priorData.lastSentAt)} day(s) ago — cooldown has cleared.</div>`
+        : `<div class="csat-note">No survey on record for this email.</div>`;
+    statusArea.innerHTML = `
+        <div class="csat-status csat-status-ok"><i class="fas fa-circle-check"></i> Eligible to send</div>
+        ${priorLine}
+        <button type="button" id="csatMarkSentBtn" class="csat-btn csat-btn-primary">
+            <i class="fas fa-paper-plane"></i> Mark Survey as Sent
+        </button>`;
+    document.getElementById('csatMarkSentBtn').onclick = () => csatMarkSurveySent(email, false);
+}
+
+function csatRenderBlocked(email, data, daysSince) {
+    const statusArea = document.getElementById('csatStatusArea');
+    if (!statusArea) return;
+    const daysLeft = CSAT_COOLDOWN_DAYS - daysSince;
+    const sentByLine = data.sentByAgentName ? ` by ${qsEscapeHtml(data.sentByAgentName)}` : '';
+    statusArea.innerHTML = `
+        <div class="csat-status csat-status-blocked"><i class="fas fa-ban"></i> Cooldown active</div>
+        <div class="csat-note">Survey already sent ${daysSince} day(s) ago${sentByLine}. Eligible again in ${daysLeft} day(s).</div>
+        <button type="button" id="csatOverrideBtn" class="csat-btn csat-btn-secondary">
+            <i class="fas fa-user-shield"></i> Request Supervisor Override
+        </button>`;
+    document.getElementById('csatOverrideBtn').onclick = () => csatRequestOverride(email);
+}
+
+async function csatRequestOverride(email) {
+    const statusArea = document.getElementById('csatStatusArea');
+    if (!statusArea) return;
+    statusArea.insertAdjacentHTML('beforeend', `
+        <div id="csatOverridePrompt" class="csat-override-prompt">
+            <input type="text" id="csatSupUser" placeholder="Supervisor username" autocomplete="off">
+            <input type="password" id="csatSupPass" placeholder="Supervisor password" autocomplete="off">
+            <div style="display:flex; gap:6px; margin-top:6px;">
+                <button type="button" id="csatSupConfirm" class="csat-btn csat-btn-primary" style="flex:1;">Confirm</button>
+                <button type="button" id="csatSupCancel" class="csat-btn csat-btn-secondary" style="flex:1;">Cancel</button>
+            </div>
+            <div id="csatSupError" class="csat-note csat-note-error" style="display:none;"></div>
+        </div>`);
+
+    document.getElementById('csatSupCancel').onclick = () => {
+        document.getElementById('csatOverridePrompt')?.remove();
+    };
+    document.getElementById('csatSupConfirm').onclick = async () => {
+        const user = document.getElementById('csatSupUser').value.trim().toLowerCase();
+        const pass = document.getElementById('csatSupPass').value.trim();
+        const errEl = document.getElementById('csatSupError');
+        try {
+            const supervisorSnap = await getDoc(doc(firestoreDb, 'supervisor_profiles', 'master_account'));
+            if (supervisorSnap.exists()) {
+                const adminData = supervisorSnap.data();
+                if (pass === adminData.password && user === String(adminData.username || '').toLowerCase()) {
+                    document.getElementById('csatOverridePrompt')?.remove();
+                    csatOverrideActive = true;
+                    showToast('Supervisor override approved.');
+                    csatMarkSurveySent(email, true);
+                    return;
+                }
+            }
+            errEl.textContent = 'Incorrect supervisor credentials.';
+            errEl.style.display = 'block';
+        } catch (err) {
+            errEl.textContent = 'Could not verify credentials right now.';
+            errEl.style.display = 'block';
+        }
+    };
+}
+
+async function csatMarkSurveySent(email, overridden) {
+    try {
+        await setDoc(doc(firestoreDb, 'csat_survey_log', email), {
+            email,
+            lastSentAt: new Date().toISOString(),
+            sentByAgentEmail: currentAgentEmail || '',
+            sentByAgentName: currentAgentName || '',
+            lob: currentAgentLob || '',
+            overridden: !!overridden
+        });
+        showToast(overridden ? 'Survey logged with supervisor override.' : 'Survey logged as sent.');
+        csatCheckCooldown();
+    } catch (err) {
+        console.warn('CSAT tracker: could not log survey.', err);
+        showToast('Could not log the survey — try again.', true);
+    }
 }
 
 const THEME_KEY = "auto_docs_theme";
@@ -946,6 +1116,7 @@ async function handleAuthSubmission(e) {
           currentAgentEmail = agentEmail;
           currentAgentName = "Operations Supervisor";
           currentAgentLob = "MANAGEMENT";
+          csatShowSubpaneIfEligible();
           trainingModeActive = false;
           window.trainingModeActive = false;
           localStorage.setItem("active_agent_session_id", "SUPERVISOR");
@@ -1034,6 +1205,7 @@ if (currentAuthMode === "LOGIN") {
           currentAgentEmail = profileData.email || "";
           currentAgentName = profileData.full_name || "Agent";
           currentAgentLob = profileData.lob || "UNKNOWN";
+          csatShowSubpaneIfEligible();
           trainingModeActive = profileData.training_mode_enabled === true;
           window.trainingModeActive = trainingModeActive;
           localStorage.setItem("active_agent_session_id", currentAgentId);
@@ -1641,6 +1813,7 @@ document.querySelectorAll("input, textarea").forEach(el => {
     if (cachedId === "SUPERVISOR") {
       currentAgentName = "Operations Supervisor";
       currentAgentLob = "MANAGEMENT";
+      csatShowSubpaneIfEligible();
       trainingModeActive = false;
       window.trainingModeActive = false;
       
@@ -1669,6 +1842,7 @@ document.querySelectorAll("input, textarea").forEach(el => {
       if(snap.exists()) {
         currentAgentName = snap.data().full_name || "Agent " + cachedId;
         currentAgentLob = snap.data().lob || "UNKNOWN";
+        csatShowSubpaneIfEligible();
         trainingModeActive = snap.data().training_mode_enabled === true;
         window.trainingModeActive = trainingModeActive;
         
@@ -1699,6 +1873,7 @@ document.querySelectorAll("input, textarea").forEach(el => {
     window.currentAgentId = null;
     currentAgentName = "Unknown Agent";
     currentAgentLob = "UNKNOWN";
+    csatShowSubpaneIfEligible();
     trainingModeActive = false;
     window.trainingModeActive = false;
     caseTabs = [];
@@ -3060,6 +3235,7 @@ async function executeLogOutRoutine() {
   currentAgentId = null;
   currentAgentName = "Unknown Agent";
   currentAgentLob = "UNKNOWN";
+  csatShowSubpaneIfEligible();
   trainingModeActive = false;
   window.trainingModeActive = false;
 
@@ -3121,6 +3297,11 @@ async function resetForm(event) {
       CASE_TAB_FIELD_IDS.forEach(id => { activeTab.fields[id] = ""; });
     }
     applyOptionalContactFieldsVisibility(activeTab); // re-collapses Thread Ref/Email for EBG since fields are now empty
+
+    const csatCheckbox = $('enableCsatTrackCheck');
+    const csatStatusArea = $('csatStatusArea');
+    if (csatCheckbox) csatCheckbox.checked = false;
+    if (csatStatusArea) { csatStatusArea.style.display = 'none'; csatStatusArea.innerHTML = ''; }
 
     // 🔒 CLOUD SYNC UPDATED: Prevent supervisors from overwriting cloud records on reset
     if (currentAgentId && !isSupervisorAuthenticated) {
@@ -3315,6 +3496,27 @@ document.addEventListener("DOMContentLoaded", () => {
         dropdownFieldsContainer.style.display = 'none'; // Clear from view
       }
     });
+  }
+
+  // 🎯 CSAT SURVEY COOLDOWN TRACKER
+  const csatCheckbox = document.getElementById('enableCsatTrackCheck');
+  const csatStatusArea = document.getElementById('csatStatusArea');
+  const csatEmailField = document.getElementById('email');
+  if (csatCheckbox && csatStatusArea) {
+    csatCheckbox.addEventListener('change', () => {
+      if (csatCheckbox.checked) {
+        csatStatusArea.style.display = 'block';
+        csatCheckCooldown();
+      } else {
+        csatStatusArea.style.display = 'none';
+        csatStatusArea.innerHTML = '';
+      }
+    });
+    if (csatEmailField) {
+      csatEmailField.addEventListener('input', () => {
+        if (csatCheckbox.checked) csatCheckCooldown();
+      });
+    }
   }
    
 // 🌓 THE AUTOMATED THEME CHECK: Did the agent choose dark mode during their last shift?
