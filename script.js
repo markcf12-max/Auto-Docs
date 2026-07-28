@@ -124,6 +124,7 @@ function qsGetRowIssues(row) {
 }
 
 function qsHidePanel() {
+    qsStopListening();
     const compact = document.getElementById('qsCompactCard');
     const expanded = document.getElementById('qsExpandedPanel');
     if (compact) compact.style.display = 'none';
@@ -212,11 +213,23 @@ async function qsRenderPanel(rows) {
     }
 }
 
-async function qsLoadAndRenderScores(email) {
+let qsUnsubscribe = null;
+
+function qsStopListening() {
+    if (qsUnsubscribe) {
+        qsUnsubscribe();
+        qsUnsubscribe = null;
+    }
+}
+
+function qsLoadAndRenderScores(email) {
+    qsStopListening();
     try {
         const q = query(collection(qualityDb, 'auditData'), where('agentEmailLower', '==', email.toLowerCase()));
-        const snap = await getDocs(q);
-        await qsRenderPanel(snap.docs.map(d => d.data()));
+        qsUnsubscribe = onSnapshot(q,
+            (snap) => { qsRenderPanel(snap.docs.map(d => d.data())); },
+            (err) => { console.warn('Quality Score link: live listener error.', err); qsHidePanel(); }
+        );
     } catch (err) {
         console.warn('Quality Score link: could not load scores.', err);
         qsHidePanel();
