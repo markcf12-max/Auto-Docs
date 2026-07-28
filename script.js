@@ -337,7 +337,9 @@ async function csatCheckCooldown() {
     const email = csatNormalizeEmail(emailField.value);
 
     if (!email || !email.includes('@')) {
-        statusArea.innerHTML = `<div class="csat-note">Enter a valid customer email above to check survey status.</div>`;
+        statusArea.innerHTML = `<div class="csat-note csat-jump-link" id="csatJumpToEmail"><i class="fas fa-arrow-up"></i> This isn't a text box — click here to jump to the Email Address field above and fill it in.</div>`;
+        const jumpLink = document.getElementById('csatJumpToEmail');
+        if (jumpLink) jumpLink.onclick = () => { emailField.focus(); emailField.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
         return;
     }
 
@@ -452,6 +454,54 @@ async function csatMarkSurveySent(email, overridden) {
 }
 
 const THEME_KEY = "auto_docs_theme";
+
+let csatSupervisorLogRows = [];
+
+async function csatLoadSupervisorLog() {
+    const listEl = document.getElementById('csatLogList');
+    if (!listEl) return;
+    listEl.innerHTML = `<div class="csat-note"><i class="fas fa-spinner fa-spin"></i> Loading survey log...</div>`;
+    try {
+        const snap = await getDocs(collection(firestoreDb, 'csat_survey_log'));
+        csatSupervisorLogRows = snap.docs.map(d => d.data()).sort((a, b) =>
+            String(b.lastSentAt || '').localeCompare(String(a.lastSentAt || '')));
+        csatRenderSupervisorLog(csatSupervisorLogRows);
+    } catch (err) {
+        console.warn('CSAT supervisor log: could not load.', err);
+        listEl.innerHTML = `<div class="csat-note csat-note-error">Could not load the survey log.</div>`;
+    }
+}
+
+function csatRenderSupervisorLog(rows) {
+    const listEl = document.getElementById('csatLogList');
+    if (!listEl) return;
+    if (!rows.length) {
+        listEl.innerHTML = `<div class="csat-note">No CSAT surveys logged yet.</div>`;
+        return;
+    }
+    listEl.innerHTML = rows.map(r => {
+        const daysSince = csatDaysSince(r.lastSentAt);
+        const cooldownActive = daysSince < CSAT_COOLDOWN_DAYS;
+        const dateStr = r.lastSentAt ? new Date(r.lastSentAt).toLocaleDateString() : '—';
+        return `<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px 10px; font-size: 11px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <span style="font-weight:700; color:#fff;">${qsEscapeHtml(r.email)}</span>
+                <span style="color:${cooldownActive ? '#ef4444' : '#10b981'}; font-weight:700; white-space:nowrap;">
+                    ${cooldownActive ? `Cooldown (${CSAT_COOLDOWN_DAYS - daysSince}d left)` : 'Cleared'}
+                </span>
+            </div>
+            <div style="color:#94a3b8; margin-top:3px;">
+                Sent ${dateStr} (${daysSince}d ago) by ${qsEscapeHtml(r.sentByAgentName || 'Unknown')} · ${qsEscapeHtml(r.lob || '—')}${r.overridden ? ' · <span style="color:#f59e0b;">Supervisor override</span>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+document.getElementById('csatLogSearch')?.addEventListener('input', (e) => {
+    const term = e.target.value.trim().toLowerCase();
+    const filtered = term ? csatSupervisorLogRows.filter(r => (r.email || '').toLowerCase().includes(term)) : csatSupervisorLogRows;
+    csatRenderSupervisorLog(filtered);
+});
 let bannerTimeout = null; 
 let isResetting = false;      
 let saveTimeout = null;      
@@ -3460,6 +3510,7 @@ document.addEventListener("DOMContentLoaded", () => {
           telemetryContainer.style.setProperty("height", "auto", "important");
           
           console.log(`Access Granted: Extraction panel rendered safely for admin.`);
+          csatLoadSupervisorLog();
         } else {
           console.error("FATAL UI ERROR: Target element '#supervisorAdminPanel' missing from DOM tree.");
           alert("System Layout Error: The extraction container element (#supervisorAdminPanel) was not found.");
