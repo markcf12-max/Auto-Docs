@@ -263,6 +263,17 @@
 
   </div>
 
+      <!-- CSAT Survey Cooldown Tracker — shown only for Enterprise Support / EBRO agents -->
+      <div class="form-group monitor-config-subpane" id="csatTrackerSubpane" style="display:none; background: rgba(30, 41, 59, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 6px;">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+          <input type="checkbox" id="enableCsatTrackCheck" style="width: auto; cursor: pointer;">
+          <label for="enableCsatTrackCheck" style="cursor: pointer; margin: 0; font-weight: 700; font-size: 11px; color: #60a5fa; user-select: none;">
+            <i class="fas fa-poll"></i> Track CSAT Survey for this Customer
+          </label>
+        </div>
+        <div id="csatStatusArea" style="display:none; margin-top: 8px;"></div>
+      </div>
+
       <div class="buttons" style="margin-top: auto; padding-top: 15px;">
         <button id="copyBtn" class="btn-primary"><i class="fas fa-copy"></i> Copy Output</button>
         <button id="resetBtn" class="btn-secondary"><i class="fas fa-undo"></i> Reset</button>
