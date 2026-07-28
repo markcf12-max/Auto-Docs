@@ -457,6 +457,71 @@ const THEME_KEY = "auto_docs_theme";
 
 let csatSupervisorLogRows = [];
 
+// 🪟 Draggable Telemetry Portal panel
+let telemetryPanelDragInitialized = false;
+let telemetryPanelHasBeenPositioned = false;
+
+function positionTelemetryPanel(panel) {
+    if (!panel) return;
+    if (!telemetryPanelHasBeenPositioned) {
+        // Center it on first open only — subsequent opens remember where the user left it
+        requestAnimationFrame(() => {
+            const rect = panel.getBoundingClientRect();
+            const left = Math.max(10, (window.innerWidth - rect.width) / 2);
+            const top = Math.max(10, (window.innerHeight - rect.height) / 2);
+            panel.style.left = left + 'px';
+            panel.style.top = top + 'px';
+            telemetryPanelHasBeenPositioned = true;
+        });
+    }
+    initTelemetryPanelDrag(panel);
+}
+
+function initTelemetryPanelDrag(panel) {
+    if (telemetryPanelDragInitialized) return;
+    telemetryPanelDragInitialized = true;
+
+    const handle = panel.querySelector('.supervisor-header-row');
+    if (!handle) return;
+
+    let dragging = false;
+    let offsetX = 0, offsetY = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+        if (e.target.closest('#closeTelemetryBtn')) return; // don't drag when clicking Close
+        dragging = true;
+        const rect = panel.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        const rect = panel.getBoundingClientRect();
+        let left = e.clientX - offsetX;
+        let top = e.clientY - offsetY;
+        // Keep at least 40px of the header on-screen so it's never lost off-viewport
+        left = Math.min(Math.max(left, -rect.width + 120), window.innerWidth - 120);
+        top = Math.min(Math.max(top, 0), window.innerHeight - 40);
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+    });
+
+    document.addEventListener('mouseup', () => { dragging = false; });
+}
+
+// 🎛️ Supervisor panel tab switching
+document.querySelectorAll('.sup-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.sup-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.sup-tab-panel').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        const panel = document.getElementById('supTab' + btn.dataset.suptab.charAt(0).toUpperCase() + btn.dataset.suptab.slice(1));
+        if (panel) panel.style.display = 'block';
+    });
+});
+
 async function csatLoadSupervisorLog() {
     const listEl = document.getElementById('csatLogList');
     if (!listEl) return;
@@ -3511,6 +3576,7 @@ document.addEventListener("DOMContentLoaded", () => {
           
           console.log(`Access Granted: Extraction panel rendered safely for admin.`);
           csatLoadSupervisorLog();
+          positionTelemetryPanel(telemetryContainer);
         } else {
           console.error("FATAL UI ERROR: Target element '#supervisorAdminPanel' missing from DOM tree.");
           alert("System Layout Error: The extraction container element (#supervisorAdminPanel) was not found.");
