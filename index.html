@@ -398,103 +398,17 @@
       </div>
 
       <div id="supervisorContent" style="display: none; opacity: 0; transition: opacity 0.4s ease;">
-        
-<div style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-top: 20px;">
-  <h3 style="color: #f8fafc; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-    📘 Playbook Provisioning Panel: Global VOC & Spiels Engine
-  </h3>
-  <form id="supervisorPlaybookForm" style="display: flex; flex-direction: column; gap: 12px;">
-    <div>
-      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Concern Type (Which dropdown this VOC belongs to)</label>
-      <select id="newVocConcernType" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
-        <option value="">-- Select Concern Type --</option>
-        <option value="Technical">Technical</option>
-        <option value="Aftersales">Aftersales</option>
-        <option value="Inquiry">Inquiry</option>
-        <option value="Complaint">Complaint</option>
-      </select>
-    </div>
 
-    <div>
-      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">VOC Name (This becomes the Document ID)</label>
-      <input type="text" id="newVocId" placeholder="e.g., Voice Quality" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
-    </div>
-
-    <div>
-      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Operational Matrix Context / Policies (htmlContent)</label>
-      <textarea id="newHtmlContent" rows="4" placeholder="💡 Use text or clean HTML elements here:<br><strong>Step 1:</strong> Check network settings..." required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; font-family: sans-serif; resize: vertical; box-sizing: border-box;"></textarea>
-    </div>
-
-    <div>
-      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Sample Email Guide / Script Template (rawSpielText)</label>
-      <textarea id="newRawSpielText" rows="4" placeholder="Dear Valued Customer,&#10;&#10;Regarding your issue about..." required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; font-family: monospace; resize: vertical; box-sizing: border-box;"></textarea>
-    </div>
-
-    <button type="submit" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s;">
-      💾 Inject Playbook Into Collection Database
-    </button>
-  </form>
-</div>
-
-        <!-- Operational Urgent Live Message Broadcast Card Module Segment -->
-        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
-          <h4 style="margin: 0 0 8px 0; color: #ef4444; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-            <i class="fas fa-bullhorn animate-pulse"></i> Live Operational Broadcast Center
-          </h4>
-          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Deploy instant emergency notifications, queue spikes, or process updates directly to all active agent banner arrays.</p>
-          
-          <div style="margin-bottom: 12px;">
-            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
-          </div>
-          
-          <div style="display: flex; gap: 16px; align-items: flex-end;">
-            <div style="flex: 1;">
-              <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Alert Severity Level</label>
-              <select id="broadcastSeveritySelect" style="width: 100%; padding: 9px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px;">
-                <option value="info">🔵 Info (Blue - General System Update)</option>
-                <option value="warning">🟡 Warning (Amber - Process Reminder Alerts)</option>
-                <option value="critical">🔴 Critical (Red - Priority Emergency / Outage)</option>
-              </select>
-            </div>
-            <div style="display: flex; gap: 8px; width: 300px;">
-              <button id="publishBroadcastBtn" style="flex: 2; background: #10b981; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;">
-                <i class="fas fa-paper-plane"></i> Broadcast Live
-              </button>
-              <button id="clearBroadcastBtn" style="flex: 1; background: #ef4444; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;" title="Terminate Active Announcement">
-                <i class="fas fa-trash-alt"></i> Clear
-              </button>
-            </div>
-          </div>
+        <!-- Supervisor Tool Tabs -->
+        <div class="sup-tab-bar">
+          <button type="button" class="sup-tab-btn active" data-suptab="intent"><i class="fas fa-chart-bar"></i> Intent Tracker</button>
+          <button type="button" class="sup-tab-btn" data-suptab="playbooks"><i class="fas fa-book"></i> Playbooks</button>
+          <button type="button" class="sup-tab-btn" data-suptab="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</button>
+          <button type="button" class="sup-tab-btn" data-suptab="training"><i class="fas fa-graduation-cap"></i> Training Mode</button>
         </div>
 
-        <!-- 🎓 TRAINING MODE MANAGER: lookup an agent, view their roster nesting/prod
-             dates, and manually flip their training mode flag anytime. -->
-        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 6px;">
-          <h4 style="margin: 0 0 8px 0; color: #a855f7; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-            <i class="fas fa-graduation-cap"></i> Training Mode Manager
-          </h4>
-          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Look up an agent to view their roster Nesting/Prod dates and manually enable or disable Training Mode (isolates their case saves from production data).</p>
-
-          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <input type="text" id="trainingLookupInput" placeholder="Agent Email or WinID" style="flex: 1; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box;">
-            <button id="trainingLookupBtn" type="button" style="background: #7c3aed; color: #fff; border: none; padding: 0 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
-              <i class="fas fa-search"></i> Look Up
-            </button>
-          </div>
-
-          <div id="trainingLookupResult" style="display: none; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 14px;">
-            <p style="margin: 0 0 4px 0; font-size: 13px; color: #f8fafc;">Agent: <strong id="trainingLookupName">—</strong></p>
-            <p style="margin: 0 0 12px 0; font-size: 12px; color: #94a3b8;">Roster Nesting Date: <span id="trainingLookupNesting">—</span> &nbsp;→&nbsp; Prod Date: <span id="trainingLookupProd">—</span></p>
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">
-              <input type="checkbox" id="trainingLookupToggle" style="width: auto; cursor: pointer;">
-              Training Mode Enabled (case saves route to isolated training collections)
-            </label>
-            <button id="trainingLookupSaveBtn" type="button" style="background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
-              <i class="fas fa-save"></i> Save
-            </button>
-          </div>
-        </div>
-
+        <!-- TAB: Intent Tracker (default) -->
+        <div class="sup-tab-panel" id="supTabIntent" style="display:block;">
         <!-- Live Floor Intent Distribution Tracker -->
 <div id="supervisorDashboardCanvas" style="display: none; flex-direction: column; gap: 20px; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Segoe UI', system-ui, sans-serif; box-sizing: border-box;">
   
@@ -553,6 +467,51 @@
     </div>
   </div>
 </div>
+        </div>
+
+        <!-- TAB: Playbooks (create new + edit existing) -->
+        <div class="sup-tab-panel" id="supTabPlaybooks" style="display:none;">
+<div style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-top: 20px;">
+  <h3 style="color: #f8fafc; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+    📘 Playbook Provisioning Panel: Global VOC & Spiels Engine
+  </h3>
+  <form id="supervisorPlaybookForm" style="display: flex; flex-direction: column; gap: 12px;">
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Concern Type (Which dropdown this VOC belongs to)</label>
+      <select id="newVocConcernType" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
+        <option value="">-- Select Concern Type --</option>
+        <option value="Technical">Technical</option>
+        <option value="Aftersales">Aftersales</option>
+        <option value="Inquiry">Inquiry</option>
+        <option value="Complaint">Complaint</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">VOC Name (This becomes the Document ID)</label>
+      <input type="text" id="newVocId" placeholder="e.g., Voice Quality" required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; box-sizing: border-box;">
+    </div>
+
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Operational Matrix Context / Policies (htmlContent)</label>
+      <textarea id="newHtmlContent" rows="4" placeholder="💡 Use text or clean HTML elements here:<br><strong>Step 1:</strong> Check network settings..." required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; font-family: sans-serif; resize: vertical; box-sizing: border-box;"></textarea>
+    </div>
+
+    <div>
+      <label style="display: block; color: #94a3b8; font-size: 11px; font-weight: 600; margin-bottom: 4px; text-transform: uppercase;">Sample Email Guide / Script Template (rawSpielText)</label>
+      <textarea id="newRawSpielText" rows="4" placeholder="Dear Valued Customer,&#10;&#10;Regarding your issue about..." required style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; color: #fff; font-size: 12px; font-family: monospace; resize: vertical; box-sizing: border-box;"></textarea>
+    </div>
+
+    <button type="submit" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.2s;">
+      💾 Inject Playbook Into Collection Database
+    </button>
+  </form>
+</div>
+
+          <div style="margin-top: 20px; padding: 20px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+            <h3 style="color: #f8fafc; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+              ✏️ Edit Existing Playbook
+            </h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
           <div>
             <label style="color: #94a3b8; font-size: 12px; display: block; margin-bottom: 6px; font-weight: 500;">Target Concern Filter</label>
@@ -588,8 +547,75 @@
         <button id="supePublishBtn" style="background: #1d4ed8; color: #fff; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: background 0.2s; font-family: inherit;">
           <i class="fas fa-cloud-upload-alt"></i> Publish Master Matrix Updates Live
         </button>
+          </div>
+        </div>
+
+        <!-- TAB: Broadcast -->
+        <div class="sup-tab-panel" id="supTabBroadcast" style="display:none;">
+        <!-- Operational Urgent Live Message Broadcast Card Module Segment -->
+        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px;">
+          <h4 style="margin: 0 0 8px 0; color: #ef4444; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-bullhorn animate-pulse"></i> Live Operational Broadcast Center
+          </h4>
+          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Deploy instant emergency notifications, queue spikes, or process updates directly to all active agent banner arrays.</p>
+          
+          <div style="margin-bottom: 12px;">
+            <textarea id="broadcastTextInput" rows="2" placeholder="Type urgent system notification text here..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box; resize: none;"></textarea>
+          </div>
+          
+          <div style="display: flex; gap: 16px; align-items: flex-end;">
+            <div style="flex: 1;">
+              <label style="color: #94a3b8; font-size: 11px; display: block; margin-bottom: 6px; font-weight: 500; text-transform: uppercase;">Alert Severity Level</label>
+              <select id="broadcastSeveritySelect" style="width: 100%; padding: 9px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px;">
+                <option value="info">🔵 Info (Blue - General System Update)</option>
+                <option value="warning">🟡 Warning (Amber - Process Reminder Alerts)</option>
+                <option value="critical">🔴 Critical (Red - Priority Emergency / Outage)</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 8px; width: 300px;">
+              <button id="publishBroadcastBtn" style="flex: 2; background: #10b981; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;">
+                <i class="fas fa-paper-plane"></i> Broadcast Live
+              </button>
+              <button id="clearBroadcastBtn" style="flex: 1; background: #ef4444; color: #fff; border: none; padding: 10px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; font-family: inherit;" title="Terminate Active Announcement">
+                <i class="fas fa-trash-alt"></i> Clear
+              </button>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- TAB: Training Mode -->
+        <div class="sup-tab-panel" id="supTabTraining" style="display:none;">
+        <!-- 🎓 TRAINING MODE MANAGER: lookup an agent, view their roster nesting/prod
+             dates, and manually flip their training mode flag anytime. -->
+        <div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 6px;">
+          <h4 style="margin: 0 0 8px 0; color: #a855f7; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-graduation-cap"></i> Training Mode Manager
+          </h4>
+          <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">Look up an agent to view their roster Nesting/Prod dates and manually enable or disable Training Mode (isolates their case saves from production data).</p>
+
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="trainingLookupInput" placeholder="Agent Email or WinID" style="flex: 1; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 4px; font-family: inherit; font-size: 12px; box-sizing: border-box;">
+            <button id="trainingLookupBtn" type="button" style="background: #7c3aed; color: #fff; border: none; padding: 0 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
+              <i class="fas fa-search"></i> Look Up
+            </button>
+          </div>
+
+          <div id="trainingLookupResult" style="display: none; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 14px;">
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #f8fafc;">Agent: <strong id="trainingLookupName">—</strong></p>
+            <p style="margin: 0 0 12px 0; font-size: 12px; color: #94a3b8;">Roster Nesting Date: <span id="trainingLookupNesting">—</span> &nbsp;→&nbsp; Prod Date: <span id="trainingLookupProd">—</span></p>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #e2e8f0; margin-bottom: 12px;">
+              <input type="checkbox" id="trainingLookupToggle" style="width: auto; cursor: pointer;">
+              Training Mode Enabled (case saves route to isolated training collections)
+            </label>
+            <button id="trainingLookupSaveBtn" type="button" style="background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px;">
+              <i class="fas fa-save"></i> Save
+            </button>
+          </div>
+        </div>
+        </div>
+
       </div>
-    </div>
   </div>
 
   <!-- Mobile View Overlay Drawer Toggle Triggers -->
@@ -646,8 +672,8 @@
   <!-- Supervisor Telemetry Workbook Extract Modal Overlays -->
   <div id="supervisorAdminPanel" class="modal-overlay supervisor-overlay" style="display: none;">
     <div class="modal-container supervisor-container">
-      <div class="supervisor-header-row">
-        <h3><i class="fas fa-user-shield"></i> Supervisor Telemetry Portal</h3>
+      <div class="supervisor-header-row" title="Drag this header to move the panel">
+        <h3><i class="fas fa-grip-vertical" style="color:#475569; margin-right:2px;"></i> <i class="fas fa-user-shield"></i> Supervisor Telemetry Portal</h3>
         <button id="closeTelemetryBtn" class="btn-close-modal" aria-label="Close Supervisor Portal">&times;</button>
       </div>
       <p class="supervisor-desc">Compile and extract raw daily agent output metrics directly from the cloud backend data modules.</p>
