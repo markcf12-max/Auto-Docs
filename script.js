@@ -304,7 +304,7 @@ async function linkQualityScoreAccount(email, password) {
    days. Agents are blocked from re-marking within that window; a Supervisor
    can override with their master credentials.
    ========================================================================== */
-const CSAT_ELIGIBLE_LOBS = ['SMART ENTERPRISE SUPPORT', 'SMART EBRO'];
+const CSAT_ELIGIBLE_LOBS = ['ES', 'EBRO'];
 const CSAT_COOLDOWN_DAYS = 30;
 let csatOverrideActive = false; // true once a Supervisor has approved an override for the current email
 
