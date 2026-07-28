@@ -1468,6 +1468,36 @@ body.light-mode .header-action-btn.logout-accent:hover {
   .brand-system-status {
     display: none;
   }
+  .workspace-brand-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .brand-identity-wrapper {
+    gap: 8px;
+  }
+  .brand-logo-circle-large {
+    width: 34px;
+    height: 34px;
+  }
+  .brand-main-title {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .header-control-actions {
+    gap: 6px;
+    margin-left: auto;
+  }
+  .header-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  .theme-picker-wrapper {
+    width: 32px;
+    height: 32px;
+  }
 }
 /* ==========================================================================
    🌓 MOON/SUN ICON VISIBILITY OVERRIDES FOR LIGHT MODE
