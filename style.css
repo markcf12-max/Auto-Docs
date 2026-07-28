@@ -1965,6 +1965,8 @@ body.density-compact #densityToggleBtn i::before {
    ========================================================================== */
 .csat-note { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
 .csat-note-error { color: #ef4444; }
+.csat-jump-link { color: #60a5fa; cursor: pointer; text-decoration: underline; }
+.csat-jump-link:hover { color: #93c5fd; }
 .csat-status {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 700; margin-bottom: 4px;
