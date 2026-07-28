@@ -685,6 +685,15 @@
       <div class="supervisor-footer" style="justify-content: flex-end;">
         <button id="adminExtractSubmitBtn" class="btn-download-excel" style="width: 100%;"><i class="fas fa-file-excel"></i> Download Excel Spreadsheet</button>
       </div>
+
+      <!-- CSAT Survey Log Viewer -->
+      <div class="modal-form-group" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;">
+        <label for="csatLogSearch"><i class="fas fa-poll"></i> CSAT Survey Log — Search by Email</label>
+        <input type="text" id="csatLogSearch" placeholder="Type an email to filter the list..." style="width:100%; box-sizing:border-box; background: rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:8px; border-radius:4px; font-family:inherit; margin-bottom:10px;">
+        <div id="csatLogList" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+          <div class="csat-note">Open this panel to load the log…</div>
+        </div>
+      </div>
     </div>
   </div>
 
