@@ -151,21 +151,10 @@ body {
   color: #10b981;
 }
 
-#themeToggle {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-#themeToggle:hover {
-  background: rgba(0,0,0,0.05);
-}
-.dark-mode #themeToggle:hover, body.dark-theme #themeToggle:hover {
-  background: rgba(255,255,255,0.05);
-}
+/* Legacy #themeToggle color/background rule removed — it was overriding
+   .header-action-btn via ID specificity and using a theme-swapped color
+   that goes invisible against this header's fixed dark background in
+   light mode. .header-action-btn (below) handles this button correctly. */
 
 .btn-logout-init {
   background: rgba(239, 68, 68, 0.1);
@@ -1463,6 +1452,32 @@ body.light-mode .header-action-btn.logout-accent:hover {
   border-color: #dc2626 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+/* 🎯 EXCEPTION: the workspace header bar has a fixed always-dark background
+   regardless of light/dark mode (see .workspace-brand-header). The generic
+   light-mode inversion above assumes a light background and made these
+   buttons invisible (dark icon on dark header). Buttons inside the header
+   always keep the dark-mode-style light icon, overriding the rules above. */
+body.light-mode .workspace-brand-header .header-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+body.light-mode .workspace-brand-header .header-action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+body.light-mode .workspace-brand-header .header-action-btn.logout-accent {
+  color: #f87171 !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+body.light-mode .workspace-brand-header .header-action-btn.logout-accent:hover {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
 }
 
 /* ==========================================================================
