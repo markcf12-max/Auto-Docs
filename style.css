@@ -1480,6 +1480,21 @@ body.light-mode .workspace-brand-header .header-action-btn.logout-accent:hover {
   color: #ffffff !important;
 }
 
+/* 🎯 The Supervisor Panel (and its Telemetry Portal modal) are an
+   intentionally fixed dark "command console" — like the header, their
+   backgrounds never change with the theme. Without this, text color still
+   inherited from the body's theme variable and flipped to a dark color in
+   light mode, while the hardcoded dark backgrounds stayed the same —
+   producing washed-out, low-contrast ("grayed out") text. */
+body.light-mode #supervisorPanel,
+body.light-mode #supervisorAdminPanel {
+  color: #e2e8f0;
+}
+body.light-mode #supervisorPanel .csat-note,
+body.light-mode #supervisorAdminPanel .csat-note {
+  color: #94a3b8;
+}
+
 /* ==========================================================================
    ⭕ BRAND BRANDING LAYOUT ELEMENTS
    ========================================================================== */
