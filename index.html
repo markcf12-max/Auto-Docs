@@ -405,6 +405,7 @@
           <button type="button" class="sup-tab-btn" data-suptab="playbooks"><i class="fas fa-book"></i> Playbooks</button>
           <button type="button" class="sup-tab-btn" data-suptab="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</button>
           <button type="button" class="sup-tab-btn" data-suptab="training"><i class="fas fa-graduation-cap"></i> Training Mode</button>
+          <button type="button" class="sup-tab-btn" data-suptab="csatlog"><i class="fas fa-poll"></i> CSAT Log</button>
         </div>
 
         <!-- TAB: Intent Tracker (default) -->
@@ -615,6 +616,20 @@
         </div>
         </div>
 
+        <!-- TAB: CSAT Survey Log -->
+        <div class="sup-tab-panel" id="supTabCsatlog" style="display:none;">
+          <div style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(8px); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+            <h3 style="color: #f8fafc; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-poll"></i> CSAT Survey Log
+            </h3>
+            <p style="margin: 0 0 14px 0; color: #94a3b8; font-size: 12px;">Search by customer email to check whether a CSAT survey was already logged, and when the 30-day cooldown clears.</p>
+            <input type="text" id="csatLogSearch" placeholder="Type an email to filter the list..." style="width:100%; box-sizing:border-box; background: rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:10px; border-radius:4px; font-family:inherit; margin-bottom:12px;">
+            <div id="csatLogList" style="max-height:400px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+              <div class="csat-note">Loading…</div>
+            </div>
+          </div>
+        </div>
+
       </div>
   </div>
 
@@ -710,15 +725,6 @@
 
       <div class="supervisor-footer" style="justify-content: flex-end;">
         <button id="adminExtractSubmitBtn" class="btn-download-excel" style="width: 100%;"><i class="fas fa-file-excel"></i> Download Excel Spreadsheet</button>
-      </div>
-
-      <!-- CSAT Survey Log Viewer -->
-      <div class="modal-form-group" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;">
-        <label for="csatLogSearch"><i class="fas fa-poll"></i> CSAT Survey Log — Search by Email</label>
-        <input type="text" id="csatLogSearch" placeholder="Type an email to filter the list..." style="width:100%; box-sizing:border-box; background: rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(255,255,255,0.15); padding:8px; border-radius:4px; font-family:inherit; margin-bottom:10px;">
-        <div id="csatLogList" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
-          <div class="csat-note">Open this panel to load the log…</div>
-        </div>
       </div>
     </div>
   </div>
