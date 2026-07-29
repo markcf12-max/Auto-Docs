@@ -519,6 +519,7 @@ document.querySelectorAll('.sup-tab-btn').forEach(btn => {
         btn.classList.add('active');
         const panel = document.getElementById('supTab' + btn.dataset.suptab.charAt(0).toUpperCase() + btn.dataset.suptab.slice(1));
         if (panel) panel.style.display = 'block';
+        if (btn.dataset.suptab === 'csatlog') csatLoadSupervisorLog();
     });
 });
 
@@ -3575,7 +3576,6 @@ document.addEventListener("DOMContentLoaded", () => {
           telemetryContainer.style.setProperty("height", "auto", "important");
           
           console.log(`Access Granted: Extraction panel rendered safely for admin.`);
-          csatLoadSupervisorLog();
           positionTelemetryPanel(telemetryContainer);
         } else {
           console.error("FATAL UI ERROR: Target element '#supervisorAdminPanel' missing from DOM tree.");
