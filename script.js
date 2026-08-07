@@ -139,7 +139,7 @@ const QS_EXPANDED_PREVIEW_COUNT = 12;
 function qsCardHtml(r) {
     const issues = qsGetRowIssues(r);
     const score = r['OVERALL SCORE'];
-    const passed = r['OVERALL PASSRATE'] ? r['OVERALL PASSRATE'] === 'PASSED' : (score !== null && score >= 85);
+    const passed = r['OVERALL PASSRATE'] ? r['OVERALL PASSRATE'] === 'PASSED' : (score !== null && score > 90);
     const tagsHtml = issues.length
         ? issues.map(i => `<span class="qs-tag">${qsEscapeHtml(i.label)}</span>`).join('')
         : `<span class="qs-no-issues">✓ No parameters flagged on this audit.</span>`;
