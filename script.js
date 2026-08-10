@@ -145,12 +145,13 @@ function qsCardHtml(r) {
         : `<span class="qs-no-issues">✓ No parameters flagged on this audit.</span>`;
     const caseLabel = qsNormVal(r['BRAND']) === 'SMART EBG' ? 'Call ID' : 'Case #';
     const caseLine = r['CALL ID / CASE NUMBER'] ? ` · ${caseLabel}: ${qsEscapeHtml(r['CALL ID / CASE NUMBER'])}` : '';
+    const minLine = r['MIN'] ? ` · ANI: ${qsEscapeHtml(r['MIN'])}` : '';
     return `<div class="qs-audit-card">
         <div class="qs-audit-head">
             <span>${qsEscapeHtml(r['WEEKENDING'])} · ${qsEscapeHtml(r['FORM TYPE'])} · ${qsEscapeHtml(r['BRAND'])}</span>
             <span class="qs-score-pill ${passed ? 'qs-pass' : 'qs-fail'}">${score === null ? '-' : score + '%'}</span>
         </div>
-        <div class="qs-audit-meta">Team Leader: ${qsEscapeHtml(r['TEAM LEADER']) || '—'} · Month: ${qsEscapeHtml(r['MONTH']) || '—'}${caseLine}</div>
+        <div class="qs-audit-meta">Team Leader: ${qsEscapeHtml(r['TEAM LEADER']) || '—'} · Month: ${qsEscapeHtml(r['MONTH']) || '—'}${caseLine}${minLine}</div>
         <div class="qs-tags-row">${tagsHtml}</div>
     </div>`;
 }
